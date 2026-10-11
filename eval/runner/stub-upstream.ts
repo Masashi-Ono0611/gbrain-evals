@@ -175,8 +175,6 @@ const FACTS_EXTRACTOR = 'You extract personal-knowledge claims from a conversati
  * gbrain's fact extractor names its JSON shape in its system prompt instead of
  * a schema field: answer it with one fact per non-empty line of the
  * `<turn>` text (at most three), so extraction lanes write real fact rows.
- * The system prompt shows an example `<turn>…</turn>`; the window's own text
- * is the last `<turn>` block, so each window gets its own facts.
  */
 function factsExtractorReply(body: Record<string, any>): { facts: unknown[] } | null {
   const strings: string[] = [];
@@ -188,7 +186,7 @@ function factsExtractorReply(body: Record<string, any>): { facts: unknown[] } | 
   walk(promptText(body));
   const text = strings.join('\n');
   if (!text.includes(FACTS_EXTRACTOR)) return null;
-  const turn = [...text.matchAll(/<turn>([\s\S]*?)<\/turn>/g)].at(-1)?.[1] ?? '';
+  const turn = /<turn>([\s\S]*?)<\/turn>/.exec(text)?.[1] ?? '';
   const lines = turn.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 3);
   return { facts: lines.map(l => ({ fact: `stub fact: ${l.slice(0, 120)}`, kind: 'fact', entity: null, confidence: 0.9, notability: 'high', metric: null, value: null, unit: null, period: null })) };
 }
