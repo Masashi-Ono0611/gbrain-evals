@@ -1,6 +1,6 @@
 # Comparing memory systems without comparing different things
 
-This page compares gbrain, as this repository pins it (master `8a3eedeac`, v0.60.126.0), with published results for other memory systems. Every row keeps its own measurement or access date; external sources were last checked September 9, 2026. A source check confirms what an author published; it does not mean we reproduced the system. Everything above [Changelog](#changelog) is current.
+This page compares gbrain, as this repository pins it (master `77cf8e111`, v0.60.169.0), with published results for other memory systems. Every row keeps its own measurement or access date; external sources were last checked September 9, 2026. A source check confirms what an author published; it does not mean we reproduced the system. Everything above [Changelog](#changelog) is current.
 
 Before comparing two memory scores, ask what each system had to do. Find one useful conversation? Find every conversation needed? Return only the right facts? Write the right answer? Those are different jobs, and a system can do one well while struggling with another.
 
@@ -25,7 +25,7 @@ A fifth detail matters: what does K count? Gbrain's ordinary LongMemEval path re
 
 The official [retrieval evaluator](https://github.com/xiaowu0162/LongMemEval/blob/main/src/retrieval/eval_utils.py) distinguishes `recall_all` from `recall_any`. Its [printing code](https://github.com/xiaowu0162/LongMemEval/blob/main/src/evaluation/print_retrieval_metrics.py) excludes abstention questions for retrieval. For the cleaned small split, that leaves 470 of 500 questions. Answer accuracy includes the 30 abstention questions.
 
-The September 6 run measured gbrain v0.48.4.0 at `2efaaf8f8a817b5b82e023383618fdcdb1cc5f7d` (receipts from the pre-squash branch head `fd7e7fd9`). This repository now installs a different commit, gbrain master `8a3eedeac` (v0.60.126.0), so a fresh `bun install` does not reproduce that code exactly. The run used cached OpenAI `text-embedding-3-large` embeddings at 1,536 dimensions, balanced search, Voyage `rerank-2.5`, autocut off, relational pin three, and lexical metadata gating. The embedding choice pins this experiment; the current new-install embedding default is a different setting.
+The September 6 run measured gbrain v0.48.4.0 at `2efaaf8f8a817b5b82e023383618fdcdb1cc5f7d` (receipts from the pre-squash branch head `fd7e7fd9`). This repository now installs a different commit, gbrain master `77cf8e111` (v0.60.169.0), so a fresh `bun install` does not reproduce that code exactly. The run used cached OpenAI `text-embedding-3-large` embeddings at 1,536 dimensions, balanced search, Voyage `rerank-2.5`, autocut off, relational pin three, and lexical metadata gating. The embedding choice pins this experiment; the current new-install embedding default is a different setting.
 
 Without reranking, gbrain found all evidence on 439/470 questions (93.40%) and some evidence on 464/470 (98.72%). With reranking, the counts were 449/470 (95.53%) and 469/470 (99.79%). The paired strict comparison gained 18 questions and lost eight. The result supports the reranker in this configuration, while making its losses visible. October 4, 2026: [recounted with opaque session ids](benchmarks/2026-10-04-longmemeval-opaque-followups.md) at gbrain `109b992`, the counts are 434/470 and 463/470 without the reranker and 451/470 and 470/470 with it (+23/−6 paired); the published numbers are confirmed.
 
@@ -174,6 +174,27 @@ The tight configuration returns at most one entity result and one result for oth
 
 The upstream README still lists tenure at 1.00 precision, supermemory at 0.22, and its own gbrain integration at about 0.14 precision / 0.17 recall. The latter is a separate integration, closer in outcome to this repository's keyword path; matching rounded scores does not establish that the implementations are identical. The old May supermemory 0.43 / 819 ms comparison is not the upstream row checked September 1 or September 9. We make no current #2 or cross-provider latency claim from those mixed runs.
 
+## BEAM: a matched head-to-head with a memory-bank server
+
+The [memory proof wave](benchmarks/2026-10-09-memory-proof-wave-sealed-results.md) ran gbrain and `memory-bank`
+(identity in [the systems table](#systems-in-the-open-source-comparison)) through the same audited harness, with the
+same reader (`gemini-3.8-flash`), judge (`gemini-3.5-flash`) and 8,000-token context target, on sealed BEAM
+conversations neither side tuned on. gbrain ran its freeze build `d7467d1cf` (0.60.95.0, an ancestor of the pin) with
+opt-in fact extraction plus its page query; `memory-bank` ran its best supported mode (extracted facts plus raw chunks)
+with knobs fitted on dev.
+
+| Arm (sealed BEAM 100k, 500k and 1M; 1,080 questions) | Graded accuracy | Cost per correct answer at 20 reads per conversation |
+|---|---:|---:|
+| gbrain, pages plus extracted facts | 0.670 | $0.0599 |
+| `memory-bank`, facts plus raw chunks | 0.644 | $0.0948 |
+| gbrain, pages only (secondary) | 0.623 | $0.0258 |
+
+The preregistered outcome is `ahead` (+2.64 points, one-sided 95% bounds +0.90 and +4.41). At 200 reads per stored
+conversation the cost edge is gone (ratio 1.01). `memory-bank` keeps an edge on event ordering (−7.9 points for gbrain)
+and temporal reasoning (−6.9). On the descriptive LongMemEval-S rows it scores 84.5% against 80.3% for gbrain's pages
+only and 69.8% for gbrain with facts, and on LoCoMo10 83.3% against 85.0% and 93.3%. A later head (`d7d7686de`) was checked
+equivalent in retrieval on public dev conversations; the sealed set was not rerun.
+
 ## Adding a comparison that an engineer can use
 
 Record the question the benchmark asks, dataset revision and subset, result budget and unit, model and software versions, score definition and denominator, error handling, and whether results were selected after inspecting test failures. Link the primary source with an access date. Keep changed results as dated entries so readers can tell a new run from a corrected label.
@@ -208,6 +229,12 @@ before A6b use the former environment variable names. The hashes of every file A
 [rename-a6b.json](benchmarks/2026-10-06-oss-memory-shootout/rename-a6b.json).
 
 ## Changelog
+
+### 2026-10-11: Re-pin to gbrain `77cf8e111`; BEAM head-to-head
+
+gbrain-evals v0.10.73. The pin named in the opening changed from `8a3eedeac` (v0.60.126.0) to `77cf8e111` (v0.60.169.0),
+which contains the memory proof wave (gbrain #6066). A new section reports its matched, preregistered head-to-head with
+`memory-bank` on sealed BEAM ([re-pin report](benchmarks/2026-10-11-wave14-repin.md)); the page had no BEAM comparison.
 
 ### 2026-10-09: Re-pin to gbrain `8a3eedeac`
 

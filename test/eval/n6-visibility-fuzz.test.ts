@@ -154,11 +154,11 @@ describe('N6 parameter synthesis', () => {
   });
 
   test('an optional question gets its own ranked variant without widening flags; a required one is always filled', () => {
-    const recall = { entity: { type: 'string' }, question: { type: 'string' }, include_expired: { type: 'boolean' }, supersessions: { type: 'boolean' } };
+    const recall: Record<string, ParamDef> = { entity: { type: 'string' }, question: { type: 'string' }, include_expired: { type: 'boolean' }, supersessions: { type: 'boolean' } };
     expect(variantsFor(recall).map(v => v.id)).toEqual(['base', 'question']);
     expect(synthesizeParams(recall, target).params).toEqual({ entity: target.slug, include_expired: true, supersessions: true });
     expect(synthesizeParams(recall, target, { ranked: true }).params).toEqual({ entity: target.slug, question: target.query });
-    const think = { question: { type: 'string', required: true } };
+    const think: Record<string, ParamDef> = { question: { type: 'string', required: true } };
     expect(variantsFor(think).map(v => v.id)).toEqual(['base']);
     expect(synthesizeParams(think, target).params).toEqual({ question: target.query });
   });
