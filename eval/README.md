@@ -112,7 +112,7 @@ How this page changed, newest first. Measurement history lives in the dated repo
 
 ### 2026-10-11: The introduction names the current pin
 
-gbrain-evals v0.10.75. The introduction names gbrain master `77cf8e111` (v0.60.169.0) as the `gbrain` every runner
+gbrain-evals v0.10.76. The introduction names gbrain master `77cf8e111` (v0.60.169.0) as the `gbrain` every runner
 loads. It still named `739e5cc` (v0.60.46.0), which stopped being the pin on October 6; five re-pins had not updated
 this page ([re-pin report](../docs/benchmarks/2026-10-11-wave14-repin.md)).
 

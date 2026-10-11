@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.75, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.76, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -203,10 +203,16 @@ procedure with documented missing pieces; it is not the current refresh command.
 
 ### 2026-10-11: Re-pin to gbrain `77cf8e111`
 
-gbrain-evals v0.10.75 (the opening names it; was v0.10.74). The opening names gbrain master `77cf8e111` (v0.60.169.0,
+gbrain-evals v0.10.76 (the opening names it; was v0.10.75). The opening names gbrain master `77cf8e111` (v0.60.169.0,
 was `8a3eedeac`, v0.60.126.0). "What does the current pin change" links the
 [wave 14 re-pin report](benchmarks/2026-10-11-wave14-repin.md); the October 6 re-pin it linked moves to the history
 rows beside the earlier re-pins.
+
+### 2026-10-11: Cat 40 Hard fix wave records
+
+gbrain-evals v0.10.75 (the opening names it; was v0.10.74). No report row changes: the release adds the fix wave's
+plan, development record, preregistration and results under `docs/plans/2026-10-07-cat40-hard-fix/`, which the October
+10 confirmation report links to.
 
 ### 2026-10-11: Cat 40 Hard confirmation
 

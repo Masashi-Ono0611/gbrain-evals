@@ -257,7 +257,7 @@ How this page changed, newest first. Measurement history lives in the dated repo
 
 ### 2026-10-11: The opening names the current pin
 
-gbrain-evals v0.10.75. The opening names gbrain master `77cf8e111` (v0.60.169.0) as the pin; it still named `739e5cc`
+gbrain-evals v0.10.76. The opening names gbrain master `77cf8e111` (v0.60.169.0) as the pin; it still named `739e5cc`
 (v0.60.46.0), the pin until October 6. Between the two, the search mode definitions gained only the three
 multi-relation planner keys of v0.60.60.0 (see [settings](settings.md)), and every number names the commit it was
 measured at, so no lesson changes ([re-pin report](benchmarks/2026-10-11-wave14-repin.md)).

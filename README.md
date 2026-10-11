@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.75 (`VERSION`) |
+| This repository | gbrain-evals v0.10.76 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history. The search modes have been identical since v0.48.4.0, so retrieval results from those commits describe
@@ -290,9 +290,9 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 
 ## Changelog
 
-### 2026-10-11: Pin gbrain v0.60.169.0 (`77cf8e111`); repository row names v0.10.75
+### 2026-10-11: Pin gbrain v0.60.169.0 (`77cf8e111`); repository row names v0.10.76
 
-gbrain-evals v0.10.75. The pin moves from `8a3eedeac` (v0.60.126.0) to the release v0.60.169.0, `77cf8e111`, after a
+gbrain-evals v0.10.76. The pin moves from `8a3eedeac` (v0.60.126.0) to the release v0.60.169.0, `77cf8e111`, after a
 paired keyless regression check that found no gbrain regression ([re-pin report](docs/benchmarks/2026-10-11-wave14-repin.md)).
 The rows rerun at every pin now name `77cf8e111`: N1 (388 of 388, unchanged), N5 (0 prohibited outputs, unchanged),
 the privacy row (0 leaks, 155 of 155 Postgres cells, unchanged) and N12, which reads 29 of 29 formats instead of 28 of
@@ -305,7 +305,13 @@ search at 1M to 2M chunks (`2e84d234e`) and the matched BEAM comparison with a m
 N2 row moves to `77cf8e111` after its paid judge arm was rerun with Garry's approval ($7.07): it reads 146 of 150
 instead of 149 of 150, with the same judge model and prompt. Three conflicts the earlier run caught were called
 changes over time, which is sampling variation at the provider's default temperature (exact McNemar p = 0.25). It
-also flags 4 of 51 compatible pairs instead of 6. The repository row names v0.10.75 (was v0.10.74).
+also flags 4 of 51 compatible pairs instead of 6. The repository row names v0.10.76 (was v0.10.75).
+
+### 2026-10-11: Repository row names v0.10.75
+
+gbrain-evals v0.10.75 adds the Cat 40 Hard fix wave's plan, development record, confirmation preregistration and
+results, and records that the sealed Hard world has now run once. No result row on this page changes. The repository
+row names v0.10.75 (was v0.10.74).
 
 ### 2026-10-11: Repository row names v0.10.74
 
