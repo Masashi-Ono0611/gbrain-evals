@@ -2,6 +2,8 @@
 
 ## The finding
 
+**Later result (2026-10-11):** on the fix-wave build v0.60.139.0, gbrain is ahead of plain files on two fresh 55,000-document worlds (+7.7 and +13.0 points); see the [confirmation](2026-10-10-model-ladder-hard-confirmation.md). The numbers below still describe v0.60.95.0.
+
 On 100 unseen Hard tasks over a 55,235-document synthetic company, frontier agents using gbrain finished fewer tasks than the same agents using plain files with grep. Pooled over Sonnet 5.5, Opus 5.5 and GPT-6.1 Sol, gbrain finished 62.0% of tasks and plain files 73.3%. The paired difference is −11.3 points, with a task-clustered 95% interval of −16.7 to −6.0. That triggers the preregistered decision sentence 3, "gbrain behind": the next gbrain wave targets retrieval on the weakest family. That family is H1, aggregation over many accounts (−18.3 points, interval −30.0 to −8.3).
 
 gbrain lost on Sonnet 5.5 (−16 points) and Opus 5.5 (−17 points) and tied on GPT-6.1 Sol (−1 point, interval −9 to +7). It also trailed the Postgres search setup by 6.3 points (simultaneous interval −12.5 to −0.2).
@@ -125,3 +127,4 @@ The output is committed as [holdout-stats.md](2026-10-07-model-ladder-hard/holdo
 - 2026-10-07: first version.
 - 2026-10-07: caveat added: the gbrain arm ran without reranking (stale Voyage endpoint in restored slots); harness fixed.
 - 2026-10-08: development-world measurement of the reranker's effect added to the caveat (+2 of 50 tasks, within noise).
+- 2026-10-11: pointer to the fix-wave confirmation, where v0.60.139.0 is ahead of plain files in both worlds.
