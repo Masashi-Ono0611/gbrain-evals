@@ -133,3 +133,19 @@ The second run repeats steps 1 to 10 on two fresh identical `standard-16` VMs st
 commit that carries these fixes, followed on each by `vm/cat7-repeat.sh`, the preregistered paired repeat for the
 suspected Cat 7 slowdown the first run showed (`traverse_paths_d1` at 1,000 pages, p50 1.37 to 1.78 ms, +30%). The
 second run's receipts are the counted ones; a difference between the runs is reported.
+
+### 2026-10-11: the final target is v0.60.169.0 (`77cf8e111`), before any run there
+
+GBRA-40 set the target: gbrain v0.60.169.0, master `77cf8e1116e9af67c1983adcbb3223b96f0991a5` (the merge of #6447,
+memory-proof wave 2 W1, after wave 14's #6480 and #6481). It descends from `3001fd9a5`. Frozen before any run at
+`77cf8e111`:
+
+1. **After** becomes `77cf8e111` everywhere above. **Before** stays `8a3eedeac`. Per GBRA-40, the counted pair is
+   `8a3eedeac` against `77cf8e111` on two fresh identical `standard-16` VMs started together, running steps 1 to 10 and
+   then `vm/cat7-repeat.sh`, at the commit that carries the previous amendment's fixes. This replaces "The final SHA"
+   section's `3001fd9a5`-against-release pair and the previous amendment's second `3001fd9a5` run, which was cancelled
+   before it finished; no output of it was read.
+2. The first run at `3001fd9a5` stays recorded as development evidence (`2026-10-11-wave14-repin/run1/`). The regression
+   rules are judged on the counted pair only.
+3. Expected moves add v0.60.168.0's timezone conversion of time-only chat timestamps (pages that declare `timezone:`)
+   and v0.60.169.0's `recall` `question` parameter.
