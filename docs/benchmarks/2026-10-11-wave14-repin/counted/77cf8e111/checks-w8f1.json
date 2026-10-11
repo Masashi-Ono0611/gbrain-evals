@@ -292,7 +292,7 @@
           "scratch_import": {
             "code": 0,
             "stdout": "Found 3 markdown files\n\nImport complete (0.5s):\n  3 pages imported\n  0 pages skipped (0 unchanged, 0 errors, 0 malformed filenames)\n  3 chunks created\n",
-            "stderr": "[gbrain phase] import.collect_files start dir=/tmp/w8f1-repo-3Uqw7V/scratch strategy=markdown\n[gbrain phase] import.collect_files done 6ms files=3\n[import.files] start\n[import.files] 3/3 (100%) imported=3 skipped=0 errors=0\n[import.files] 3/3 (100%) done\n"
+            "stderr": "[gbrain phase] import.collect_files start dir=<tmp>/w8f1-repo-3Uqw7V/scratch strategy=markdown\n[gbrain phase] import.collect_files done 6ms files=3\n[import.files] start\n[import.files] 3/3 (100%) imported=3 skipped=0 errors=0\n[import.files] 3/3 (100%) done\n"
           },
           "scratch_list": "scratch-note-3\tconcept\t2026-10-11\tScratch note 3\nscratch-note-2\tconcept\t2026-10-11\tScratch note 2\nscratch-note-1\tconcept\t2026-10-11\tScratch note 1\n",
           "repo_import": {

@@ -2557,13 +2557,13 @@
               "init",
               "--pglite",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-cli/gbrain-home/brain.pglite",
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-cli/gbrain-home/brain.pglite",
               "--no-embedding",
               "--non-interactive"
             ],
             "code": 0,
             "ms": 3466,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v222)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  217 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /tmp/n5-forget-residue-cells-boXyT7/n5-pglite-cli/gbrain-home/.gbrain/content/ac39e944-4765-468c-b1cf-d87fe9c0057b/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v222)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  217 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-cli/gbrain-home/.gbrain/content/ac39e944-4765-468c-b1cf-d87fe9c0057b/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -2572,11 +2572,11 @@
               "add",
               "vault",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-cli/vault-vault"
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-cli/vault-vault"
             ],
             "code": 0,
             "ms": 935,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-cli/vault-vault\",\n  \"source_incarnation\": \"d33bef28-702c-416b-9b0b-bf520136585e\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"79aad75b-97af-4bb9-864c-6020a7003470\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-cli/vault-vault\",\n  \"source_incarnation\": \"d33bef28-702c-416b-9b0b-bf520136585e\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"79aad75b-97af-4bb9-864c-6020a7003470\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-add:other",
@@ -2585,11 +2585,11 @@
               "add",
               "other",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-cli/other-vault"
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-cli/other-vault"
             ],
             "code": 0,
             "ms": 810,
-            "tail": "  \"source_id\": \"other\",\n  \"local_path\": \"/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-cli/other-vault\",\n  \"source_incarnation\": \"750aa428-1762-4223-9025-7457f3a468ac\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"bccd6a7a-e3a3-463b-93fd-93259d52e33f\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"other\",\n  \"local_path\": \"<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-cli/other-vault\",\n  \"source_incarnation\": \"750aa428-1762-4223-9025-7457f3a468ac\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"bccd6a7a-e3a3-463b-93fd-93259d52e33f\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -4236,13 +4236,13 @@
               "init",
               "--pglite",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-stdio/gbrain-home/brain.pglite",
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-stdio/gbrain-home/brain.pglite",
               "--no-embedding",
               "--non-interactive"
             ],
             "code": 0,
             "ms": 3435,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v222)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  217 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /tmp/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-stdio/gbrain-home/.gbrain/content/6f9bc523-f102-4dde-b58d-8805edeffa4c/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v222)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  217 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-stdio/gbrain-home/.gbrain/content/6f9bc523-f102-4dde-b58d-8805edeffa4c/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -4251,11 +4251,11 @@
               "add",
               "vault",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-stdio/vault-vault"
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-stdio/vault-vault"
             ],
             "code": 0,
             "ms": 880,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-stdio/vault-vault\",\n  \"source_incarnation\": \"29134f48-f243-48c9-a2f0-5c4bcba4ebde\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"23bf9d3f-0a87-4775-a450-afc9ffbcf3b0\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-stdio/vault-vault\",\n  \"source_incarnation\": \"29134f48-f243-48c9-a2f0-5c4bcba4ebde\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"23bf9d3f-0a87-4775-a450-afc9ffbcf3b0\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-add:other",
@@ -4264,11 +4264,11 @@
               "add",
               "other",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-stdio/other-vault"
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-stdio/other-vault"
             ],
             "code": 0,
             "ms": 911,
-            "tail": "  \"source_id\": \"other\",\n  \"local_path\": \"/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-stdio/other-vault\",\n  \"source_incarnation\": \"fa175252-0cb4-4b88-9674-78642896d09c\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"70d94958-f2bf-425f-9de7-8ac1097776eb\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"other\",\n  \"local_path\": \"<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-stdio/other-vault\",\n  \"source_incarnation\": \"fa175252-0cb4-4b88-9674-78642896d09c\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"70d94958-f2bf-425f-9de7-8ac1097776eb\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -5930,13 +5930,13 @@
               "init",
               "--pglite",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-http/gbrain-home/brain.pglite",
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-http/gbrain-home/brain.pglite",
               "--no-embedding",
               "--non-interactive"
             ],
             "code": 0,
             "ms": 3610,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v222)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  217 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /tmp/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-http/gbrain-home/.gbrain/content/a966e7ba-8adf-47b7-a3ba-6223a9499f1e/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v222)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  217 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-http/gbrain-home/.gbrain/content/a966e7ba-8adf-47b7-a3ba-6223a9499f1e/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -5945,11 +5945,11 @@
               "add",
               "vault",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-http/vault-vault"
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-http/vault-vault"
             ],
             "code": 0,
             "ms": 841,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-http/vault-vault\",\n  \"source_incarnation\": \"ca6eafcd-e475-4264-af96-5cecd15535a9\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"76bf15ed-7328-47fa-8286-f23f9e5ec5d4\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-http/vault-vault\",\n  \"source_incarnation\": \"ca6eafcd-e475-4264-af96-5cecd15535a9\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"76bf15ed-7328-47fa-8286-f23f9e5ec5d4\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-add:other",
@@ -5958,11 +5958,11 @@
               "add",
               "other",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-http/other-vault"
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-http/other-vault"
             ],
             "code": 0,
             "ms": 817,
-            "tail": "  \"source_id\": \"other\",\n  \"local_path\": \"/tmp/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-http/other-vault\",\n  \"source_incarnation\": \"a0791bec-eba3-4d9a-ad4a-7a7c496fe015\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"3c5cd58f-0299-4aa3-8593-4d5bf3371f3b\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"other\",\n  \"local_path\": \"<tmp>/n5-forget-residue-cells-boXyT7/n5-pglite-mcp-http/other-vault\",\n  \"source_incarnation\": \"a0791bec-eba3-4d9a-ad4a-7a7c496fe015\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"3c5cd58f-0299-4aa3-8593-4d5bf3371f3b\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -7663,7 +7663,7 @@
             ],
             "code": 0,
             "ms": 3143,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v222)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  217 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /tmp/n5-forget-residue-cells-boXyT7/n5-postgres-cli/gbrain-home/.gbrain/content/2fda262e-dea7-4a9c-a07e-8f2f6dac6532/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v222)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  217 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-cli/gbrain-home/.gbrain/content/2fda262e-dea7-4a9c-a07e-8f2f6dac6532/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -7672,11 +7672,11 @@
               "add",
               "vault",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-postgres-cli/vault-vault"
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-cli/vault-vault"
             ],
             "code": 0,
             "ms": 513,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/tmp/n5-forget-residue-cells-boXyT7/n5-postgres-cli/vault-vault\",\n  \"source_incarnation\": \"e1686af0-d955-42aa-8ef6-51fca082319a\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"26517b40-ef80-424f-bf30-c3fc56539106\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-cli/vault-vault\",\n  \"source_incarnation\": \"e1686af0-d955-42aa-8ef6-51fca082319a\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"26517b40-ef80-424f-bf30-c3fc56539106\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-add:other",
@@ -7685,11 +7685,11 @@
               "add",
               "other",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-postgres-cli/other-vault"
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-cli/other-vault"
             ],
             "code": 0,
             "ms": 447,
-            "tail": "  \"source_id\": \"other\",\n  \"local_path\": \"/tmp/n5-forget-residue-cells-boXyT7/n5-postgres-cli/other-vault\",\n  \"source_incarnation\": \"10843c5a-def1-4f89-b660-fff6dcf478a5\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"6e610a3c-11a8-4833-b51a-1c2057091ce5\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"other\",\n  \"local_path\": \"<tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-cli/other-vault\",\n  \"source_incarnation\": \"10843c5a-def1-4f89-b660-fff6dcf478a5\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"6e610a3c-11a8-4833-b51a-1c2057091ce5\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -9341,7 +9341,7 @@
             ],
             "code": 0,
             "ms": 3139,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v222)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  217 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /tmp/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-stdio/gbrain-home/.gbrain/content/a4617dba-70e8-4381-90a7-0d3b2b9431c3/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v222)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  217 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-stdio/gbrain-home/.gbrain/content/a4617dba-70e8-4381-90a7-0d3b2b9431c3/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -9350,11 +9350,11 @@
               "add",
               "vault",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-stdio/vault-vault"
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-stdio/vault-vault"
             ],
             "code": 0,
             "ms": 536,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/tmp/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-stdio/vault-vault\",\n  \"source_incarnation\": \"49b354a8-946c-4861-b45a-54d716342d99\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"654728e9-570e-4f58-83cb-45c7e21eedf5\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-stdio/vault-vault\",\n  \"source_incarnation\": \"49b354a8-946c-4861-b45a-54d716342d99\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"654728e9-570e-4f58-83cb-45c7e21eedf5\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-add:other",
@@ -9363,11 +9363,11 @@
               "add",
               "other",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-stdio/other-vault"
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-stdio/other-vault"
             ],
             "code": 0,
             "ms": 441,
-            "tail": "  \"source_id\": \"other\",\n  \"local_path\": \"/tmp/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-stdio/other-vault\",\n  \"source_incarnation\": \"8775102a-36e1-4781-a9b9-c1a16e43412f\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"42a740c3-8892-4eac-886c-1ea78d889bf7\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"other\",\n  \"local_path\": \"<tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-stdio/other-vault\",\n  \"source_incarnation\": \"8775102a-36e1-4781-a9b9-c1a16e43412f\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"42a740c3-8892-4eac-886c-1ea78d889bf7\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -11034,7 +11034,7 @@
             ],
             "code": 0,
             "ms": 3014,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v222)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  217 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /tmp/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-http/gbrain-home/.gbrain/content/62ecb43c-7365-4dff-8f05-22f0f600ff3a/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v222)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  217 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-http/gbrain-home/.gbrain/content/62ecb43c-7365-4dff-8f05-22f0f600ff3a/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -11043,11 +11043,11 @@
               "add",
               "vault",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-http/vault-vault"
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-http/vault-vault"
             ],
             "code": 0,
             "ms": 557,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/tmp/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-http/vault-vault\",\n  \"source_incarnation\": \"c7aaca65-c4e3-484e-bace-1873b5c0e2da\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"4c7d3e01-020e-4349-bfc3-939d7fd9a0db\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-http/vault-vault\",\n  \"source_incarnation\": \"c7aaca65-c4e3-484e-bace-1873b5c0e2da\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"4c7d3e01-020e-4349-bfc3-939d7fd9a0db\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-add:other",
@@ -11056,11 +11056,11 @@
               "add",
               "other",
               "--path",
-              "/tmp/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-http/other-vault"
+              "<tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-http/other-vault"
             ],
             "code": 0,
             "ms": 431,
-            "tail": "  \"source_id\": \"other\",\n  \"local_path\": \"/tmp/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-http/other-vault\",\n  \"source_incarnation\": \"32a97bdb-66e5-4d13-9ef4-da65c54d88a1\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"876a9fb4-8b86-41db-83b8-c5639a723e21\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"other\",\n  \"local_path\": \"<tmp>/n5-forget-residue-cells-boXyT7/n5-postgres-mcp-http/other-vault\",\n  \"source_incarnation\": \"32a97bdb-66e5-4d13-9ef4-da65c54d88a1\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"876a9fb4-8b86-41db-83b8-c5639a723e21\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
