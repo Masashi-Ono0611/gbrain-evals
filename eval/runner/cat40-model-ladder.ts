@@ -55,7 +55,7 @@ import { runAgent, runAgentText, provider, HarnessError, type AgentRun, type Arm
 import { FsArm, MemoryArm, OracleArm, FileStore, isWriteCall } from './cat40/arms.ts';
 import { renderDoc } from '../generators/model-ladder-gen.ts';
 import { PgArm, PgStore, cachedOpenAIEmbedder } from './cat40/pg-arm.ts';
-import { GbrainArm, instructionsOverride, cellLabel, assertNoGbrainFsCollision, GBRAIN_FS_READ_TOOLS, type CellArm, GbrainPool, GbrainSlot, MeteringProxy, SERVE_BOOT_TIMEOUT_SECONDS, STAGED_SOURCE_ADD_DOCS, STAGED_SYNC_BATCH, coverageProblem, type Meter, type SlotBuild, type SlotCoverage } from './cat40/gbrain-arm.ts';
+import { GbrainArm, instructionsOverride, cellLabel, assertNoGbrainFsCollision, GBRAIN_FS_READ_TOOLS, type CellArm, GbrainPool, GbrainSlot, MeteringProxy, rerankProbe, SERVE_BOOT_TIMEOUT_SECONDS, STAGED_SOURCE_ADD_DOCS, STAGED_SYNC_BATCH, coverageProblem, type Meter, type SlotBuild, type SlotCoverage } from './cat40/gbrain-arm.ts';
 import { scoreTask, judgePrompt, parseClaims, JUDGE_PROMPT_VERSION, type TaskScore, type ClaimVerdicts } from './cat40/score.ts';
 import { budgetOptionsFrom, startPaidRun, receiptCost, type BudgetRun, type PaidRequestGuard } from './budget-ledger.ts';
 import { HARD_FAMILIES, isHardWorld, type HardWorld, type HardTask } from '../generators/hard/schema.ts';
@@ -225,7 +225,7 @@ async function runCell(ctx: Ctx, model: string, armName: CellArm, task: LadderTa
       try { await slot.restore(); }
       finally {
         restoreMs = Date.now() - t;
-        ctx.proxy!.unbind(slot.id);
+        ctx.proxy!.unbind(slot.id, runId);
         ctx.pool!.release(slot);
       }
     }
@@ -316,22 +316,7 @@ export interface ExperimentManifest {
   hard?: { identity: ReturnType<typeof identityOf>; max_turns: number; tool_limits: string; judge: string | null; scorer: string; judge_prompt: string; settings_digest: string; code: Record<string, string>; runner_commit: string | null };
 }
 
-type ProbeSlot = { id: string; client: { call(name: string, args: Record<string, unknown>): Promise<string> } | null; restore(): Promise<void> };
-type ProbeProxy = { bind(slot: string, key: string): void; unbind(slot: string): void; finalize(key: string, timeoutMs?: number): Promise<{ byModel: Record<string, { requests: number }> }> };
-
-/** One search per slot must reach a reranker through this process's proxy (Cat 40 Hard R0); otherwise fail closed. */
-export async function rerankProbe(slots: ProbeSlot[], proxy: ProbeProxy, query: string): Promise<void> {
-  for (const s of slots) {
-    const key = `rerank-probe:${s.id}`;
-    proxy.bind(s.id, key);
-    try { await s.client!.call('search', { query }); }
-    finally { proxy.unbind(s.id); }
-    const m = await proxy.finalize(key, 30_000);
-    const reranks = Object.entries(m.byModel).filter(([k]) => /rerank/i.test(k)).reduce((n, [, v]) => n + v.requests, 0);
-    if (!reranks) throw new HarnessError(`gbrain ${s.id}: a probe search made no rerank request (provider calls: ${JSON.stringify(m.byModel)}); the reranker is unreachable or off, so the arm would run degraded. Fix the provider endpoint, or pass --gbrain-config search.reranker.enabled=false to measure without reranking on purpose.`);
-    await s.restore();
-  }
-}
+export { rerankProbe };
 
 export function experimentFlags(argv: readonly string[]): Record<string, string | true> {
   const flags: Record<string, string | true> = {};

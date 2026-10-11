@@ -10,6 +10,9 @@
  *     [--retrieved-from <rows dir>] [--search-limit N] [--pool-depth N] [--max-per-session N]
  *     [--paid --budget-run-id <id>] --output <dir>
  *
+ * Memory-system cells (`--system`, `--arms`, `--replay`, `--sealed-profile`, `--provider-proxy` and the other flags in
+ * run-systems.ts) run through run-systems.ts, the open-source comparison's harness, unchanged; this file dispatches to it.
+ *
  * What it measures: judge-free session retrieval. Each conversation's
  * sessions are imported as pages into a fresh in-memory gbrain (PGLite), the
  * question goes through gbrain's hybrid search with the pinned search config
@@ -61,10 +64,12 @@ import { requirePaidArm } from '../paid-arm.ts';
 import { gbrainSpecFrom, importGbrain, overlaySummary, productIdentityFor, resolveGbrainUnderTest, type GbrainUnderTest } from '../gbrain-under-test.ts';
 import { EmbeddingCache, makeCachingTransport } from '../longmemeval-cache.ts';
 import { ndcgAtK, recallAllAtK, recallAnyAtK, uniqueInOrder, percentile } from '../metrics.ts';
-import { loadCorpus, occurrenceId, renderSessionPage, type Corpus, type MemoryQuestion, type Session } from './corpus.ts';
+import { loadCorpus, occurrenceId, renderSessionPage, sha256, type Corpus, type MemoryQuestion, type Session } from './corpus.ts';
 import { ChatClient, DEFAULT_JUDGE, DEFAULT_READER, chatWithReceipts, factsReaderPrompt, judgeResponse, latestDate, packSessions, readerPrompt, repeatsTrap, sendsTemperature, unresolvedRelativeTime, type SavedFact } from './qa.ts';
 import { normalizeUsage, receipt, sumUsage, thinkFinish, USAGE_RECEIPT_SCHEMA, type UsageReceipt } from '../usage-receipt.ts';
 import { devConversations, loadSplit } from '../decisions/splits.ts';
+import * as systems from './run-systems.ts';
+export { readinessProbe, type ProbeResult } from './run-systems.ts';
 import { appendAccessLog } from '../sealed-confirmation-lib.ts';
 import { decideError, DecideError, renderOperatorMessage } from '../decisions/errors.ts';
 
@@ -125,6 +130,7 @@ export interface MemoryQaRow {
   qa_receipts?: UsageReceipt[];
   qa_error?: string;
   qa_facts?: number;
+  qa_facts_tokens?: number;
   facts_count?: number;
   facts_unresolved_share?: number;
   facts_extract_error?: string;
@@ -191,7 +197,14 @@ export function ledgerRerankRequests(ledgerPath: string, runId: string, particip
   } finally { db.close(); }
 }
 
+/** Flags only the memory-system harness (run-systems.ts) takes; any of them sends the run there. */
+const SYSTEMS_FLAGS = ['--system', '--arms', '--replay', '--sealed-profile', '--provider-proxy', '--proxy-slot', '--context', '--policy', '--policy-setting',
+  '--max-attempts', '--finish-timeout-s', '--ingest-timeout-s', '--ingest-replicate', '--no-retry-upstream-5xx', '--budget-tokens', '--frozen-from'];
+export const isSystemsArgv = (argv: string[]) => argv.some(x => SYSTEMS_FLAGS.includes(x));
+export type SystemsRunArgs = systems.RunArgs;
+
 export function parseRunArgs(argv: string[]): RunArgs {
+  if (isSystemsArgv(argv)) return systems.parseRunArgs(argv) as unknown as RunArgs;
   const one = (name: string) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : undefined; };
   const many = (name: string) => argv.flatMap((a, i) => (a === name ? [argv[i + 1]] : []));
   const benchmark = one('--benchmark');
@@ -348,13 +361,14 @@ export async function readAndJudge(p: {
 }
 
 export async function runArm(a: RunArgs): Promise<{ receipt: Record<string, unknown>; rows: MemoryQaRow[] }> {
+  if ('system' in a) return systems.runArm(a as unknown as systems.RunArgs) as unknown as Promise<{ receipt: Record<string, unknown>; rows: MemoryQaRow[] }>;
   const started = new Date().toISOString();
   mkdirSync(a.output, { recursive: true });
   const gut = resolveGbrainUnderTest(a.gbrain);
   if (a.benchmark === 'custody' && a.split !== 'sealed') throw new Error('benchmark custody is a custodian sealed corpus: run it with --split sealed');
   if (a.split === 'sealed') {
     if (!a.custody) throw new Error('sealed memory-qa runs need custody (decision id, purpose, access log)');
-    appendAccessLog(a.custody.log, { action: 'open', purpose: `memory-qa ${a.benchmark} sealed: ${a.custody.purpose}`, decision_id: a.custody.decisionId, labels_sha256: 'public-split-file', run_sha256: null });
+    appendAccessLog(a.custody.log, { action: 'open', purpose: `memory-qa ${a.benchmark} sealed: ${a.custody.purpose}`, decision_id: a.custody.decisionId, labels_sha256: a.benchmark === 'custody' && a.corpusFile ? sha256(readFileSync(a.corpusFile)) : 'public-split-file', run_sha256: null });
   }
   const allowed = a.benchmark === 'custody' ? null : a.split === 'sealed' ? new Set(loadSplit(a.benchmark).sealed) : devConversations(a.benchmark);
   const corpus = loadCorpus(a.benchmark, a.corpusFile, allowed ?? undefined);
@@ -538,7 +552,7 @@ export async function runArm(a: RunArgs): Promise<{ receipt: Record<string, unkn
               const prompt = think ? null : a.qa.context === 'facts' ? factsReaderPrompt(q, readFacts, latestDate(conv.sessions)) : readerPrompt(q, pack.sessions, latestDate(conv.sessions));
               row = { ...row, ...await readAndJudge({ benchmark: a.benchmark, qa: a.qa, q, chat, think: think ? { fn: think, engine } : null, prompt, countTokens }),
                 qa_context_tokens: think || a.qa.context === 'facts' ? undefined : pack.tokens, qa_sessions: think || a.qa.context === 'facts' ? undefined : pack.sessions.length,
-                ...(a.qa.context === 'facts' ? { qa_facts: readFacts.length } : {}) };
+                ...(a.qa.context === 'facts' ? { qa_facts: readFacts.length, qa_facts_tokens: systems.factsContextTokens(readFacts) } : {}) };
             }
           } catch (e) {
             row = { ...base, error: (e as Error).message, error_origin: /budget|BudgetExceeded/i.test((e as Error).message) ? 'harness' : 'sut' };

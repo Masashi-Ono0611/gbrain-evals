@@ -380,7 +380,7 @@ The CEO, DX and Eng reviews added the requirements below. They are part of the p
   projected from calibration's measured prompt tokens at each scale.
 - **Temporal and entity semantics (ENG-F4).** Every entity has a stable id; every attribute value has an effective
   time and a recorded time. "As of D" means the value in effect on D using every document, including those written
-  after D (valid time with hindsight), and the Hard system prompt says so. A correction replaces the corrected value
+  after D (valid time with later knowledge), and the Hard system prompt says so. A correction replaces the corrected value
   from that value's effective date; two changes with the same effective date resolve to the later recorded one. A
   user statement in the H5 session chain outranks documents, and a later user statement outranks an earlier one; the
   prompt states this beside the authority order. Aliases and former names resolve at the query date; the alias
@@ -1521,7 +1521,7 @@ read-only). Findings: E1 critical (error retries bias outcomes; uncapped grep tu
 add `context_overflow` stop kind, retry only harness errors, cap 2); E2 high (resume and two-session record shape
 hardcoded across analyze, rescore, latency-replay; `sessions[]` v2 schema with `attempt`); E3 high (H5 user
 corrections vs H4 authority order; user statements outrank documents); E4 high ("as of D" ambiguity; choose
-valid-time-with-hindsight); E5 high (claims judge marks H5 recall unsupported; Hard judge prompt); E6 medium
+valid-time-with-later-knowledge); E5 high (claims judge marks H5 recall unsupported; Hard judge prompt); E6 medium
 (non-string answers crash imported helpers; coerce); E7 medium (knob changes reshuffle tasks; per-family/task
 sub-seeds, Wilson intervals); E8 medium (world identity proves self-consistency, not freeze; check frozen knob
 digest); E9 medium (alias namespace injective); E10 medium (H3 oracle evidence at 50k; seeded near-miss order); E11
@@ -1665,7 +1665,7 @@ CODE PATHS                                                     USER (OPERATOR) F
   ├── alias namespace injective                    [GAP] unit    ├── [GAP] freeze analyzer PASS/FAIL per condition
   ├── accepted/wrong distinct, no substrings       [GAP] unit    [+] held-out step
   ├── H5 counterfactual dependency                 [GAP] unit    ├── [GAP] frozen-digest mismatch refused
-  └── valid-time-with-hindsight keys; tie rule     [GAP] unit    └── [GAP] [→E2E] resume after kill mid-H5 chain
+  └── valid-time-with-later-knowledge keys; tie rule     [GAP] unit    └── [GAP] [→E2E] resume after kill mid-H5 chain
 [+] cat40-model-ladder.ts
   ├── identity incl. knobs, --max-turns            [GAP] unit
   ├── Hard refusals (judge, mini, unpriced)        [GAP] unit
@@ -1739,7 +1739,7 @@ convention).
   projected from calibration's measured prompt tokens at each scale.
 - **Temporal and entity semantics (ENG-F4).** Every entity has a stable id; every attribute value has an effective
   time and a recorded time. "As of D" means the value in effect on D using every document, including those written
-  after D (valid time with hindsight), and the Hard system prompt says so. A correction replaces the corrected value
+  after D (valid time with later knowledge), and the Hard system prompt says so. A correction replaces the corrected value
   from that value's effective date; two changes with the same effective date resolve to the later recorded one. A
   user statement in the H5 session chain outranks documents, and a later user statement outranks an earlier one; the
   prompt states this beside the authority order. Aliases and former names resolve at the query date; the alias
@@ -1968,7 +1968,7 @@ default judge.
 - [ ] **T6 (P1, human: ~4h / CC: ~20min) — freeze** — Record code hashes and settings digest; refuse held-out worlds whose knob digest differs from the frozen file
   - Surfaced by: eng-review — ENG-F6
   - Files: eval/runner/cat40-model-ladder.ts
-- [ ] **T4 (P1, human: ~1d / CC: ~45min) — generator** — Encode valid-time-with-hindsight, correction and tie rules, user-statement precedence, injective aliases, with fixtures
+- [ ] **T4 (P1, human: ~1d / CC: ~45min) — generator** — Encode valid-time-with-later-knowledge, correction and tie rules, user-statement precedence, injective aliases, with fixtures
   - Surfaced by: eng-review — ENG-F4
   - Files: eval/generators/model-ladder-hard.ts
 - [ ] **T7 (P1, human: ~4h / CC: ~20min) — isolation** — Quarantine slots whose restore or health check fails

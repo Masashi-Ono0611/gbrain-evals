@@ -32,7 +32,7 @@ import { FsArm, type ArmName, type FileStore, type FsArmOptions } from './arms.t
 import type { LadderWorld } from '../../generators/model-ladder-gen.ts';
 import { renderDoc } from '../../generators/model-ladder-gen.ts';
 import { runCli, type RunEnv } from '../lifecycle/drivers.ts';
-import { priceRequest, reservationUsd, usageCost, type BudgetAllowance } from '../budget-ledger.ts';
+import { MeteringProxy, type Meter } from '../metering-proxy.ts';
 
 export const GBRAIN_EMBED_MODEL = 'openai:text-embedding-3-large';
 /** Above this many documents the source is registered before the corpus is written (see GbrainSlot.build). */
@@ -48,107 +48,8 @@ const execFileAsync = promisify(execFile);
 
 // ─── Metering proxy ─────────────────────────────────────────────────
 
-const UPSTREAM: Record<string, string> = { anthropic: 'https://api.anthropic.com', openai: 'https://api.openai.com', voyage: 'https://api.voyageai.com' };
-
-export interface Meter {
-  usd: number;
-  requests: number;
-  /** Requests whose cost came from their reservation because the response reported no usage (charged, not free). */
-  unpriced: number;
-  /** Requests still in flight when the meter was finalized after its timeout (their cost is missing here, not in the ledger). */
-  undrained?: number;
-  byModel: Record<string, { usd: number; requests: number }>;
-}
-export const newMeter = (): Meter => ({ usd: 0, requests: 0, unpriced: 0, byModel: {} });
-
-/**
- * Forwards gbrain's provider requests (each slot's base URL names the slot)
- * and meters them. A request is charged to the cell bound to its slot when it
- * arrives, so a request that finishes after the cell moved on still lands on
- * the right cell; `finalize` waits for a cell's in-flight requests to drain.
- * Requests with no bound cell are metered under `slot:<id>`.
- */
-export class MeteringProxy {
-  private server: ReturnType<typeof Bun.serve> | null = null;
-  readonly meters = new Map<string, Meter>();
-  /** Slots whose provider requests are charged to a ledger allowance (slot builds), not one ledger entry each. */
-  readonly allowances = new Map<string, BudgetAllowance>();
-  private bindings = new Map<string, string>();
-  private inflight = new Map<string, number>();
-  private waiters = new Map<string, Array<() => void>>();
-  constructor(private options: { fetchImpl?: typeof fetch } = {}) {}
-  get port(): number { return this.server!.port as number; }
-  /** Charge the slot's provider requests to `key` (a cell id) from now on. */
-  bind(slot: string, key: string) { this.bindings.set(slot, key); }
-  /** With `key`, only drops the binding if it is still that key: a released slot may already be bound to the next cell. */
-  unbind(slot: string, key?: string) { if (key === undefined || this.bindings.get(slot) === key) this.bindings.delete(slot); }
-  private meter(key: string): Meter { let m = this.meters.get(key); if (!m) this.meters.set(key, m = newMeter()); return m; }
-  private settled(key: string) {
-    const n = (this.inflight.get(key) ?? 1) - 1;
-    if (n > 0) { this.inflight.set(key, n); return; }
-    this.inflight.delete(key);
-    for (const w of this.waiters.get(key) ?? []) w();
-    this.waiters.delete(key);
-  }
-  /** Wait for `key`'s in-flight requests (at most `timeoutMs`), then remove and return its meter. */
-  async finalize(key: string, timeoutMs = 120_000): Promise<Meter> {
-    if (this.inflight.get(key)) {
-      await Promise.race([new Promise<void>(r => { const list = this.waiters.get(key) ?? []; list.push(r); this.waiters.set(key, list); }), Bun.sleep(timeoutMs)]);
-    }
-    const m = this.meters.get(key) ?? newMeter();
-    this.meters.delete(key);
-    if (this.inflight.get(key)) m.undrained = this.inflight.get(key);
-    return m;
-  }
-  start() {
-    const send = this.options.fetchImpl ?? ((input: RequestInfo | URL, init?: RequestInit) => fetch(input, init));
-    this.server = Bun.serve({
-      port: 0, hostname: '127.0.0.1', idleTimeout: 255,
-      fetch: async req => {
-        const url = new URL(req.url);
-        const m = url.pathname.match(/^\/([^/]+)\/(anthropic|openai|voyage)(\/.*)$/);
-        if (!m) return new Response('not found', { status: 404 });
-        const [, slot, prov, rest] = m;
-        const key = this.bindings.get(slot) ?? `slot:${slot}`;
-        this.inflight.set(key, (this.inflight.get(key) ?? 0) + 1);
-        try {
-          const target = `${UPSTREAM[prov]}${rest}${url.search}`;
-          const headers = new Headers(req.headers);
-          for (const h of ['host', 'content-length', 'accept-encoding', 'connection']) headers.delete(h);
-          const body = req.method === 'GET' || req.method === 'HEAD' ? undefined : await req.text();
-          let price: ReturnType<typeof priceRequest> = null;
-          try { price = priceRequest(target, body ? JSON.parse(body) : undefined); } catch { price = null; }
-          const meter = this.meter(key);
-          const charge = (usd: number, unpriced: boolean) => {
-            meter.requests++;
-            meter.usd += usd;
-            if (unpriced) meter.unpriced++;
-            if (price) { const k = `${prov}:${price.model}`; meter.byModel[k] ??= { usd: 0, requests: 0 }; meter.byModel[k].usd += usd; meter.byModel[k].requests++; }
-          };
-          let res: Response;
-          const allowance = this.allowances.get(slot);
-          const forward = () => send(target, { method: req.method, headers, body });
-          try { res = await (allowance ? allowance.run(forward) : forward()); }
-          catch (e) {
-            // A refused reservation never left the process; any other failure after sending is charged at its reservation, as the ledger does.
-            if ((e as Error).name !== 'BudgetExceededError' && price) charge(reservationUsd(price), true);
-            return new Response(JSON.stringify({ error: { message: `cat40 proxy: ${(e as Error).message}` } }), { status: 502, headers: { 'content-type': 'application/json' } });
-          }
-          const text = await res.text();
-          if (price) {
-            let cost: ReturnType<typeof usageCost> = null;
-            try { cost = usageCost(price, JSON.parse(text)); } catch { cost = null; }
-            charge(cost ? cost.usd : reservationUsd(price), !cost);
-          } else charge(0, false);
-          const out = new Headers(res.headers);
-          for (const h of ['content-encoding', 'content-length', 'transfer-encoding']) out.delete(h);
-          return new Response(text, { status: res.status, headers: out });
-        } finally { this.settled(key); }
-      },
-    });
-  }
-  stop() { this.server?.stop(true); }
-}
+// Extracted to eval/runner/metering-proxy.ts (shared with the shootout cell); re-exported for existing callers.
+export { MeteringProxy, newMeter, type Meter } from '../metering-proxy.ts';
 
 // ─── Minimal MCP stdio client ───────────────────────────────────────
 
@@ -309,16 +210,56 @@ export function coverageProblem(c: SlotCoverage): string | null {
   return `mention coverage ${c.state ?? 'unknown'} with ${c.pending ?? 'unknown'} pending pages`;
 }
 
+/**
+ * Points a slot's Voyage base URL at this process's metering proxy, and sets the advertised MCP surface when one is
+ * given. The build writes the proxy's port into the snapshot's config.json, and each process's proxy listens on a new
+ * port, so without this a slot started by a later process (cells run, latency replay, a restore) reranked against a
+ * dead port (`degraded_recall rerank_failed`; Cat 40 Hard R0, T0b root cause 2026-10-08). Runs on every start.
+ * Returns whether it changed the file.
+ */
+export function refreshProviderBaseUrls(home: string, voyageBase: string, advertised: string | null = null): boolean {
+  const cfgPath = join(home, '.gbrain', 'config.json');
+  if (!existsSync(cfgPath)) return false;
+  const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'));
+  let changed = false;
+  if (cfg.provider_base_urls?.voyage && cfg.provider_base_urls.voyage !== voyageBase) { cfg.provider_base_urls = { ...cfg.provider_base_urls, voyage: voyageBase }; changed = true; }
+  if (advertised && cfg.mcp?.advertised_surface !== advertised) { cfg.mcp = { ...(cfg.mcp ?? {}), advertised_surface: advertised }; changed = true; }
+  if (changed) writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+  return changed;
+}
+
+type ProbeSlot = { id: string; client: { call(name: string, args: Record<string, unknown>): Promise<string> } | null; restore(): Promise<void> };
+type ProbeProxy = { bind(slot: string, key: string): void; unbind(slot: string, key?: string): void; finalize(key: string, timeoutMs?: number): Promise<{ byModel: Record<string, { requests: number }> }> };
+
+/**
+ * One search per started slot must reach a reranker through this process's proxy; otherwise fail closed before any
+ * cell runs (from GBRA-39's #76, Cat 40 Hard R0). Each slot is restored after its probe.
+ */
+export async function rerankProbe(slots: ProbeSlot[], proxy: ProbeProxy, query: string): Promise<void> {
+  for (const s of slots) {
+    const key = `rerank-probe:${s.id}`;
+    proxy.bind(s.id, key);
+    try { await s.client!.call('search', { query }); }
+    finally { proxy.unbind(s.id, key); }
+    const m = await proxy.finalize(key, 30_000);
+    const reranks = Object.entries(m.byModel).filter(([k]) => /rerank/i.test(k)).reduce((n, [, v]) => n + v.requests, 0);
+    if (!reranks) throw new HarnessError(`gbrain ${s.id}: a probe search made no rerank request (provider calls: ${JSON.stringify(m.byModel)}); the reranker is unreachable or off, so the arm would run degraded. Fix the provider endpoint, or pass --gbrain-config search.reranker.enabled=false to measure without reranking on purpose and say so in the preregistration.`);
+    await s.restore();
+  }
+}
+
 export class GbrainSlot {
   client: McpClient | null = null;
   readonly dir: string;
   readonly run: RunEnv;
+  readonly voyageBase: string;
   /** `gbrain config set` pairs applied after every restore (the snapshot does not carry them). */
   config: Array<[string, string]> = [];
   /** `advertised`: the brain's mcp.advertised_surface (tools listed; the callable set stays `surface`). Null leaves it unset. */
   constructor(readonly id: string, root: string, readonly buildDir: string, readonly proxyPort: number, readonly surface: string, readonly advertised: string | null = null) {
     this.dir = join(root, id);
     const base = `http://127.0.0.1:${proxyPort}/${id}`;
+    this.voyageBase = `${base}/voyage/v1`;
     this.run = {
       buildDir,
       env: {
@@ -334,17 +275,22 @@ export class GbrainSlot {
   }
   get snapshot() { return `${this.dir}.tar`; }
 
-  async build(world: LadderWorld, proxy: MeteringProxy, analyze: boolean): Promise<SlotBuild> {
+  /**
+   * `render` turns a document into its Markdown file (default: the Cat 40 renderer). `embed: false` skips the
+   * embedding step for a keyless (hermetic) brain, which then searches by keyword only.
+   */
+  async build<D extends { id: string; type: string }>(world: { docs: D[] }, proxy: MeteringProxy, analyze: boolean, opts: { render?: (d: D) => string; embed?: boolean } = {}): Promise<SlotBuild> {
+    const render = opts.render ?? ((d: D) => renderDoc(d as unknown as LadderWorld['docs'][number]));
     const t0 = Date.now();
     const meterKey = `build:${this.id}`;
     proxy.bind(this.id, meterKey);
     rmSync(this.dir, { recursive: true, force: true });
     const vault = join(this.dir, 'vault');
     for (const d of ['home', 'uh', 'vault']) mkdirSync(join(this.dir, d), { recursive: true });
-    const writeDocs = (docs: LadderWorld['docs']) => { for (const doc of docs) {
+    const writeDocs = (docs: D[]) => { for (const doc of docs) {
       const p = join(vault, `${doc.id}.md`);
       mkdirSync(dirname(p), { recursive: true });
-      writeFileSync(p, renderDoc(doc));
+      writeFileSync(p, render(doc));
     } };
     const git = (args: string[]) => execFileSync('git', ['-C', vault, '-c', 'user.name=cat40', '-c', 'user.email=cat40@example.invalid', ...args], { stdio: 'pipe' });
     // `gbrain sources add` hashes every file into a manifest and refuses one over 1 MiB (source-lifecycle.ts),
@@ -370,7 +316,7 @@ export class GbrainSlot {
     await op('init', ['init', '--pglite', '--path', join(this.dir, 'home', 'brain.pglite'), '--embedding-model', GBRAIN_EMBED_MODEL, '--non-interactive']);
     const cfgPath = join(this.dir, 'home', '.gbrain', 'config.json');
     const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'));
-    cfg.provider_base_urls = { ...(cfg.provider_base_urls ?? {}), voyage: `http://127.0.0.1:${proxy.port}/${this.id}/voyage/v1` };
+    cfg.provider_base_urls = { ...(cfg.provider_base_urls ?? {}), voyage: this.voyageBase };
     writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
     const operatorAnalyze = (step: string) => {
       // gbrain does not ANALYZE after a bulk import on PGLite (no autovacuum), so the planner sees empty
@@ -406,8 +352,9 @@ export class GbrainSlot {
     // Builds that gate paid backfills (agent-first operator wave) refuse with exit 3 until `--yes`; older builds
     // reject that flag, so it is passed only after a confirmation_required refusal.
     const embedArgs = ['embed', '--stale', ...(staged ? ['--catch-up'] : [])];
-    const first = await runCli(this.run, embedArgs, 3_600_000);
-    if (first.code === 3 && /confirmation_required|needs the user's approval/.test(first.stdout + first.stderr)) {
+    const first = opts.embed === false ? null : await runCli(this.run, embedArgs, 3_600_000);
+    if (!first) steps.push({ step: 'embed-skipped', code: 0, ms: 0, tail: 'keyless brain: no embedding step (keyword search only)' });
+    else if (first.code === 3 && /confirmation_required|needs the user's approval/.test(first.stdout + first.stderr)) {
       steps.push({ step: 'embed-consent-refused', code: 3, ms: first.ms, tail: 'confirmation_required; rerun with --yes (evaluator-authorized build spend)' });
       await op('embed', [...embedArgs, '--yes']);
     } else {
@@ -473,16 +420,7 @@ export class GbrainSlot {
   }
 
   async start() {
-    // The snapshot's config.json carries the Voyage base URL written by the process that built it, whose proxy
-    // port is gone; a later process (cells run, latency replay) listens elsewhere, so every rerank call was
-    // refused (Cat 40 Hard R0). Point it at this process's proxy on every start.
-    const cfgPath = join(this.dir, 'home', '.gbrain', 'config.json');
-    if (existsSync(cfgPath)) {
-      const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'));
-      cfg.provider_base_urls = { ...(cfg.provider_base_urls ?? {}), voyage: `http://127.0.0.1:${this.proxyPort}/${this.id}/voyage/v1` };
-      if (this.advertised) cfg.mcp = { ...(cfg.mcp ?? {}), advertised_surface: this.advertised };
-      writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
-    }
+    refreshProviderBaseUrls(join(this.dir, 'home'), this.voyageBase, this.advertised);
     this.client = new McpClient(this.run, ['--surface', this.surface]);
     await this.client.start();
   }

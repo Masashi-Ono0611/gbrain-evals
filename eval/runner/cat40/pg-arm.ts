@@ -60,8 +60,11 @@ export type Embedder = (texts: string[], options?: EmbedOptions) => Promise<numb
  * `usage` at the price the budget ledger uses (gbrain's `embedding-pricing.ts`, $0.13 per million tokens
  * for this model) and added to the caller's `usage` counter. A failed request throws HarnessError
  * (infrastructure, not the agent); a refused ledger reservation passes through unchanged.
+ *
+ * `baseUrl` defaults to OPENAI_BASE_URL (a shootout cell's metering proxy) or the official endpoint; requests are
+ * priced as official OpenAI requests either way.
  */
-export function cachedOpenAIEmbedder(cachePath: string, fetchImpl: typeof fetch = fetch): Embedder {
+export function cachedOpenAIEmbedder(cachePath: string, fetchImpl: typeof fetch = fetch, baseUrl = process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1'): Embedder {
   // Legacy cache: one JSON object. New entries are appended to a JSONL file beside it (base64 float32), so a
   // 50,000-document corpus neither rewrites a gigabyte of JSON per query nor exceeds the maximum string length.
   const linesPath = cachePath.replace(/\.json$/, '') + '.jsonl';
@@ -75,10 +78,10 @@ export function cachedOpenAIEmbedder(cachePath: string, fetchImpl: typeof fetch 
     }
   }
   const key = (t: string, ns?: string) => createHash('sha256').update(ns ? `${PG_EMBED_MODEL}:${PG_EMBED_DIMS}:${ns}:${t}` : `${PG_EMBED_MODEL}:${PG_EMBED_DIMS}:${t}`).digest('hex');
-  const url = 'https://api.openai.com/v1/embeddings';
+  const url = `${baseUrl.replace(/\/$/, '')}/embeddings`;
   const fetchBatch = async (batch: string[], ns: string | undefined, usage: EmbedUsage | undefined) => {
     const payload = { model: PG_EMBED_MODEL, input: batch.map(t => t.slice(0, PG_EMBED_INPUT_CHARS)), dimensions: PG_EMBED_DIMS };
-    const price = priceRequest(url, payload);
+    const price = priceRequest('https://api.openai.com/v1/embeddings', payload);
     let res: Response, text: string;
     for (let attempt = 0; ; attempt++) {
       try {
