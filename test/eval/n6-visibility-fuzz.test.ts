@@ -153,6 +153,16 @@ describe('N6 parameter synthesis', () => {
     expect(isTargeted({ limit: { type: 'number' } })).toBe(false);
   });
 
+  test('an optional question gets its own ranked variant without widening flags; a required one is always filled', () => {
+    const recall = { entity: { type: 'string' }, question: { type: 'string' }, include_expired: { type: 'boolean' }, supersessions: { type: 'boolean' } };
+    expect(variantsFor(recall).map(v => v.id)).toEqual(['base', 'question']);
+    expect(synthesizeParams(recall, target).params).toEqual({ entity: target.slug, include_expired: true, supersessions: true });
+    expect(synthesizeParams(recall, target, { ranked: true }).params).toEqual({ entity: target.slug, question: target.query });
+    const think = { question: { type: 'string', required: true } };
+    expect(variantsFor(think).map(v => v.id)).toEqual(['base']);
+    expect(synthesizeParams(think, target).params).toEqual({ question: target.query });
+  });
+
   test('a hits array names the target with its source', () => {
     const foreign = ledger.classes.find(c => c.class === 'foreign_source')!.protected;
     expect(synthesizeParams({ hits: { type: 'array', required: true } }, foreign).params).toEqual({ hits: [{ source_id: 'beta', slug: foreign.slug, chunk_id: 0 }] });

@@ -149,3 +149,40 @@ memory-proof wave 2 W1, after wave 14's #6480 and #6481). It descends from `3001
    rules are judged on the counted pair only.
 3. Expected moves add v0.60.168.0's timezone conversion of time-only chat timestamps (pages that declare `timezone:`)
    and v0.60.169.0's `recall` `question` parameter.
+
+### 2026-10-11: a third harness defect and a host check, after the counted pair and before any further run
+
+The counted pair (gbrain-evals `301474d1`, before `8a3eedeac`, after `77cf8e111`) finished. Two results break a rule
+at `77cf8e111`, and both point at something other than gbrain. Nothing above changes, and the counted pair's receipts
+stay the counted ones. Frozen before the next run:
+
+1. **N6-5.** N6 on Postgres over HTTP fails its coverage rule at `77cf8e111`: `recall` is not covered for the scoped
+   and owner principals (153 of 155 mandatory cells), with 0 leaks and 0 oracles. The in-process N6 shows the same
+   thing as `recall` signal 164 to 0. v0.60.169.0 gives `recall` an optional `question` parameter. The runner filled it
+   with the target's query word on every call, alongside `include_expired` and `supersessions`, and gbrain refuses
+   that combination by design (`parseQuestionParam`, `invalid_params` with the corrected call as its fix), so every
+   `recall` probe was a refusal. Leaving `question` out restores `recall` signal to 224 on the Capy machine. The
+   runner now leaves an optional `question` out of the base call and adds a `question` variant that passes it without
+   the widening flags. A required `question` (`think`) is filled as before. No operation at `8a3eedeac` has an optional
+   `question`, so every probe at the old pin is unchanged.
+2. **Host speed.** At `77cf8e111`, every Cat 7 operation at both scales ran 1.3 to 2.7 times slower than at
+   `8a3eedeac`, including `putPage_single`, in the offline tier and in all three `vm/cat7-repeat.sh` runs, and the
+   Cat7-1 repro failed (p50 0.078 to 0.120 ms against its 0.075 ms limit; 0.055 to 0.060 ms at `8a3eedeac`). Every
+   offline-tier category also took longer on the after VM. The first run's after VM at `3001fd9a5` showed none of
+   this (Cat 7 within 25% apart from `traverse_paths_d1`; Cat7-1 p50 0.059 to 0.061 ms), and on the Capy machine the
+   Cat7-1 repro interleaved three times gives 0.060 ms at `3001fd9a5`, 0.060 ms at `77cf8e111` and 0.057 to 0.084 ms
+   at `8a3eedeac`. A two-VM pair cannot separate a slower host from a slower gbrain, so the next run puts both pins on
+   each host.
+
+The next run uses two fresh identical `standard-16` VMs started together. Each holds two copies of this tree, one per
+pin, differing only in `package.json` and `bun.lock`, and runs `vm/round4.sh`: steps 9 and 10 at both pins, then
+three rounds of Cat 7 and the Cat7-1 repro alternating which pin goes first. It is judged as follows:
+
+- Steps 9 and 10 under the rules above, at both pins, on each VM.
+- For each Cat 7 operation and scale, the median of the three p50s at `77cf8e111` against the median at `8a3eedeac`
+  on the same VM. A slowdown above 25% on both VMs is a confirmed regression and is bisected over the first-parent
+  merges, on one VM with both ends interleaved. A slowdown on neither VM means the counted pair's slowdown came from
+  the host.
+- Cat7-1 counts as a regression if its repro fails at `77cf8e111` and passes at `8a3eedeac` on the same VM.
+
+The report gives the counted pair's results as they are, with this run beside them.
