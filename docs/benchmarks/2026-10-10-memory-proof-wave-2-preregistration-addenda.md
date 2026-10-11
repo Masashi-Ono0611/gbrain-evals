@@ -200,3 +200,33 @@ The intervals are paired bootstrap 95% intervals over questions, 9,999 draws, se
 The four arms get their own joint blinded re-judge. The scope is LongMemEval-S dev only, and the result is exploratory. The cells run on their own ledger, capped at $16: the store about $11, plus three reads at about $1.30. The re-judge cap is $2.00, sized for the $0.59 per-call reservation; its actual spend is about $1.10. Specs are in `cells/mpw2/iso2/`, written by `mpw2-iso-specs.py`. Ledgers are mirrored, and the VM is recorded in `iso2/VMS.md` and destroyed afterwards.
 
 **Isolation re-judge cap.** The isolation's joint re-judge refused 107 of its 900 answers at $1.91 committed of its $2.50 cap. Each judge call reserves a worst case of $0.59, against an actual cost of about $0.003. With Garry's approval, the cap was raised to $3.00 for reservation headroom only. The reason is recorded in that ledger's cap change. Actual spend stays near $2.21.
+
+## Two-way `tokenBudget` result: the ranking cut explains the mode gap (October 11, 2026)
+
+**The mode's `tokenBudget` cut explains the gap in both directions.** Giving `tokenmax` the 4,000-token cut recovers 6 of the 10 points. Removing the cut from `conservative` loses 8 of them. Multi-session follows the cut exactly when it is removed. The result is exploratory, LongMemEval-S dev only, on one rebuilt store at `8d4f6ab6e`.
+
+The scores come from the joint blinded re-judge of the four arms. Intervals are paired bootstrap 95% intervals over questions, 9,999 draws, seed `20261010`.
+
+| Arm | Score | vs `b` | vs `d` | Multi-session (22) | Temporal reasoning (27) | Pages reaching delivery per question |
+|---|---:|---|---|---:|---:|---:|
+| `b` tokenmax | 80 | — | −10 (−19 to −2) | 11 | 20 | 47.6 (16.0 delivered, 31.6 dropped) |
+| `d` conservative | 90 | +10 (+2 to +19) | — | 18 | 22 | 8.3 |
+| `t-tb-4000` tokenmax, cut 4,000 | 86 | +6 (0 to +13) | −4 (−10 to +1) | 14 | 22 | 8.2 |
+| `c-tb-unset` conservative, no cut | 82 | +2 (0 to +5) | −8 (−16 to 0) | 11 | 21 | 47.6 (16.2 delivered, 31.4 dropped) |
+
+- **The knob alone sets how many pages reach delivery.** `t-tb-4000` delivers the same 8.2 pages per question as `d`. `c-tb-unset` has the same 47.6 candidates as `b`. Everything else about each mode is unchanged.
+- **Removing the cut from `conservative` drops multi-session to exactly `b`'s 11 of 22.** Adding the cut to `tokenmax` lifts it from 11 to 14.
+- **The rest of the gap is the reranker.** Under the cut, the reranker picks which 8 pages survive, and that costs about 4 points. `t-tb-4000` scores −4 against `d`, and in the isolation `c-rerank-on` also scored −4 against `d` (87 against 91).
+- **The isolation's joint re-judge, now complete on all 900 answers, gives the same picture as its in-cell judge.** `b` 83, `d` 91, `c-rerank-on` 87, and every single tokenmax flip 80 to 83.
+
+**Spend on the wave-2 ledgers (dev release).**
+
+| Item | Spend |
+|---|---:|
+| Isolation cells | $21.57 |
+| Isolation re-judge | $2.23 |
+| Two-way cells (store $11.0) | $14.73 |
+| Two-way re-judge | $1.05 |
+| **Total** | **$39.58** |
+
+Receipts are under `2026-10-10-memory-proof-wave-2/iso/` and `iso2/`. Ledgers are mirrored to the integrator's primary machine with matching SHA-256: `iso.sqlite` `206d2e2f…`, `iso-rejudge.sqlite` `1a5057b5…`, `iso2.sqlite` `ddb723f9…`, `iso2-rejudge.sqlite` `3f37128a…`. Both VMs are destroyed and recorded.
