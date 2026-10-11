@@ -1,8 +1,16 @@
 # Cat 40 Hard: the sealed validation variant
 
-The sealed variant is a second Cat 40 Hard world generator, written separately from the main one. It produces the same kinds of tasks (H1 to H5) with the same answer rules, but in document styles, naming conventions and folder layouts that gbrain has never been tuned on. Its seed is private and its rendered world stays unopened until a later held-out check reveals it. That check shows whether a gbrain improvement measured on the main Hard tier also holds on company documents written another way, or whether it learned the main generator's habits.
+The sealed variant is a second Cat 40 Hard world generator, written separately from the main one. It produces the same kinds of tasks (H1 to H5) with the same answer rules, but in document styles, naming conventions and folder layouts that gbrain has never been tuned on. Its seed is private, and its rendered world stayed unopened until the fix wave's confirmation revealed it (see [Status](#status)). That check shows whether a gbrain improvement measured on the main Hard tier also holds on company documents written another way, or whether it learned the main generator's habits.
 
-The generator lives in [`eval/generators/hard-sealed/`](../../../eval/generators/hard-sealed/). It reads the same knob files as the main generator and implements the same reference forms (generator v2, amendment A1): with the reference-form knobs, most records name their customer by short-name, desk handle or "<lead>'s <territory> <sector> account" instead of by name. With the multi-account knobs (amendment A2) its H2 to H5 questions ask about two or more unlinked customers at once. It is registered with the runner as `hard-sealed` (knob files without the reference-form keys) and `hard-sealed-v2` (knob files with them, multi-account keys included), and its worlds pass the same invariants, runner checks and scorer as main Hard worlds. Gate decision CEO-UC2 in [the Hard plan](../../plans/2026-10-05-cat40-hard/PLAN.md) created it. No paid cell has run on it.
+The generator lives in [`eval/generators/hard-sealed/`](../../../eval/generators/hard-sealed/). It reads the same knob files as the main generator and implements the same reference forms (generator v2, amendment A1): with the reference-form knobs, most records name their customer by short-name, desk handle or "<lead>'s <territory> <sector> account" instead of by name. With the multi-account knobs (amendment A2) its H2 to H5 questions ask about two or more unlinked customers at once. It is registered with the runner as `hard-sealed` (knob files without the reference-form keys) and `hard-sealed-v2` (knob files with them, multi-account keys included), and its worlds pass the same invariants, runner checks and scorer as main Hard worlds. Gate decision CEO-UC2 in [the Hard plan](../../plans/2026-10-05-cat40-hard/PLAN.md) created it. Its 50k world has run once, in the preregistered confirmation of 2026-10-10/11, so it is no longer a first-look held-out set (see [Status](#status)).
+
+## Status
+
+- **Generated once.** The 50k world (`hard-sealed-v2`, `--scale large`, frozen knobs) was generated on 2026-10-10 on the owner's Mac from the custody seed. Its digest matched the committed `61870796…` above.
+- **Ran once.** It ran under the preregistered confirmation ([PREREG.md](../../plans/2026-10-07-cat40-hard-fix/PREREG.md)) on 2026-10-10 and 2026-10-11, on two custody VMs. Another lane's VM cleanup destroyed the first after the oracle gate and before any sealed slot or counted cell finished; the second ran the slots and counted cells. Both VMs are now destroyed.
+- **Only aggregates are published:** [RESULTS.md](../../plans/2026-10-07-cat40-hard-fix/RESULTS.md) and the [2026-10-10 confirmation report](../2026-10-10-model-ladder-hard-confirmation.md).
+- **Custody.** The seed, the documents and the task text stay in owner custody. None was committed or put on Capy Drive.
+- **Consequence.** The sealed world is no longer a first-look held-out set. Any future result on this seed is a repeat measurement, not a new held-out test, and the next confirmation needs a new sealed seed (choose and record it as below).
 
 ## Committed digest
 
@@ -14,7 +22,7 @@ The generator lives in [`eval/generators/hard-sealed/`](../../../eval/generators
 | Generator commit | `9ca2956` (`hard-sealed-v2`) |
 | Recorded on | 2026-10-06, on the seed owner's machine, with `--digest-only` (no document was written or read) |
 
-The digests were recorded after the main generator's knobs froze (amendments A4 and A5), with the frozen knob file, because any knob change changes the sealed world. Nobody has generated the sealed world's documents. The digest is the SHA-256 of the world JSON (`sealedWorldDigest` in `generate.ts`). It changes if the seed, the knobs, or any code that shapes the world changes: the sealed generator itself, `eval/generators/hard/schema.ts` and `eval/generators/hard/semantics.ts`. A changed digest means the revealed world is not the world that was sealed. Record a new digest, with its date and reason, before relying on it.
+The digests were recorded after the main generator's knobs froze (amendments A4 and A5), with the frozen knob file, because any knob change changes the sealed world. The 50k world's documents were generated once, on 2026-10-10, for the confirmation (see [Status](#status)). The digest is the SHA-256 of the world JSON (`sealedWorldDigest` in `generate.ts`). It changes if the seed, the knobs, or any code that shapes the world changes: the sealed generator itself, `eval/generators/hard/schema.ts` and `eval/generators/hard/semantics.ts`. A changed digest means the revealed world is not the world that was sealed. Record a new digest, with its date and reason, before relying on it.
 
 ## What makes it independent
 
@@ -126,6 +134,7 @@ For multi-account questions it checks, on test seeds and the round-4 knobs: that
 
 ## Changelog
 
+- 2026-10-11: Status section added. The 50k world was generated on 2026-10-10 (digest matched) and ran once in the fix wave's confirmation; only aggregates are published, and the next confirmation needs a new sealed seed.
 - 2026-10-06: Round-5 knobs build at both scales. Questions with up to four items ran out of account leads ("a multi-account question has run out of account leads"); when `multi_account_max` is above 3 the lead pool now grows from 12 to 24. Default, round-3 and round-4 worlds are byte for byte unchanged.
 - 2026-10-06: Multi-account questions (amendment A2) added from WORLD_SCHEMA.md: k items per H2 to H5 question, unlinked items, the contract's wording, H5 session layout and `values` fields; the round-4 knobs run at both scales. Worlds without the multi-account keys are unchanged.
 - 2026-10-05: Reference forms (generator v2, amendment A1) added from WORLD_SCHEMA.md, with the variant's own desk handles, account profile, change slips and id scheme, the `hard-sealed-v2` version, and the H3 overflow values that let round-2 and round-3 knobs run. Worlds from knob files without the reference keys are unchanged. The digest stays unrecorded until the knob freeze.
