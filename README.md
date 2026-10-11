@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain master [`8a3eedeac`](https://github.com/garrytan/gbrain/tree/8a3eedeacb6e52da5b413502019692db80c5cc5d) (v0.60.126.0), declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.72 (`VERSION`) |
+| This repository | gbrain-evals v0.10.73 (`VERSION`) |
 
 This repository installs gbrain master `8a3eedeac`. Some results below were measured at earlier commits; each names
 its commit. The search modes have been identical since v0.48.4.0, so retrieval results from those commits describe
@@ -262,6 +262,12 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-11: Repository row names v0.10.73
+
+gbrain-evals v0.10.73 folds in two contributor fixes: the Bash 3.2 resume-args guard in the phase 1 run script and
+the shared judge's rejection of non-finite scores. No result row on this page changes. The repository row names
+v0.10.73 (was v0.10.72).
 
 ### 2026-10-11: Repository row names v0.10.72
 
