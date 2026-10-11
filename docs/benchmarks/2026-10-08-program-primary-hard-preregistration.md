@@ -395,3 +395,11 @@ A stop leaves complete personas in both arms; the verdict is then computed on th
 says how many ran.
 
 **Recorded before sealed cells.** (Appended by the executor.)
+
+- 2026-10-11 (Pacific), custody: on Garry's Mac, at this repository's commit `7d03bcada` (a sparse checkout of the
+  generator and its three imports), `--mint-sealed --personas 32` and `--custodian-seeds` ran. Commitment
+  `c1c8a0ffeefc49f0054fb8d3c6983aaca4371a057b1ef1d65d894c765a2474b4`; world digest
+  `b113c68f40d12f7fd3ec6f702aa45be54075eb25a13a894a327b5468c55e3e70` (`program-primary-hard-v2`, `V2_KNOBS`, 32
+  personas, 96 tasks). The same commit reproduces the version 2 development digest `da47d3d4…` on the Mac and on a
+  Linux machine, so the generator is deterministic across both. The seed file and the world stay on the Mac (0600
+  files in a 0700 directory outside any repository) until the custody VM exists.
