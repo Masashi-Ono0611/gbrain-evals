@@ -107,7 +107,7 @@
     "input_tokens": 7139329,
     "output_tokens": 367036,
     "basis": "budget ledger cat40-model-ladder-2026-10-10T16-40-13-295Z-66be7ac3: 600 paid requests, 0 charged at their reservation because usage was unavailable",
-    "ledger": "/home/ubi/work/gbrain-evals/.budget/cat40-hard-confirm-main.sqlite",
+    "ledger": ".budget/cat40-hard-confirm-main.sqlite",
     "program_cap_usd": 650,
     "overshoot_usd": 0.016225,
     "event_loop_lag_ms": {

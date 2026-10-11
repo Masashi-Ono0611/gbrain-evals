@@ -20,7 +20,7 @@
     "--gbrain-label": "gbrain-hard",
     "--gbrain-repo": "../gbrain",
     "--gbrain-ref": "3e4ff61ce1ac553581fb5c1eb905cf48541fe344",
-    "--gbrain-root": "/home/ubi/cat40/gbrain-confirm",
+    "--gbrain-root": "~/cat40/gbrain-confirm",
     "--slots": "5",
     "--concurrency": "10",
     "--repeat": "1",

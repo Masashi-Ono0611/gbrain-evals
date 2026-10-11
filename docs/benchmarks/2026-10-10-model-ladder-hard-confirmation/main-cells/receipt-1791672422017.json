@@ -117,7 +117,7 @@
     "--gbrain-ref",
     "3e4ff61ce1ac553581fb5c1eb905cf48541fe344",
     "--gbrain-root",
-    "/home/ubi/cat40/gbrain-confirm",
+    "~/cat40/gbrain-confirm",
     "--slots",
     "5",
     "--concurrency",
@@ -204,7 +204,7 @@
     "input_tokens": 143271456,
     "output_tokens": 735037,
     "basis": "budget ledger cat40-model-ladder-2026-10-10T22-26-54-170Z-f2474ecf: 2986 paid requests, 0 charged at their reservation because usage was unavailable",
-    "ledger": "/home/ubi/work/gbrain-evals/.budget/cat40-hard-confirm-main.sqlite",
+    "ledger": ".budget/cat40-hard-confirm-main.sqlite",
     "program_cap_usd": 900,
     "overshoot_usd": 2.821603,
     "event_loop_lag_ms": {

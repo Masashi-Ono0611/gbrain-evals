@@ -26,5 +26,5 @@
     "H4": 20,
     "H5": 20
   },
-  "command": "bun eval/generators/model-ladder-gen.ts --mode hard --seed 20261021 --knobs /home/ubi/work/gbrain-evals/docs/benchmarks/cat40-hard/knobs.frozen.json --scale large --base-world <4k world.json>"
+  "command": "bun eval/generators/model-ladder-gen.ts --mode hard --seed 20261021 --knobs docs/benchmarks/cat40-hard/knobs.frozen.json --scale large --base-world <4k world.json>"
 }
