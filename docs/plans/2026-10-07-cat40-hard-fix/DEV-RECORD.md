@@ -71,3 +71,19 @@ Before any confirmation cell:
 5. Preregister: fresh main seed plus sealed world (co-primary, per UC2 "approve all"), 50k, frozen knobs, gbrain vs fs, Opus 5.5, Sonnet 5.5 and GPT-6.1 Sol, 100 tasks each, oracle ≥ 95% gate per world, the parity wording rule (lower bound above −3) and the kill rule (point estimate below 0).
 
 Still open: a real-brain alias precision check on an owner brain, since the development world gives no evidence on short codes.
+
+## Alias precision check (2026-10-11)
+
+This closes the open item above and is the real-brain precision check the plan requires before merge ([PLAN.md](PLAN.md), "Real-brain precision check before merge"). Counts only; no alias, page or person is named, and the hand-labeled sheet stays on the owner's machine.
+
+**Real brain at `979e9ca2d`.** The owner's own brain (PGLite, 6,616 entity pages, 4 sources), read only. Of the derived aliases in the hand-labeled sample, 47 of 72 were correct: multi-word captures 12 of 24 (Wilson 95% lower bound 0.314) and single-word captures 35 of 48 (lower bound 0.59). The brain produced 0 short codes and 0 sibling candidates, so it gives no evidence on either.
+
+**Anchored rule (v2).** An alias is derived only where an explicit label anchors it. On the real brain it was right on 25 of 25 (multi-word 6 of 6, single-word 19 of 19); it keeps 25 of the 47 correct aliases the first rule found, so it trades recall for precision. On a public held-out corpus (890 English Wikipedia articles, CC BY-SA 4.0), precision went from 50 of 198 before to 20 of 25 after. Multi-word captures on both sets combined: 20 of 22. Neither set produced a sibling candidate.
+
+**Gate.** The plan ships multi-word captures on by default only at 90% precision or better. Neither the Wilson 0.85 lower bound nor the alternative of 150 labels was reached, because the samples are small. Garry Tan accepted the anchored rule with multi-word captures on, 2026-10-11 ("option 1 is fine"). The plan's fallback, leaving multi-word captures out of this wave, would have removed 2,897 aliases on world M and voided the confirmation, which measured a build with them on.
+
+**Transfer.** The anchored build derives identical aliases, mention links and card identity lines on world M (5,726 entity pages), the calibration world (5,690), the Cat 40 v1 world (100) and sealed world S (9,116; computed in owner custody). So the confirmed result applies to the shipped build.
+
+**Disclosure.** One refinement, a cue followed by a colon counts as a label, was spotted while looking at world M.
+
+**Scope.** Search's per-result declaration scan is unchanged.
