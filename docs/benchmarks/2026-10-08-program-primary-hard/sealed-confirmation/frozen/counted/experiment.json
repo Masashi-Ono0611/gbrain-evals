@@ -62,7 +62,7 @@
   ],
   "repeat": 2,
   "gbrain": {
-    "requested": "/home/ubi/c/gbrain@7aa2caa0",
+    "requested": "~/c/gbrain@7aa2caa0",
     "commit": "7aa2caa0aa2a9f031730cd351cd516cf4f9f5802",
     "tree": "217fa3775c98393698e262d01481017fbf00ca0d",
     "version": "0.60.106.0",

@@ -1,5 +1,5 @@
 {
-  "ledger": "/home/ubi/c/gbrain-evals/.budget/t0b-sealed-confirm.sqlite",
+  "ledger": ".budget/t0b-sealed-confirm.sqlite",
   "state": "sqlite",
   "totals": {
     "program_cap_usd": 265,
