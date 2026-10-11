@@ -73,3 +73,51 @@ The ledger caps total $103. The A15 shadow probe's Voyage-only replay, about $1,
 - **Judging.** Dev lanes are judged in-cell by the preregistered judge. Dev decides tuning, not gates, so there is no joint re-judge in stage 2.
 - **Refusal.** A cell whose cap exceeds what is left on its group's ledger is refused and reported, not shrunk.
 - **Custody.** Each group's ledger is copied to `~/.capy/work/mpw-ledgers/wave2/<group>.sqlite` on the integrator's primary machine after every cell, with SHA-256 checked on both sides.
+
+## Step 0 result: mode dominates, so the wave pauses (October 11, 2026)
+
+**Rule 1 fires, so the wave pauses for Garry's decision.** On the 100 LongMemEval-S dev questions, switching the combined store's search mode from `tokenmax` to `conservative` gains 13 points. Removing the facts block, and returning its space to pages, changes the score by −1 and 0 points. This result is exploratory: step 0 ran on #6066's head, `59782b95`, with the knobs listed in its specs, and it decides scope only. No dev cell has run.
+
+The figures below come from the joint blinded re-judge of all five arms. The judge was `gemini-3.5-flash`. The re-judge matches each arm's in-cell judge, apart from three answers that moved by one point each.
+
+| Arm | Correct | Abstentions | Delivered tokens (mean / p95) | Cell |
+|---|---:|---:|---|---|
+| comb | 81 | 22 | 8,128 / 8,156 | `longmemeval-s-gbrain-rag-95369ca39b74` |
+| a: block removed | 80 | 21 | 6,335 / 6,363 (below the context gate, by design) | `longmemeval-s-gbrain-rag-0c561a6a744f` |
+| b: space returned | 80 | 20 | 8,142 / 8,175 | `longmemeval-s-gbrain-rag-77c9ebfbf567` |
+| d: `conservative` | 93 | 12 | 8,058 / 8,105 | `longmemeval-s-gbrain-rag-a1bbbca4a86b` |
+| raw | 90 | 14 | 8,052 / 8,098 | `longmemeval-s-gbrain-rag-367592ede32e` |
+
+The gap is raw − comb = 9 points. It splits into four parts. The intervals are paired bootstrap 95% intervals over questions, 9,999 draws, seed `20261010`.
+
+| Part | Points | 95% interval |
+|---|---:|---|
+| store (raw − d) | −3 | −7 to 0 |
+| mode (d − b) | +13 | +6 to +21 |
+| page space (b − a) | 0 | −3 to +3 |
+| facts block (a − comb) | −1 | −5 to +2 |
+
+- **Rule 1 (mode dominates): fires.** (d − b) = +13 is positive and larger than (b − comb) = −1.
+- **Rule 2 (proceed): not reached.** It would fail anyway, because (b − comb) = −1 is below half the gap.
+- **Where the gain is.** Multi-session questions account for most of it: 19 of 22 correct under `conservative` against 11 of 22 under `tokenmax`, with the same store and the same 8,100-token page budget. Temporal reasoning goes from 21 to 23 of 27. Every other question type is within one question.
+- **What the mode switch changes.** The harness already sends `expand: false`, so query expansion is not part of the difference. The page budget is also the same in both arms, because the caller's `token_budget` overrides each bundle's own budget. Under `tokenmax`, the bundle also turns on these, each of which `conservative` leaves off:
+  - the cross-encoder reranker, `voyage:rerank-2.5`, over the top 50;
+  - a search limit of 50 instead of 10;
+  - graph signals;
+  - relational retrieval and its planner;
+  - `per_chunk_synopsis` contextual retrieval.
+
+  Step 0 does not isolate which of these costs the points.
+- **The facts store helps a little.** With the mode held at `conservative`, the combined store scores 3 points above the raw store. The interval reaches 0, so this is not established.
+
+**Spend.** Step 0 committed $15.14 on its ledger and the joint re-judge $1.30, for a total of $16.44 of the $18 released. Receipts:
+
+- the cells under [`2026-10-10-memory-proof-wave-2/step0/cells/`](2026-10-10-memory-proof-wave-2/step0/cells/);
+- the re-judge, with its analysis, under [`step0/rejudge/`](2026-10-10-memory-proof-wave-2/step0/rejudge/).
+
+The ledgers are mirrored to the integrator's primary machine with matching SHA-256:
+
+- `step0.sqlite`: `aa646c6b…`;
+- `step0-rejudge.sqlite`: `a4366da6…`.
+
+The step-0 VM is destroyed and recorded in `VMS.md`.
