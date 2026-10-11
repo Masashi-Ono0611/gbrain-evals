@@ -121,3 +121,39 @@ The ledgers are mirrored to the integrator's primary machine with matching SHA-2
 - `step0-rejudge.sqlite`: `a4366da6…`.
 
 The step-0 VM is destroyed and recorded in `VMS.md`.
+
+## The wave pauses for re-scope; a mode isolation runs first (October 11, 2026)
+
+**Decision (Garry, through the integrator, October 11).** Step 0's mode-dominates rule fired, so the wave is paused for re-scope. Stage 2 as written above (the dev groups and their caps) does not start. Before the re-scope, one exploratory isolation runs to find which part of `tokenmax` costs the 13 points. It is diagnosis, not a gate, and its result goes to Garry with the re-scope decision.
+
+**Scope.** LongMemEval-S dev only, the same 100 questions. No BEAM, LoCoMo10 or other dev cell runs.
+
+**Build and store.**
+- Build: the dev pin, `8d4f6ab6e589df8b59bedd791cffb8092540b646`.
+- Store: one measured-default store (Claude Haiku 5.5 extraction, credentials `voyage` and `anthropic`), with the ingest knobs of the explicit-knob addendum. All arms read this one store.
+- The first arm, `b`, runs under `tokenmax` and builds the store. A markdown import embeds pages under the inline contextual-retrieval tier of the mode active at ingest, with `per_chunk_synopsis` demoted to `title`. So this store, like step 0's combined store, is embedded at the `title` tier.
+
+**Arms.** Each arm starts from the explicit read-knob set above, with the facts block removed and 8,100 page tokens, unless noted. Specs: `cells/mpw2/iso/`, written by [`mpw2-iso-specs.py`](../../eval/harness-provider/mpw2-iso-specs.py).
+
+| Arm | Mode | Change |
+|---|---|---|
+| `b` | `tokenmax` | none (step 0's arm b, at the pin) |
+| `d` | `conservative` | none (step 0's arm d, at the pin) |
+| `comb` | `tokenmax` | wave-1 combined packing: 1,800-token block plus 6,300 page tokens |
+| `t-rerank-off` | `tokenmax` | `search.reranker.enabled: false` |
+| `t-limit-10` | `tokenmax` | `search.searchLimit: 10` (from 50) |
+| `t-relational-off` | `tokenmax` | `search.relational_retrieval: false`, `search.relational_planner: false` |
+| `t-graph-off` | `tokenmax` | `search.graph_signals: false` |
+| `t-cr-none` | `tokenmax` | `search.contextual_retrieval: none` |
+| `c-rerank-on` | `conservative` | `search.reranker.enabled: true` |
+
+`search.contextual_retrieval` is read only at embed time, and no read path consults it. So `t-cr-none` is expected to match `b`, and it doubles as a same-configuration noise check. `c-rerank-on` separates the reranker on its own from the reranker over tokenmax's larger candidate set.
+
+**Analysis.** One joint blinded re-judge covers all nine arms, with the preregistered judge. For each arm, the analysis reports:
+- the paired difference from `b`;
+- the paired difference from `d`;
+- the share of (d − b) that the arm recovers.
+
+The intervals are paired bootstrap 95% intervals over questions, 9,999 draws, seed `20261010`. Results are broken out by question type, with multi-session and temporal reasoning first. Nothing here is a gate.
+
+**Budget.** The cells run on their own ledger, capped at $23: the store about $9.50, plus eight reads at about $1.30. The re-judge is capped at $2.50. Both come out of the dev release. Ledgers are mirrored to the integrator's primary machine with SHA-256 checked, and the VM is recorded in `iso/VMS.md` and destroyed afterwards.
