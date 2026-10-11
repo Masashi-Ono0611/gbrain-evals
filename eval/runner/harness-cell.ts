@@ -83,7 +83,7 @@ export interface CellFile {
 // ─── spec ────────────────────────────────────────────────────────────
 
 /** The gbrain provider's lanes (eval/harness-provider/mpw/gbrain_provider.py LANES). */
-export const LANES = ['raw', 'facts', 'combined', 'combined-v2', 'filler-removed'] as const;
+export const LANES = ['raw', 'facts', 'combined', 'combined-v2', 'filler-removed', 'recall-one-call'] as const;
 
 export function validateSpec(raw: unknown): CellSpec {
   const s = raw as CellSpec;

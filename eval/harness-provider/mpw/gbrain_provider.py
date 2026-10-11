@@ -91,7 +91,7 @@ INGEST_KEYS = ("embedding_model", "embedding_dimensions", "gbrain_config", "remo
 # picks the extractor. Before any ingest the template must report this resolution in `gbrain models --json`.
 MEASURED_DEFAULT_SOURCE = "measured default"
 MEASURED_DEFAULT_EXTRACTOR = "anthropic:claude-haiku-5-5"
-LANES = ("raw", "facts", "combined", "combined-v2", "filler-removed")
+LANES = ("raw", "facts", "combined", "combined-v2", "filler-removed", "recall-one-call")
 
 DEFAULTS = {
     "lane": "raw",
@@ -285,10 +285,10 @@ class GbrainMemoryProvider(MemoryProvider):
         lane = cfg.get("lane") or "raw"
         if lane not in LANES:
             raise ValueError(f"unknown lane {lane!r}: use one of {', '.join(LANES)}")
-        if lane in ("combined-v2", "filler-removed") and not self.facts_on:
+        if lane in ("combined-v2", "filler-removed", "recall-one-call") and not self.facts_on:
             raise ValueError(f"lane {lane} reads a facts store: set extraction_model or extraction_source")
-        if lane == "combined-v2" and not cfg.get("delivered_tokens"):
-            raise ValueError("lane combined-v2 needs delivered_tokens, the total the facts block and the pages share")
+        if lane in ("combined-v2", "recall-one-call") and not cfg.get("delivered_tokens"):
+            raise ValueError(f"lane {lane} needs delivered_tokens, the total the facts block and the pages share")
         self.cli = cfg.get("gbrain_cli") or os.environ.get("MPW_GBRAIN_CLI")
         if not self.cli:
             raise RuntimeError("no gbrain CLI: set provider_config.gbrain_cli or MPW_GBRAIN_CLI (the launcher resolves GBRAIN_UNDER_TEST)")
@@ -638,6 +638,8 @@ class GbrainMemoryProvider(MemoryProvider):
             return docs, None, {**meta_out, "lane": lane}
         if lane == "combined-v2":
             return self._combined_v2(query, user_id)
+        if lane == "recall-one-call":
+            return self._recall_one_call(query, user_id)
         if lane not in ("facts", "combined"):
             raise GbrainRetrieveError(f"unknown lane {lane!r}: use one of {', '.join(LANES)}")
         # One lock hold across both calls: another unit opening in between could close this unit's child.
@@ -713,6 +715,51 @@ class GbrainMemoryProvider(MemoryProvider):
                             "budget_clamped": bool(page_meta.get("budget_clamped")),
                             "entity_anchored": page_meta.get("entity_anchored", 0),
                             "timing": _timing({**page_meta["timing"], "unit_open_ms": round(open_ms, 1)}, wait_ms, recall_ms)}
+
+    def _recall_one_call(self, query: str, user_id: str | None):
+        """gbrain's own single-call packing: `recall(question, query)` with `budget_tokens` = `delivered_tokens`,
+        `budget_policy: "facts_first"` and `return_unit: "page"`. gbrain packs both arms (estimated tokens, no separate
+        facts cap); the harness renders its facts as the other lanes do and reports the total on the rendered text."""
+        from .context import count_tokens, render_rag_context
+
+        args = {"question": query, "query": query, "limit": int(self.cfg["facts_limit"]), "budget_tokens": int(self.cfg["delivered_tokens"]),
+                "budget_policy": "facts_first", "return_unit": "page"}
+        t0 = time.perf_counter()
+        with self._lock:
+            wait_ms = (time.perf_counter() - t0) * 1000
+            u = self._ensure_unit(user_id or "_all", create=False)
+            t1 = time.perf_counter()
+            try:
+                recalled, _ = u.child.call("recall", args)
+            except McpToolError as e:
+                raise GbrainRetrieveError(str(e)) from e
+            call_ms = (time.perf_counter() - t1) * 1000
+        if not isinstance(recalled, dict) or not isinstance(recalled.get("facts"), list) or not isinstance(recalled.get("results"), list):
+            raise GbrainRetrieveError(f"recall returned {type(recalled).__name__} without facts and results lists")
+        if recalled.get("facts_order") != "relevance":
+            raise GbrainRetrieveError(f"recall did not rank facts by the question (facts_order {recalled.get('facts_order')!r}): "
+                                      "this gbrain has no recall(question)")
+        for key in ("facts_degraded", "search_degraded"):
+            if recalled.get(key):
+                raise GbrainRetrieveError(f"recall reported {key} {json.dumps(recalled[key])[:300]}; a degraded read is not packed")
+        block, fact_meta = self._pack_facts(u, [], recalled["facts"], 10 ** 9, user_id)
+        pages = []
+        for r in recalled["results"]:
+            slug = str(r.get("slug", ""))
+            doc_id = slug[len(SLUG_PREFIX):] if slug.startswith(SLUG_PREFIX) else slug
+            text = str(r.get("chunk") or "")
+            if self.cfg.get("date_header", True):
+                text = f"{date_header(u.timestamps.get(doc_id))}\n{text}"
+            pages.append(Document(id=doc_id, content=text, user_id=user_id))
+        docs = block + pages
+        return docs, None, {"lane": "recall-one-call", "requested": args, "facts": fact_meta, "results": len(pages),
+                            "facts_order": recalled["facts_order"], "budget_tokens": recalled.get("budget_tokens"),
+                            "budget_used": recalled.get("budget_used"), "dropped_count": recalled.get("dropped_count"),
+                            "budget_packing": recalled.get("budget_packing"), "tokenizer": "cl100k",
+                            "tokens_delivered": count_tokens(render_rag_context(docs)), "rendered_tokens": count_tokens(render_rag_context(docs)),
+                            "budget_clamped": False, "entity_anchored": 0,
+                            "timing": {"lock_wait_ms": round(wait_ms, 1), "unit_open_ms": round((t1 - t0) * 1000 - wait_ms, 1),
+                                       "recall_ms": round(call_ms, 1), "service_ms": round(call_ms, 1)}}
 
     def _pack_facts(self, u: _Unit, saved: list, recalled: list, budget: int, user_id: str | None) -> tuple[list[Document], dict]:
         """saved_facts first, then recall's facts in recall's order, one line each, grouped under their source page.

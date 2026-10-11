@@ -182,6 +182,22 @@ def test_filler_removed_reads_the_page_query_alone(tmp_path):
     assert meta["lane"] == "filler-removed" and len(docs) == 1
 
 
+def test_recall_one_call_renders_gbrains_own_packing(tmp_path):
+    from mpw.context import count_tokens, render_rag_context
+    from mpw.gbrain_provider import GbrainRetrieveError
+
+    calls: list = []
+    one = {**RANKED, "results": [{"slug": "conversations/d-1", "chunk": "user: Kyoto in May."}], "budget_tokens": 8100, "budget_used": 900}
+    p = _v2(_stub_unit(tmp_path, one, calls=calls), lane="recall-one-call")
+    docs, _, meta = p.retrieve_with_meta("Who went to Kyoto?", 10, "u-1")
+    assert calls == [("recall", {"question": "Who went to Kyoto?", "query": "Who went to Kyoto?", "limit": 100, "budget_tokens": 8100,
+                                 "budget_policy": "facts_first", "return_unit": "page"})]
+    assert meta["facts"]["kept"] == 60 and docs[-1].content == "Date: 2024-03-02 10:00 UTC\nuser: Kyoto in May."
+    assert meta["rendered_tokens"] == count_tokens(render_rag_context(docs)) and meta["budget_used"] == 900
+    with pytest.raises(GbrainRetrieveError, match="search_degraded"):
+        _v2(_stub_unit(tmp_path, {**one, "search_degraded": "embed_unavailable"}), lane="recall-one-call").retrieve_with_meta("q", 10, "u-1")
+
+
 def test_lane_and_extractor_config_is_validated():
     from mpw.gbrain_provider import GbrainMemoryProvider
 
@@ -190,7 +206,8 @@ def test_lane_and_extractor_config_is_validated():
                         ({"extraction_source": "default"}, "unknown extraction_source"),
                         ({"lane": "combined-v3"}, "unknown lane"),
                         ({"lane": "combined-v2", "extraction_source": "measured_default"}, "delivered_tokens"),
-                        ({"lane": "filler-removed"}, "reads a facts store")):
+                        ({"lane": "filler-removed"}, "reads a facts store"),
+                        ({"lane": "recall-one-call", "extraction_source": "measured_default"}, "delivered_tokens")):
         with pytest.raises(ValueError, match=needle):
             GbrainMemoryProvider({**base, **cfg})
 
