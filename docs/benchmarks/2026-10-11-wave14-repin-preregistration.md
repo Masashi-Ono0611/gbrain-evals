@@ -193,3 +193,22 @@ three rounds of Cat 7 and the Cat7-1 repro alternating which pin goes first. It 
 - Cat7-1 counts as a regression if its repro fails at `77cf8e111` and passes at `8a3eedeac` on the same VM.
 
 The report gives the counted pair's results as they are, with this run beside them.
+
+### 2026-10-11: the paid N2 judge arm, approved after round 4 and before it runs
+
+Garry approved the paid N2 contradiction-judge arm at `77cf8e111` with a $30 cap. Frozen before the run:
+
+1. **Same judge and configuration as the measurement README's N2 row reports** (149 of 150, measured at gbrain
+   `48ed5e8` in the [wave 7 re-pin](2026-10-03-wave7-repin.md); the row named `739e5cc`, the pin it was carried to).
+   That is the runner's fixed judge model `anthropic:claude-haiku-4-5-20251001`, gbrain's judge prompt (version 4 at
+   both `48ed5e8` and `77cf8e111`), the $10 probe budget split over 4 concurrent probe runs, and the same world and
+   queries. If the model is unavailable, the run stops and no other model is substituted.
+2. **Spend** goes through the budget ledger: a program cap of $30 and one budget run of $30. A refused 4xx request
+   settles at $0. The wave 7 run cost $7.04.
+3. **What it decides.** The N2 report's three decision rules apply as written: recall on offered conflicts at least
+   0.80, false contradictions on offered dated changes at most 0.10, and on offered compatible pairs at most 0.10.
+   The row's number is the count of the 150 planted same-time conflicts the judge calls contradictions. The judge
+   samples once per pair, so a difference from 149 is reported with the wave 7 repeat control's spread as context
+   (prompt version 3 gave 132 and then 129 at one commit). It is a regression only if recall on offered conflicts
+   falls below 0.80 or a false-contradiction rule that held at `48ed5e8` fails. README moves the row to `77cf8e111`
+   with whatever number this run gives.
