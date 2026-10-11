@@ -31,9 +31,8 @@ const tmp = mkdtempSync(join(tmpdir(), 'bd-h1-'));
 afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
 describe('the committed decision directory', () => {
-  test('measures the package.json pin, at E2\'s budget, with E2\'s recipes and renderer bytes', () => {
-    const pkg = JSON.parse(readFileSync(join(REPO, 'package.json'), 'utf8'));
-    expect(pkg.dependencies.gbrain).toBe(`github:garrytan/gbrain#${D.gbrain.commit}`);
+  test('measures its recorded gbrain commit (the package.json pin when it ran), at E2\'s budget, with E2\'s recipes and renderer bytes', () => {
+    expect(D.gbrain.commit).toBe('8a3eedeacb6e52da5b413502019692db80c5cc5d');
     expect(D.construction.b_pseudo).toBe(JSON.parse(readFileSync(join(E2, 'manifests/campaign.json'), 'utf8')).parameters.b_pseudo_lme_s);
     expect(sha(READER_TEMPLATE)).toBe(D.construction.renderer.reader_template_sha256);
     expect(D.construction.renderer.dated_renderer_version).toBe(DATED_RENDERER_VERSION);

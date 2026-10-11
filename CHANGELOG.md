@@ -2,6 +2,193 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.76] - 2026-10-11
+
+### Re-pin to gbrain v0.60.169.0 (`77cf8e111`)
+
+gbrain-evals installs gbrain release v0.60.169.0, master `77cf8e1116e9af67c1983adcbb3223b96f0991a5` (was `8a3eedeac`,
+v0.60.126.0, 43 first-parent merges earlier), after a preregistered keyless regression check on paired Ubicloud VMs
+([report](docs/benchmarks/2026-10-11-wave14-repin.md), [preregistration](docs/benchmarks/2026-10-11-wave14-repin-preregistration.md)
+with four amendments). The keyless runs cost $0 of provider spend and the paid N2 judge arm cost $7.07.
+
+- **No gbrain regression.** All 34 offline-tier categories pass at `77cf8e111`. Full N1 and N5 pass on PGLite and
+  Postgres through every interface. N6 on Postgres over HTTP passes with 155 of 155 cells and 0 leaks, and N6 and N8
+  pass attested. Every ledger repro, every preregistered check and the memory trust repros 37-1, 37-2 and 37-5 pass.
+- **Memory trust gates.** `eval/registry.ts` drops the hold on Cats 37 to 39. They fail at `8a3eedeac`, which
+  predates the feature, and pass every keyless contract at `77cf8e111`.
+- **The counted pair's two rule breaks were not gbrain.** N6 on Postgres lost `recall` coverage at the new pin (153
+  of 155) through harness defect N6-5. Cat 7 ran 1.3 to 2.7 times slower on every operation, `putPage` included,
+  because of the after VM's host. Two fresh hosts each running both pins (amendment 3) show N6 complete at both pins,
+  no Cat 7 operation more than 25% slower on both hosts, and the Cat7-1 repro passing at both pins. Cat7-1 stays
+  open: `get_timeline` p50 at 1,000 pages is 0.075 to 0.078 ms against the 0.056 ms closure bar. `traverse_paths_d1`
+  at 1,000 pages ran 20% to 30% slower in three pairings; it is below the confirmed-regression rule and recorded as
+  the operation to watch.
+- **Four harness fixes, each with a test, none changing a result at the old pin.**
+  - N6 decodes `delta`'s base64 cursors before masking them (N6-4).
+  - Cat 39 reads a fact row's page from `page_slug` (39-8, found when #6066's query facts arm returned fact rows).
+  - N6 gives an optional `question` its own variant without `include_expired` and `supersessions`, which `recall`
+    refuses alongside it (N6-5).
+  - The operator-wave check `edit-page-diff-order` reads the `edit_page` receipt block and ignores appended notice
+    blocks.
+- **A flaky harness test made deterministic.** `test_facts_extraction_and_lanes` (`eval/harness-provider/`) stores
+  one identical stub fact from five extraction windows running eight at a time. gbrain keeps the first insert, so the
+  conversation that owns the fact depended on timing. It failed on one core at both pins and in four of seven CI
+  runs on this branch. The test now extracts one window at a time with `d-a1` first, and it passes on one core at
+  both pins.
+- **Pin-following updates.** N12 renders gbrain's new `plain-role-no-time` pattern (29 of 29 formats). Four tests
+  that assumed the old pin's behaviour were updated (`tool-bridge`, `pglite-snapshot`, `cat38-state-resolution`,
+  `budgeted-delivery-h1`). The VM scripts for this check live in `docs/benchmarks/2026-10-11-wave14-repin/vm/`.
+- **Docs.** README, `docs/README.md`, `docs/settings.md`, `docs/comparison-systems.md`, `docs/retrieval-lessons.md`,
+  `eval/README.md` and `eval/CONTRIBUTING.md` name the new pin. README moves the rows rerun here to `77cf8e111` and
+  adds the features the old pin predated, each on evidence measured inside the new pin's history: memory trust
+  labels, the verbatim-quote probe, scoped vector search and the matched BEAM comparison.
+- **Paid N2 judge arm at the new pin (approved, $7.07 of a $30 cap).** The judge (`claude-haiku-4-5-20251001`, prompt
+  version 4, the same inputs to the token as the published run at `48ed5e8`) called 146 of 150 planted conflicts
+  contradictions, against 149. It flagged 0 of 40 dated changes and 4 of 51 compatible pairs (6 of 51 before), so all
+  three of the report's decision rules hold. The three lost conflicts are sampling variation (exact McNemar p =
+  0.25). README's N2 row moves to `77cf8e111` with 146 of 150. 2,774 requests went through the budget ledger, all
+  reconciled to provider usage, none refused.
+- **Recorded commits stay.** The sealed MPW (`d7467d1cf`), H1 (`8a3eedeac`), Q1 (`f05943e6`, `7aa2caa0`) and Cat 40
+  runs keep the commits they recorded. The report lists every place that reads the installed pin, including the Q1
+  campaign custody hash, which covers `package.json` and `bun.lock`.
+
+## [0.10.75] - 2026-10-11
+
+### Cat 40 Hard fix wave: plan, development record, preregistration and results
+
+The records behind the October 10 confirmation (released in 0.10.74) move from the plan branch to main, under [docs/plans/2026-10-07-cat40-hard-fix/](docs/plans/2026-10-07-cat40-hard-fix/). No paid call ran for this release.
+
+- **[PLAN.md](docs/plans/2026-10-07-cat40-hard-fix/PLAN.md)** and **[DEV-RECORD.md](docs/plans/2026-10-07-cat40-hard-fix/DEV-RECORD.md):** the fix wave's plan and its development rounds on the calibration world, with the root-cause scripts `rca.py` to `rca4.py`. The development record now carries the alias precision check (2026-10-11): on the owner's real brain the anchored rule was right on 25 of 25 aliases, and on 890 public Wikipedia articles on 20 of 25. Garry Tan accepted it with multi-word captures on. It also records that gbrain #6271 merged as v0.60.174.0 (master `0df9f2ee7`), whose build derives identically to the confirmed `3e4ff61ce` on worlds M and S, the calibration world and the v1 world.
+- **[PREREG.md](docs/plans/2026-10-07-cat40-hard-fix/PREREG.md):** the confirmation preregistration with everything recorded before cells (world digests, custody VMs, ledgers, oracle gates, the slot allowance and the $900 caps).
+- **[RESULTS.md](docs/plans/2026-10-07-cat40-hard-fix/RESULTS.md):** the verdict ("ahead" in both worlds; Δ_M +7.7, Δ_S +13.0), per-model and per-family tables, secondary measures (wrong answers, stops, cost per success, seconds per cell, the rerank check, DX measures), costs with the ledger overstatement explained, the deviations log and the weaknesses. Computed with `confirm_secondary.py`, which prints counts only.
+- **[SEALED.md](docs/benchmarks/cat40-hard/SEALED.md):** the sealed 50k world was generated on 2026-10-10 on the owner's Mac (its digest matched the committed one) and ran once in the confirmation; only aggregates are published, and the seed, documents and task text stay in owner custody. It is no longer a first-look held-out set: a future result on it is a repeat measurement, and the next confirmation needs a new sealed seed.
+- **Version.** Main is at 0.10.74, so this release is 0.10.75.
+
+## [0.10.74] - 2026-10-11
+
+### Cat 40 Hard confirmation: gbrain ahead of plain files on a fresh and a sealed 55,000-document company
+
+On two worlds no development agent had seen, Sonnet 5.5, Opus 5.5 and GPT-6.1 Sol finished more Hard tasks with gbrain v0.60.139.0 (`3e4ff61ce`, gbrain #6271, since merged as gbrain v0.60.174.0, master `0df9f2ee7`) than with plain files: +7.7 points on world M (fresh seed 20261021; 78.7% vs 71.0%, 95% CI +2.7 to +12.7) and +13.0 points on the sealed world S (66.0% vs 53.0%, CI +7.7 to +18.3). Both lower bounds are above 0, so the preregistered wording is "ahead" in both worlds and the kill criterion does not fire. Limits: gbrain trails on M's conflicting-source family H4 (47 vs 56 of 60), S's H1 is at the floor on both arms, fs overflowed the context 22 times on S at the fixed 16-turn cap, and gbrain gives more wrong answers. Report: [docs/benchmarks/2026-10-10-model-ladder-hard-confirmation.md](docs/benchmarks/2026-10-10-model-ladder-hard-confirmation.md); preregistration and full results in `docs/plans/2026-10-07-cat40-hard-fix/` (#93). Ledgers $572.34 (M) and $775.63 (S) of $900 each.
+
+- **Confirmation steps.** `scripts/cat40-hard.sh step confirm-world|confirm-slots|confirm-oracle|confirm-cells` per world (`CONFIRM_WORLD=main|sealed`), seed 20261021 registered as `HARD_SEEDS.confirmation`, one ledger per world (`CONFIRM_CAP_USD` 900), and the 95% oracle gate.
+- **Warm-boot fix.** The slot build's warm start waits for the reply to one read-only `entity` call before the snapshot, so the snapshot no longer keeps tens of thousands of queued persistence effects that stalled every restore's first tool call; each slot receipt records `queued_effects` at snapshot.
+- **Rejected requests settle at $0.** The metering proxy's in-process mode (gbrain's own provider calls) now settles a 4xx answer without usage at $0, as lease mode and the paid-request guard do; a 413 or a prompt over the context window no longer books its whole reservation.
+- **One implementation each** after merging main: `rerankProbe` and `refreshProviderBaseUrls` live in `eval/runner/cat40/gbrain-arm.ts` (the runner re-exports the probe), and every slot start refreshes the Voyage base URL and advertised surface through `refreshProviderBaseUrls`; `MeteringProxy` lives in `eval/runner/metering-proxy.ts`.
+
+### Cat 40 Hard result: gbrain trails plain files by 11.3 points on the 55,000-document company
+
+On 100 unseen Hard tasks, Sonnet 5.5, Opus 5.5 and GPT-6.1 Sol finished 62.0% with gbrain v0.60.95.0 and 73.3% with plain files (paired difference −11.3 points, 95% CI −16.7 to −6.0); Postgres search finished 68.3%. The gap is wrong answers (gbrain 50, fs 13), not turn caps. The preregistered decision is "gbrain behind": the next wave targets retrieval on H1 aggregation, with alias resolution, current-value preference and cross-session recall as the concrete fixes. Fable 5.1's finished cells (descriptive, amendment A6) went the other way: 65% with gbrain, 20% with plain files. Report: [docs/benchmarks/2026-10-07-model-ladder-hard.md](docs/benchmarks/2026-10-07-model-ladder-hard.md). Hard ledger $2,000 of $2,044.
+
+- **Exploratory gbrain-fs arm (plan C16).** `--arms gbrain-fs` gives the agent every gbrain tool plus the fs arm's read tools (`list_dir`, `grep`, `read_file`, same limits) over the same files, with writes through gbrain only (no `write_file`), to ask whether gbrain beside the files beats files alone. Cells are labelled `<gbrain-label>+fs`; a gbrain tool named like an fs read tool is refused; the arm runs only on the calibration-seed development world outside any program step (`HARD_ARM_EXPLORATORY`) and records `exploratory: true` in `experiment.json` and the receipt. No cell has run.
+
+### Cat 40 Hard round 4: questions about several accounts; the held-out run is 50k only
+
+Round 3 (50k, generator v2) left the better simple arm at 83%: H1 fell to 15-20%, but H2 to H5, which each asked about
+one account, stayed at 85 to 100%. Under amendment A2, H2 to H5 questions now ask about several accounts at once and H1
+sets shrink. No paid call ran; round 4 is ready to calibrate.
+
+- **Multi-account questions.** Knobs `multi_account_min` and `multi_account_max` set how many accounts each H2 to H5
+  question asks about; [knobs.round-4.json](docs/benchmarks/cat40-hard/knobs.round-4.json) uses 2 to 3. A question
+  lists its items as numbered one-account questions, each a complete instance of its family with its own records, and
+  asks for a JSON array of the answers in order. No two accounts in a question share a descriptor, first word, code
+  prefix or account manager, so each needs its own search. With a maximum of 1 the generator writes the v2 world, and
+  the round-3 world is unchanged.
+- **Scoring.** The Hard scorer grades the array as a new `values` answer kind (`cat40-hard-score-v2`): each element is
+  graded like a one-account answer, and success needs every element right. Earlier answer kinds score as before. The
+  validator checks every item's accounts and the unlinked rule, and the H5 write diagnostic matches each superseded
+  fact to its own chain.
+- **Smaller H1.** Round 4 asks for 6 to 12 members (round 3: 10 to 40). When a predicate cannot land in range, the
+  generator narrows it to one region or segment.
+- **Held-out path.** The held-out run is 50k only: freeze check, freeze, smoke, the 50k world, slots, then four batches
+  that each run after the one before (gbrain and fs, the oracle, pg, memory on two models), each with its own
+  projection and ledger gate. `slots-4k`, `simple-4k`, `comparator` and `gbrain-4k` stop with `HARD_STEP_RETIRED`.
+  The primary endpoint is `holdout_stats.py --hard-headline gbrain-hard,fs --simple fs`, adding pg when it ran.
+- **Proxy.** `hard-proxy.ts` also reports oracle documents and accounts per answer. On the 50k calibration world,
+  H2 to H5 answers now need 2.4 to 2.7 accounts and two to three times the oracle documents
+  ([calibration.md](docs/benchmarks/cat40-hard/calibration.md)).
+
+### Cat 40 Hard generator v2: records stop naming their account
+
+Calibration round 2 left plain files at 95%: agents searched for the account name in the question and read every
+record, because every record named the account. Generator `model-ladder-hard-v2` (amendment A1) keeps every fact and
+answer key and changes how records refer to accounts. No paid call ran; round 3 is ready to calibrate on the 50k world.
+
+- **Reference forms.** Each account reference in an event record uses the account's name, its code, its nickname, or
+  `<manager>'s <region> <industry> account`, meaning the account that manager held on the record's date. Knobs
+  `direct_name_share`, `code_ref_weight`, `nickname_ref_weight` and `manager_ref_weight` set the mix;
+  [knobs.round-3.json](docs/benchmarks/cat40-hard/knobs.round-3.json) starts at 15% by name and about 30%, 30% and 24%
+  for the others. CRM records, new account sheets, rename and merger notices name the account and resolve the other
+  forms in at most two hops. A manager reference is used only where it fits one account on that date from the records
+  written by then. Event documents get opaque ids, so paths never name an account. A knob file without the new keys
+  writes v1's worlds byte for byte (rounds 1 and 2 still regenerate); with `direct_name_share` 1 the documents and
+  tasks are v1's.
+- **Checks.** `hardWorldProblems` checks every reference: its text is in its document, a reference not by name never
+  names the account, a manager reference fits one account, every code, nickname and descriptor is introduced on or
+  before its use, and every task's oracle documents tie each reference to the asked name. Oracle evidence carries the
+  resolution documents each record needs. [WORLD_SCHEMA.md](docs/benchmarks/cat40-hard/WORLD_SCHEMA.md) states the
+  rules for the sealed generator.
+- **Difficulty proxy.** `bun eval/runner/cat40/hard-proxy.ts` reports, without a model call, how often the oracle's
+  records name the asked account. On the 50k calibration world it falls from 91% with round-2 knobs to 14% with
+  round-3 knobs; code and nickname searches together still reach 76%, so the manager form carries most of the added
+  difficulty ([calibration.md](docs/benchmarks/cat40-hard/calibration.md)).
+- **Calibration at 50k.** `scripts/cat40-hard.sh step calibrate` builds the 50k world from round 3 on (`SCALE=large`,
+  `SCALE=v1` for the 4k world). Projections use measured cells at the step's scale when there are any and add the pg
+  arm's one-time corpus embedding when the world is known (about $2.70 at 50k). The pg store now checkpoints PGlite while it builds; without that, the 50k Hard build ran out of memory and hung. Appended 50k accounts have their own
+  account managers, so 4k records keep their meaning inside the 50k world.
+- **H1 set sizes.** H1 keys are computed over the 4k accounts so they match at both scales; the 261-account
+  population supports at most 25 to 34 members per predicate, so round 3 keeps 10 to 40.
+
+### Cat 40 Hard: the harness for tasks that measure the edge of frontier models
+
+Cat 40 no longer separates the models people use most: on the development world gbrain master finished 239 of 250
+frontier-model runs. The Hard tier asks harder memory questions, and this release builds everything it needs. No paid
+cell ran; calibration and the held-out runs follow the [runbook](docs/benchmarks/cat40-hard/RUNBOOK.md) under Garry's
+2026-10-05 gate decisions (16 turns with the cap as the last knob, tier A, a $4,350 authorization, the Hard ledger at
+$1,794).
+
+- **Generator.** `bun eval/generators/model-ladder-gen.ts --mode hard` writes a ledger-first world of about 4,000
+  documents with five families: H1 sets and counts over 10 to 40 accounts, H2 attribute histories with reversals,
+  backdated corrections and effective dates, H3 look-alike, renamed and merged accounts, H4 conflicts decided by
+  authority with long deciding documents, and H5 five-session memory. `--knobs` takes a validated knob file;
+  `--scale large --base-world` appends accounts and non-deciding documents to about 50,000 documents and refuses
+  unless every H1 key recomputed over the full ledger equals the 4k key and every H3 disambiguation stays unique.
+  Dates, corrections, user statements and names follow one written semantics (`eval/generators/hard/semantics.ts`),
+  and one predicate evaluator computes and checks every H1 key. Each family and the background draw from their own
+  seeded streams, so a knob change moves only the family it controls.
+- **World contract.** `eval/generators/hard/schema.ts` and `validate.ts` hold the world, task and answer types, the
+  knob schema and the invariants, separate from the renderers, so the sealed validation variant can be written against
+  [WORLD_SCHEMA.md](docs/benchmarks/cat40-hard/WORLD_SCHEMA.md) alone.
+- **Runner.** Hard worlds carry their identity (seed, scale, mode, knobs) and turn cap (16; `--max-turns` overrides
+  and changes the experiment identity). H5 cells run five sessions with a fresh session between them on every arm.
+  Hard runs refuse a missing judge, gpt-5.4-mini and unpriced models, write v2 records to `attempts.jsonl`, retry only
+  harness errors (at most twice), score a context-length error as its own stop kind, quarantine a gbrain slot whose
+  restore fails, and exit 3 with a stable code for every refusal and stop. `--preflight` lists keys, prices, identity,
+  cells, slots, the roster-checked ledger and the step projection without a paid call. v1 runs are unchanged.
+- **Scoring and judge.** `eval/runner/cat40/score-hard.ts` scores sets, counts and values (wrong values anywhere in the
+  answer fail; unreadable sets are reported apart), importing `score.ts` unchanged. `judge-hard.ts` (`--judge
+  gpt-6.1-sol`) treats H5 user messages as evidence, caps H1 near misses, persists requests and re-judges failures.
+- **Fairness and cost.** pg embeds long documents in chunks on Hard; grep returns every match with full lines and a
+  total and runs in a Worker with a time limit; pg pages with offsets and totals; restores run asynchronously; every
+  embedding request is charged to setup or to its cell.
+- **Analysis.** `analyze.ts`, `rescore.ts`, `latency-replay.ts` and `holdout_stats.py` read v1 and v2 records. New:
+  the freeze-rule analyzer (`--freeze-rule --round N`), Hard report tables, offline Hard rescoring, and
+  `holdout_stats.py --hard-comparator`, `--hard-headline` (primary endpoint, simultaneous intervals against every
+  simple arm, weakest-family rule, cost per extra correct answer) and `--hard-mdd`.
+- **Operator tools and paperwork.** `scripts/cat40-hard.sh hello|status|preflight|step`, the runbook, the
+  preregistration template, the calibration record, the program ledger roster, the cost basis, a report template and
+  the `model-ladder-hard` registry row (tier P, report-only).
+- **Regression contract.** Tests pin the v1 world, the large manifest digest, the `score.ts` hash, v1 tool limits and
+  a v1 scripted run's scores against a fixture recorded from the previous runner.
+- **After calibration round 1 (2026-10-05).** Both oracle models missed the same account on two H1 tasks: a renamed
+  account's ticket written after the rename still used the old name, and the H1 evidence lacked the rename notice.
+  Records written on or after a rename now use the new name, H1 evidence carries rename and merger notices, a merged
+  account's tickets count for the account it merged into, and H1 predicates that turn on a date boundary are not
+  drawn ([calibration.md](docs/benchmarks/cat40-hard/calibration.md)). Projections now go per model, arm and family
+  from round 1's measured Hard costs (2 to 5 times v1 per cell) plus the measured judge cost; a resumed step opens a
+  new budget run (`--new-budget-run`) sized to the cells still missing. `knobs.round-2.json` makes H2 and H3 harder.
+
+- **Version.** Main is at 0.10.73, so this release is 0.10.74.
+
 ## [0.10.73] - 2026-10-11
 
 ### Contributor fix wave: Bash 3.2 resume args and non-finite judge scores

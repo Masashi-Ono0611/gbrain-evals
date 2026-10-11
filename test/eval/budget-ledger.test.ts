@@ -311,6 +311,30 @@ describe('provider SDKs that capture fetch', () => {
   });
 });
 
+describe('a request the provider rejects before generating does not book its reservation', () => {
+  test('a 413 and a prompt over the context window settle at $0; a 4xx that reports usage settles at that usage', async () => {
+    const path = ledgerPath();
+    const run = BudgetRun.open({ runner: 'test', budgetUsd: 50, ledgerPath: path });
+    const replies = [
+      new Response(JSON.stringify({ type: 'error', error: { type: 'request_too_large', message: 'Request exceeds the maximum size' } }), { status: 413, headers: { 'content-type': 'application/json' } }),
+      new Response(JSON.stringify({ type: 'error', error: { type: 'invalid_request_error', message: 'prompt is too long: 210000 tokens > 200000 maximum' } }), { status: 400, headers: { 'content-type': 'application/json' } }),
+      new Response('<html>413 Request Entity Too Large</html>', { status: 413, headers: { 'content-type': 'text/html' } }),
+      new Response(JSON.stringify({ type: 'error', error: { type: 'invalid_request_error', message: 'rejected' }, usage: { input_tokens: 1000, output_tokens: 0 } }), { status: 400, headers: { 'content-type': 'application/json' } }),
+    ];
+    const guard = installPaidRequestGuard(run, { fetchImpl: (async () => replies.shift()!) as unknown as typeof fetch });
+    const body = { ...anthropicBody, max_tokens: 64_000, messages: [{ role: 'user', content: 'x'.repeat(600_000) }] };
+    const call = () => fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    try { for (const want of [413, 400, 413, 400]) expect((await call()).status).toBe(want); }
+    finally { guard.uninstall(); }
+    const entries = read(path).entries;
+    expect(entries.map(e => e.status)).toEqual(['reconciled', 'reconciled', 'reconciled', 'reconciled']);
+    expect(entries.slice(0, 3).map(e => e.actual_usd)).toEqual([0, 0, 0]);
+    expect(entries[3].actual_usd).toBeGreaterThan(0);
+    expect(entries[3].actual_usd!).toBeLessThan(entries[3].reserved_usd / 10);
+    expect(entries[3].input_tokens).toBe(1000);
+  });
+});
+
 describe('streamed responses settle from their usage events', () => {
   test('Anthropic message_start plus message_delta, and OpenAI response.completed', async () => {
     const { sseUsage, usageCost, priceRequest } = await import('../../eval/runner/budget-ledger.ts');

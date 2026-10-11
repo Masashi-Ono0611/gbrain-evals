@@ -164,8 +164,9 @@ def _model_hits(hits: list, start: int) -> list:
 
 def test_facts_extraction_and_lanes(tmp_path, upstream):
     url, hits = upstream
-    p = _provider(tmp_path / "store", url, lane="facts")
-    docs = _docs("u-1")
+    p = _provider(tmp_path / "store", url, lane="facts", extraction_in_flight=1)
+    a0, a1, a2 = _docs("u-1")
+    docs = [a1, a0, a2]
     try:
         before = len(hits)
         p.ingest(docs)

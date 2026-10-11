@@ -12,7 +12,8 @@
  *   in-process (Cat 40, chronicle, P4 stream, P8): the client is a gbrain
  *     child process of this harness. Its credentials are forwarded and the
  *     process-wide paid-request guard (or a slot allowance) reserves each
- *     request, as before the extraction.
+ *     request, as before the extraction. A 4xx answer without usage is
+ *     metered at $0, as in lease mode.
  *   lease (the shootout cell, `policy` set): the proxy holds a lease run in
  *     its own ledger (`BudgetRun.openLease`) and enforces it itself. It strips
  *     inbound credentials and injects the real key from its own environment,
@@ -244,6 +245,8 @@ export class MeteringProxy {
     if (price) {
       let cost: ReturnType<typeof usageCost> = null;
       try { cost = (res.headers.get('content-type') ?? '').includes('event-stream') ? usageCost(price, { usage: sseUsage(text) }) : usageCost(price, JSON.parse(text)); } catch { cost = null; }
+      // A 4xx without usage (a 413, a prompt over the context window) settles at $0, as in lease mode and the paid-request guard.
+      if (!cost && res.status >= 400 && res.status < 500) cost = { usd: 0, input_tokens: 0, output_tokens: 0 };
       this.charge(key, prov, price.model, cost ? cost.usd : reservationUsd(price), !cost);
     } else this.charge(key, prov, null, 0, false);
     const out = new Headers(res.headers);
