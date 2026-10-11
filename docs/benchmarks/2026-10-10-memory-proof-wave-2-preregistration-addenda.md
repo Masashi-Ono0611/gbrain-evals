@@ -78,7 +78,7 @@ The ledger caps total $103. The A15 shadow probe's Voyage-only replay, about $1,
 
 **Rule 1 fires, so the wave pauses for Garry's decision.** On the 100 LongMemEval-S dev questions, switching the combined store's search mode from `tokenmax` to `conservative` gains 13 points. Removing the facts block, and returning its space to pages, changes the score by −1 and 0 points. This result is exploratory: step 0 ran on #6066's head, `59782b95`, with the knobs listed in its specs, and it decides scope only. No dev cell has run.
 
-The figures below come from the joint blinded re-judge of all five arms. The judge was `gemini-3.5-flash`. The re-judge matches each arm's in-cell judge, apart from three answers that moved by one point each.
+The figures below come from the joint blinded re-judge of all five arms. The judge was `gemini-3.5-flash`. The in-cell judges gave 79, 81, 81, 93 and 90 in the table's order. The re-judge moves comb up 2 and arms a and b down 1 each, so rule 1 fires on either set.
 
 | Arm | Correct | Abstentions | Delivered tokens (mean / p95) | Cell |
 |---|---:|---:|---|---|
