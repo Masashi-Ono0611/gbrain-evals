@@ -2,6 +2,25 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.77] - 2026-10-11
+
+### T0b sealed confirmation: 10x fewer end-to-end memory failures than v0.60.106.0
+
+The custodian-sealed run preregistered in T0b amendment 5 compares the shipped stack, gbrain v0.60.174.0
+(`0df9f2ee7`), with the frozen v0.60.106.0 (`7aa2caa0`) on 32 personas minted on the maintainer's Mac
+([report](docs/benchmarks/2026-10-11-t0b-sealed-confirmation.md)).
+
+- **Verdict `10x` under `t0b-score-v2`.** The stack fails 5 of 576 runs and the frozen release fails 271 (failure
+  ratio 0.020, 95% interval 0.006 to 0.045). Opus 5.5 goes from 142 to 0, Sonnet 5.5 from 124 to 5, and gpt-6.1-sol
+  from 5 to 0, near its ceiling and inconclusive on its own.
+- **Under `t0b-score-v1` the verdict is `improvement`** (273 to 13, factor 20, interval 0.019 to 0.101).
+- **Validity held.** Both mutants were detected in 144 of 144 runs, every cell was scored, and the stack stayed inside
+  the resource envelope for every reader.
+- **Cost.** The sealed ledger committed $232.01 of its $265 cap; the round stands at $370.12 of the approved $420.
+- **Records are aggregates and receipts only.** Per-cell scores, receipts, cost records, paired statistics and status
+  logs are committed under `docs/benchmarks/2026-10-08-program-primary-hard/sealed-confirmation/`. No world file,
+  seed, sealed documents, task text or transcripts are.
+
 ## [0.10.76] - 2026-10-11
 
 ### Re-pin to gbrain v0.60.169.0 (`77cf8e111`)
