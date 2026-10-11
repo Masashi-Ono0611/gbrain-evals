@@ -13,6 +13,8 @@ gbrain is **ahead** of plain files in both confirmation worlds, so the co-primar
 
 Δ_W is the mean over models of each model's gbrain rate minus its fs rate on the same 100 tasks; the interval is a task-clustered bootstrap (10,000 resamples of tasks, seed 1, all three models resampled together), as preregistered. Each world has 600 counted cells (3 models × 2 arms × 100 tasks, repeat 1), every cell has exactly one recorded attempt and it is harness-clean (the 10 cells in flight when M's first run stopped at its budget left no record and ran once in the resume), and every slot and cell record carries gbrain `3e4ff61ce1ac553581fb5c1eb905cf48541fe344`. An independent recomputation from the `results.jsonl` copies gave the same Δ_M and Δ_S and intervals, with 0 duplicate keys and 0 missing cells.
 
+**Shipped build (2026-10-11).** The confirmed build `3e4ff61ce` is gbrain #6271's branch; #6271 has since merged as gbrain v0.60.174.0 (master `0df9f2ee7`). The shipped build derives identical aliases, mention links and card identity lines to `3e4ff61ce` on M, S, the calibration world and the v1 world ([DEV-RECORD.md](DEV-RECORD.md), alias precision check), so the result applies to it.
+
 The claim this supports: on these two 50k-document worlds, with a 16-turn cap and starter-surface tools, agents using gbrain finished more hard company questions correctly than the same agents with plain files, for every model tested. It does not say the gap is the same size on other corpora or turn budgets; see the weaknesses below.
 
 ## Per model

@@ -52,7 +52,9 @@ Adding files did not help. Sonnet fell back to grep (874 grep and 788 read_file 
 
 In every development gbrain cell that made a hybrid search, reranking ran. The lower rerank counts in the guidance runs (Opus 33–36 of 50 cells, Sol 1–4 of 50) come from agents switching to keyword search, which does not rerank. One degraded notice appeared in each of two 50-cell runs. Separately, on the held-out build, reranking on vs off scored 21 vs 19 of 50 (within noise), which is now in #76's caveat.
 
-## Product changes in gbrain #6271 (branch `capy/cat40-hard-fix`, draft)
+## Product changes in gbrain #6271 (branch `capy/cat40-hard-fix`; merged 2026-10-11 as gbrain v0.60.174.0, master `0df9f2ee7`)
+
+#6271 merged as gbrain v0.60.174.0 (master `0df9f2ee7`). The shipped build derives identical aliases, mention links and card identity lines to the confirmed `3e4ff61ce` on worlds M and S, the calibration world and the v1 world (see the alias precision check below), so the confirmed result applies to it.
 
 R0 (rerank degradation reasons), R1 (`fact_withdrawn` at write time), F1 (identity excerpt, generator-independent alias grammar, sibling cards, alias fan-out), F2 (`keyword_total` and keyword paging), F3 (provenance demotion of gbrain-generated pages), F4 (date source labels), F6 (any `request_id`), sibling-page facts, label-line aliases, claim linking and the forget guard, short-code aliases (2–3 characters, declared on the entity's own page, stoplisted; credit: gbrain-evals#109), `entity names[]` and the batching guidance.
 
