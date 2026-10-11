@@ -30,6 +30,11 @@ with four amendments). The keyless runs cost $0 of provider spend and the paid N
     refuses alongside it (N6-5).
   - The operator-wave check `edit-page-diff-order` reads the `edit_page` receipt block and ignores appended notice
     blocks.
+- **A flaky harness test made deterministic.** `test_facts_extraction_and_lanes` (`eval/harness-provider/`) stores
+  one identical stub fact from five extraction windows running eight at a time. gbrain keeps the first insert, so the
+  conversation that owns the fact depended on timing. It failed on one core at both pins and in four of seven CI
+  runs on this branch. The test now extracts one window at a time with `d-a1` first, and it passes on one core at
+  both pins.
 - **Pin-following updates.** N12 renders gbrain's new `plain-role-no-time` pattern (29 of 29 formats). Four tests
   that assumed the old pin's behaviour were updated (`tool-bridge`, `pglite-snapshot`, `cat38-state-resolution`,
   `budgeted-delivery-h1`). The VM scripts for this check live in `docs/benchmarks/2026-10-11-wave14-repin/vm/`.
