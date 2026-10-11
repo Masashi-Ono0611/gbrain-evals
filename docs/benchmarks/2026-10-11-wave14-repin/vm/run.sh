@@ -31,19 +31,20 @@ for f in fence-chunk-unconfirmed fence-chunk-external context-pack-newer-pages; 
 done
 # 8. full N1 and N5: PGLite and Postgres, every interface
 PG_IMG=pgvector/pgvector:pg16
-pgstart() { docker rm -f "$1" >/dev/null 2>&1; docker run -d --name "$1" -p "127.0.0.1:$2:5432" -e POSTGRES_HOST_AUTH_METHOD=trust "$PG_IMG" >/dev/null
-  for _ in $(seq 60); do docker exec "$1" pg_isready -U postgres >/dev/null 2>&1 && break; sleep 1; done; sleep 2; }
+sudo chmod 666 /var/run/docker.sock   # the N6 runner reads the image digest with a plain docker inspect
+pgstart() { sudo docker rm -f "$1" >/dev/null 2>&1; sudo docker run -d --name "$1" -p "127.0.0.1:$2:5432" -e POSTGRES_HOST_AUTH_METHOD=trust "$PG_IMG" >/dev/null
+  for _ in $(seq 60); do sudo docker exec "$1" pg_isready -U postgres >/dev/null 2>&1 && break; sleep 1; done; sleep 2; }
 pgstart n1-pg 55432
 bun eval/runner/n1-knowledge-update.ts --engines pglite,postgres --pg-url postgres://postgres@127.0.0.1:55432/postgres --output "$OUT/n1-full" > "$OUT/n1-full.log" 2>&1; echo $? > "$OUT/n1-full.exit"
 pgstart n1-pg 55432
 bun eval/runner/n5-forget-residue.ts --engines pglite,postgres --pg-url postgres://postgres@127.0.0.1:55432/postgres --output "$OUT/n5-full" > "$OUT/n5-full.log" 2>&1; echo $? > "$OUT/n5-full.exit"
-docker rm -f n1-pg >/dev/null 2>&1
+sudo docker rm -f n1-pg >/dev/null 2>&1
 # 9. N6 on Postgres over real HTTP, the attested run and the negative control
 pgstart n6-pg 55442
 bun eval/runner/n6-postgres-http.ts --pg-url postgres://postgres@127.0.0.1:55442/postgres \
   --attest docs/benchmarks/2026-10-06-n6-postgres-http-preregistration.md --output "$OUT/n6pg" > "$OUT/n6pg.log" 2>&1; echo $? > "$OUT/n6pg.exit"
 bun eval/runner/n6-postgres-http.ts --control-remote-private-pages --only get_page,search,list_pages --output "$OUT/n6pg-control" > "$OUT/n6pg-control.log" 2>&1; echo $? > "$OUT/n6pg-control.exit"
-docker rm -f n6-pg >/dev/null 2>&1
+sudo docker rm -f n6-pg >/dev/null 2>&1
 # 10. N8 and N6 attested against their gate preregistration
 bun eval/runner/n8-proactive-recall.ts --attest docs/benchmarks/2026-10-06-n8-privacy-gate-preregistration.md --output "$OUT/n8-attest" > "$OUT/n8-attest.log" 2>&1; echo $? > "$OUT/n8-attest.exit"
 bun eval/runner/n6-visibility-fuzz.ts --attest docs/benchmarks/2026-10-06-n8-privacy-gate-preregistration.md --output "$OUT/n6-attest" > "$OUT/n6-attest.log" 2>&1; echo $? > "$OUT/n6-attest.exit"

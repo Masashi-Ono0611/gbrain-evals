@@ -214,10 +214,22 @@ export function hasSourceRow(data: unknown, source: string): boolean {
 }
 
 /** Mask target values and drop volatile keys so a protected response can be compared with its ghost. */
+/** A base64 or base64url string that decodes to a JSON object or array (an opaque cursor), parsed; else null. */
+export function decodeOpaqueJson(s: string): unknown {
+  if (s.length < 16 || !/^[A-Za-z0-9+/_-]+={0,2}$/.test(s)) return null;
+  try {
+    const parsed: unknown = JSON.parse(Buffer.from(s, s.includes('-') || s.includes('_') ? 'base64url' : 'base64').toString('utf8'));
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch { return null; }
+}
+
 export function normalizeForOracle(data: unknown, mask: readonly string[]): string {
   const needles = [...new Set(mask.filter(m => m && m.length >= 4))].sort((a, b) => b.length - a.length);
   const visit = (v: unknown): unknown => {
     if (typeof v === 'string') {
+      // An opaque cursor echoes the caller's own arguments (delta's `since_slug`); compare its decoded content, masked.
+      const decoded = decodeOpaqueJson(v);
+      if (decoded) return { '<decoded cursor>': visit(decoded) };
       let s = v;
       for (const n of needles) s = s.split(n).join('<T>');
       return s;

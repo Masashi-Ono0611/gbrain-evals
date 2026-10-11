@@ -112,3 +112,24 @@ before. The pin, README and the report name the release only if nothing regresse
 None: no paid request. The VMs are compute only.
 
 ## Amendments
+
+### 2026-10-11: two harness defects and the Postgres steps, before the second paired run
+
+The first paired run (both VMs at gbrain-evals `ca624e95`) found three problems in this repository, none in gbrain.
+Its receipts are kept under `2026-10-11-wave14-repin/run1/`. Nothing above changes. Frozen before the second run:
+
+1. **N6-4.** At `3001fd9a5`, N6 reported 60 existence-oracle probes, all on `delta`. `delta`'s `next_cursor.cursor` is
+   base64 JSON that echoes the caller's own `since_slug`, so a protected and a ghost call differed only in the slug the
+   caller sent, encoded where the target mask could not reach it. The runner now decodes such cursors and compares
+   their content masked; a cursor that differs in anything else still counts.
+2. **39-8.** At `3001fd9a5`, Cat 39 counted 4 purged claims as recovered through `query`. Each was a fact row from
+   gbrain's new query facts arm (#6066) for the page where the claim is preregistered to remain (another subject's
+   fence copy). The runner read a row's page from `slug` or `entity_slug` only, and fact rows name it in `page_slug`.
+   It now reads `page_slug` too; a fact row on a purged page still counts.
+3. Steps 8 and 9 reached no Postgres (the VM user could not reach Docker), so N1 and N5 ran their PGLite cells only
+   and N6 on Postgres did not run. `vm/run.sh` now runs Docker with `sudo`.
+
+The second run repeats steps 1 to 10 on two fresh identical `standard-16` VMs started together, one per pin, at the
+commit that carries these fixes, followed on each by `vm/cat7-repeat.sh`, the preregistered paired repeat for the
+suspected Cat 7 slowdown the first run showed (`traverse_paths_d1` at 1,000 pages, p50 1.37 to 1.78 ms, +30%). The
+second run's receipts are the counted ones; a difference between the runs is reported.
