@@ -412,3 +412,12 @@ says how many ran.
   Stack build: gbrain master at #6271's merge, `0df9f2ee77ae7bf8ee004aa222fddc3cf568ec33` (v0.60.174.0). It carries
   Candidate 1 and #6271's short-code alias rule (`f24ca6afe` is an ancestor). Gate 1 passed on it ($0 scripted smoke,
   version 2 world: baseline and push-off arms pass, both mutants fail every task).
+
+- 2026-10-11 (Pacific), custody VM and gate 3: the custody VM is `ubirun-gbra60-1791737888-050283c6` (Ubicloud `eu-central-h1`, standard-16, owner
+  `gbra60`), with gbrain checked out to hold both `7aa2caa0` and `0df9f2ee`, gbrain-evals at this branch and Bun 1.4.2.
+  The world file went from the Mac to one Capy cloud machine and then over SSH to `~/custody/world.json` (0600, in a
+  0700 directory) on the VM; the Capy copy was deleted at once. File SHA-256 `c9fe68ca…` matches on both ends; the VM
+  recomputes world digest `b113c68f…` and commitment `c1c8a0ff…`, as recorded above (gate 3 passed). The seed file
+  never left the Mac. Run-day model check: the newest frontier models are still Opus 5.5 (`claude-opus-5-5`),
+  Sonnet 5.5 (`claude-sonnet-5-5`) and gpt-6.1-sol, so the readers are unchanged; Fable does not run. Ledger on the VM:
+  `.budget/t0b-sealed-confirm.sqlite`, program cap $265.
