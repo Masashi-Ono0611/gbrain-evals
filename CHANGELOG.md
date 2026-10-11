@@ -9,7 +9,7 @@ This records what each gbrain-evals release changed and what its measurements me
 gbrain-evals installs gbrain release v0.60.169.0, master `77cf8e1116e9af67c1983adcbb3223b96f0991a5` (was `8a3eedeac`,
 v0.60.126.0, 43 first-parent merges earlier), after a preregistered keyless regression check on paired Ubicloud VMs
 ([report](docs/benchmarks/2026-10-11-wave14-repin.md), [preregistration](docs/benchmarks/2026-10-11-wave14-repin-preregistration.md)
-with three amendments). $0 of provider spend.
+with four amendments). The keyless runs cost $0 of provider spend and the paid N2 judge arm cost $7.07.
 
 - **No gbrain regression.** All 34 offline-tier categories pass at `77cf8e111`. Full N1 and N5 pass on PGLite and
   Postgres through every interface. N6 on Postgres over HTTP passes with 155 of 155 cells and 0 leaks, and N6 and N8
@@ -36,8 +36,13 @@ with three amendments). $0 of provider spend.
 - **Docs.** README, `docs/README.md`, `docs/settings.md`, `docs/comparison-systems.md`, `docs/retrieval-lessons.md`,
   `eval/README.md` and `eval/CONTRIBUTING.md` name the new pin. README moves the rows rerun here to `77cf8e111` and
   adds the features the old pin predated, each on evidence measured inside the new pin's history: memory trust
-  labels, the verbatim-quote probe, scoped vector search and the matched BEAM comparison. The N2 row keeps
-  `739e5cc`: its paid judge arm (about $10) was not rerun.
+  labels, the verbatim-quote probe, scoped vector search and the matched BEAM comparison.
+- **Paid N2 judge arm at the new pin (approved, $7.07 of a $30 cap).** The judge (`claude-haiku-4-5-20251001`, prompt
+  version 4, the same inputs to the token as the published run at `48ed5e8`) called 146 of 150 planted conflicts
+  contradictions, against 149. It flagged 0 of 40 dated changes and 4 of 51 compatible pairs (6 of 51 before), so all
+  three of the report's decision rules hold. The three lost conflicts are sampling variation (exact McNemar p =
+  0.25). README's N2 row moves to `77cf8e111` with 146 of 150. 2,774 requests went through the budget ledger, all
+  reconciled to provider usage, none refused.
 - **Recorded commits stay.** The sealed MPW (`d7467d1cf`), H1 (`8a3eedeac`), Q1 (`f05943e6`, `7aa2caa0`) and Cat 40
   runs keep the commits they recorded. The report lists every place that reads the installed pin, including the Q1
   campaign custody hash, which covers `package.json` and `bun.lock`.

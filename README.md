@@ -65,7 +65,7 @@ save, find, update and forget what it knows. The parts that matter for an agent:
 | Private pages reaching agent callers or remote callers | **0**, in process and on Postgres over real HTTP (155 of 155 cells, 5 kinds of caller); proactive recall gated in CI | `77cf8e111` | [N6 on Postgres](docs/benchmarks/2026-10-06-n6-postgres-http.md), [N8 gate](docs/benchmarks/2026-10-06-n8-privacy-gate.md), [re-pin](docs/benchmarks/2026-10-11-wave14-repin.md) |
 | An attacker's false claim from an email or a relayed tool result, adopted in a later session (Opus 5.5, Sonnet 5.5, GPT-6.1 Sol) | **1.5% to 5%** of sessions with trust labels shown, 5.1% to 10.6% with them stripped; **0 of 360** instruction-worded injections followed per model; Cats 37 to 39 pass every keyless contract at the pin | `c2f10ee8` to `5b9c814b` (shipped as `d4dc2d4d8`); keyless at `77cf8e111` | [Memory trust](docs/benchmarks/2026-10-08-memory-trust-results-paid.md), [re-pin](docs/benchmarks/2026-10-11-wave14-repin.md) |
 | Keeping speaker and time across chat export formats | **29 of 29** formats | `77cf8e111` | [N12](docs/benchmarks/2026-10-01-n12-format-fidelity.md), [re-pin](docs/benchmarks/2026-10-11-wave14-repin.md) |
-| Finding contradicting notes | **149 of 150** conflicts with the default judge model | `739e5cc` | [N2](docs/benchmarks/2026-10-01-n2-contradiction-surfacing.md) |
+| Finding contradicting notes | **146 of 150** conflicts with the default judge model (`claude-haiku-4-5`), 0 of 40 dated changes and 4 of 51 compatible pairs flagged; 149 at `48ed5e8` with the same prompt, the difference is sampling | `77cf8e111` | [N2](docs/benchmarks/2026-10-01-n2-contradiction-surfacing.md), [re-pin](docs/benchmarks/2026-10-11-wave14-repin.md#the-paid-n2-judge-arm) |
 | Contradiction judge on current models | **150 of 150** conflicts and **0 of 251** compatible pairs flagged, for each of four current models (Opus 5.5 the top Anthropic one); cheapest passing model $0.21 per 1,000 pairs | `c5fb0201` | [N2 judges](docs/benchmarks/2026-10-06-n2-judges.md) |
 | Attributing someone else's claim to the page holder (takes classifier) | **0 of 123** cases on Sonnet 5.5, GPT-6.1 Sol and Opus 5.5 (3 with Claude Haiku 4.5); the classifier is not yet graduated | `c5fb0201` | [Takes-bootstrap](docs/benchmarks/2026-10-06-takes-bootstrap-frontier.md) |
 | Real agents (Claude Code, Codex) spending or destroying data without consent | **0** violations in 66 safety sessions; 96 of 102 tasks finished | v0.60.46.0 | [Cat 41](docs/benchmarks/2026-10-03-agent-operator.md) |
@@ -290,7 +290,10 @@ Features the old pin predated now appear, each on evidence measured at a commit 
 trust labels (a capability and a results row from the paid run at `c2f10ee8` to `5b9c814b`, with Cats 37 to 39
 passing keyless at the pin), the verbatim-quote probe (`fecc7827`, 500 of 500 clean against 429), scoped vector
 search at 1M to 2M chunks (`2e84d234e`) and the matched BEAM comparison with a memory-bank server (`d7467d1cf`). The
-N2 row keeps `739e5cc`, because its paid judge arm was not rerun. The repository row names v0.10.74 (was v0.10.73).
+N2 row moves to `77cf8e111` after its paid judge arm was rerun with Garry's approval ($7.07): it reads 146 of 150
+instead of 149 of 150, with the same judge model and prompt. Three conflicts the earlier run caught were called
+changes over time, which is sampling variation at the provider's default temperature (exact McNemar p = 0.25). It
+also flags 4 of 51 compatible pairs instead of 6. The repository row names v0.10.74 (was v0.10.73).
 
 ### 2026-10-11: Repository row names v0.10.73
 
