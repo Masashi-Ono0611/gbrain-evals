@@ -232,7 +232,7 @@ before A6b use the former environment variable names. The hashes of every file A
 
 ### 2026-10-11: Re-pin to gbrain `77cf8e111`; BEAM head-to-head
 
-gbrain-evals v0.10.74. The pin named in the opening changed from `8a3eedeac` (v0.60.126.0) to `77cf8e111` (v0.60.169.0),
+gbrain-evals v0.10.75. The pin named in the opening changed from `8a3eedeac` (v0.60.126.0) to `77cf8e111` (v0.60.169.0),
 which contains the memory proof wave (gbrain #6066). A new section reports its matched, preregistered head-to-head with
 `memory-bank` on sealed BEAM ([re-pin report](benchmarks/2026-10-11-wave14-repin.md)); the page had no BEAM comparison.
 

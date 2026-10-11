@@ -154,7 +154,7 @@ reproducible matrix used here.
 
 ### 2026-10-11: Installed pin moves to `77cf8e111`
 
-gbrain-evals v0.10.74. The installed gbrain commit changed from `8a3eedeac` (v0.60.126.0) to `77cf8e111` (v0.60.169.0),
+gbrain-evals v0.10.75. The installed gbrain commit changed from `8a3eedeac` (v0.60.126.0) to `77cf8e111` (v0.60.169.0),
 the release after wave 14 ([re-pin report](benchmarks/2026-10-11-wave14-repin.md)).
 `src/core/search/mode.ts` is identical at both commits, so the mode-definition note stands with the new end commit. The
 opening now notes the query facts arm (`search.query_facts_arm`, on by default since v0.60.164.0), which no

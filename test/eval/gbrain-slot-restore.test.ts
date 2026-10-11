@@ -26,6 +26,12 @@ describe('refreshProviderBaseUrls (restored slots rerank through the live proxy)
     expect(refreshProviderBaseUrls(none, 'http://127.0.0.1:41000/s1/voyage/v1')).toBe(false);
     expect(read(none)).toEqual({ engine: 'pglite' });
   });
+  test('every start also sets the advertised MCP surface when one is given', () => {
+    const h = home({ provider_base_urls: { voyage: 'http://127.0.0.1:41000/s1/voyage/v1' }, mcp: { other: 1 } });
+    expect(refreshProviderBaseUrls(h, 'http://127.0.0.1:41000/s1/voyage/v1', 'starter')).toBe(true);
+    expect(read(h)).toEqual({ provider_base_urls: { voyage: 'http://127.0.0.1:41000/s1/voyage/v1' }, mcp: { other: 1, advertised_surface: 'starter' } });
+    expect(refreshProviderBaseUrls(h, 'http://127.0.0.1:41000/s1/voyage/v1', 'starter')).toBe(false);
+  });
   test('a home without a config is a no-op', () => {
     expect(refreshProviderBaseUrls(mkdtempSync(join(tmpdir(), 'slot-home-')), 'http://127.0.0.1:1/v1')).toBe(false);
   });
