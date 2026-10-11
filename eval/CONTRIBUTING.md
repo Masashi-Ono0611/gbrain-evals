@@ -2,7 +2,7 @@
 
 Useful contributions make it easier to tell when gbrain helps. You can contribute naturally worded questions, a competing search implementation, or a reproduction of a published result.
 
-Work from the repository root. Install with `bun install --frozen-lockfile`, and run `bun run test` for the tests under `test/eval/` and `eval/`, the Python tests and the validators. The gbrain under test is the one `package.json` declares, master `739e5cc` (v0.60.46.0); a category scores what gbrain implements at that commit. Model-comparison runs follow the model rules in [CLAUDE.md](../CLAUDE.md#choose-models). Everything above [Changelog](#changelog) is current.
+Work from the repository root. Install with `bun install --frozen-lockfile`, and run `bun run test` for the tests under `test/eval/` and `eval/`, the Python tests and the validators. The gbrain under test is the one `package.json` declares, master `77cf8e111` (v0.60.169.0); a category scores what gbrain implements at that commit. Model-comparison runs follow the model rules in [CLAUDE.md](../CLAUDE.md#choose-models). Everything above [Changelog](#changelog) is current.
 
 ## Write questions in your own words
 
@@ -101,6 +101,11 @@ See [CREDITS.md](CREDITS.md) for attribution. Contributions to external question
 
 How this page changed, newest first. Measurement history lives in the dated reports and in
 [CHANGELOG.md](../CHANGELOG.md).
+
+### 2026-10-11: The opening names the current pin
+
+gbrain-evals v0.10.76. The gbrain under test is named as master `77cf8e111` (v0.60.169.0). The page still named
+`739e5cc` (v0.60.46.0), the pin until October 6 ([re-pin report](../docs/benchmarks/2026-10-11-wave14-repin.md)).
 
 ### 2026-10-05: Restructured as a current-state page with this changelog
 

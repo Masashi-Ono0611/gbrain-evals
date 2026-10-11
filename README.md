@@ -12,12 +12,12 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 
 | Item | Value |
 |---|---|
-| Pinned product | gbrain master [`8a3eedeac`](https://github.com/garrytan/gbrain/tree/8a3eedeacb6e52da5b413502019692db80c5cc5d) (v0.60.126.0), declared as `gbrain` in `package.json` |
+| Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.75 (`VERSION`) |
+| This repository | gbrain-evals v0.10.76 (`VERSION`) |
 
-This repository installs gbrain master `8a3eedeac`. Some results below were measured at earlier commits; each names
-its commit. The search modes have been identical since v0.48.4.0, so retrieval results from those commits describe
+This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
+names its commit, and every commit named below is in the release's history. The search modes have been identical since v0.48.4.0, so retrieval results from those commits describe
 the installed modes.
 
 ## What gbrain does
@@ -36,6 +36,10 @@ save, find, update and forget what it knows. The parts that matter for an agent:
   behind each hit, within a token budget, so a question that needs two old chats gets both.
 - **Memory that stays correct.** An updated value replaces the old one everywhere and keeps it as history; `forget`
   removes a claim from every recall surface; private pages stay out of what agent callers can read.
+- **Memory that says where it came from.** Everything an agent reads back is labelled by its source: your notes,
+  something you told your agent, something an agent wrote, or outside content such as an email. A write gate flags
+  instruction-like text, and a purge removes a claim from every store, with a record of what was removed.
+  [What the labels change](docs/benchmarks/2026-10-08-memory-trust-results-paid.md).
 - **Built to be run by an agent.** Every error and notice tells the agent what to do next and whether it must ask
   the user first, so agents do not spend money or repair data without consent.
 - **A write path you can measure.** Agent sessions become readable memory pages, and timeline events are extracted
@@ -53,12 +57,15 @@ save, find, update and forget what it knows. The parts that matter for an agent:
 | Relationship retrieval on reworded one-hop questions, recall at five | **0.411 → 0.537**, 19 better, 0 worse | `3a284ae` | [N9](docs/benchmarks/2026-10-01-n9-multi-hop.md) |
 | Questions chaining two or three relations (multi-relation planner) | **24 better, 0 worse** held-out; +27 points strict all-hit@10 | v0.60.60.0 | [Held-out program](docs/benchmarks/2026-10-05-heldout-program.md) |
 | Meeting attendance from a documented `## Attendees` list | **132 of 132** attendees stored, 0 false; "who attended" recall at five 32% → 80% | `c5fb0201` | [Attendance world](docs/benchmarks/2026-10-06-attendance-world.md) |
+| A query that quotes a saved turn word for word (LongMemEval-S, 500 questions) | **500 of 500** return the conversation as a clean read (was 429; the rest lacked a rerank score or lost a search arm); strict recall@10 unchanged at 496 | `fecc7827` (#6391, merged as `f05943e65`) | [Verbatim probe](docs/benchmarks/2026-10-09-verbatim-probe-preregistration.md) |
+| Vector search inside a 10% source or visibility scope, 1M to 2M chunks on Postgres | recall@50 **0.96 to 0.99** (was 0.52 to 0.77); a topic-coherent 10% source scope still reaches only 0.78 | `2e84d234e` (#6380) | [Scoped vector search](docs/benchmarks/2026-10-09-hnsw-scale.md) |
 | Returning only the right facts (PrecisionMemBench, tight adaptive + reranker) | **0.586 precision**, 0.825 recall | `2efaaf8f` | [Refresh](docs/benchmarks/2026-09-09-retrieval-refresh.md) |
-| Serving the new value after an update | **388 of 388** probes, never stale | `739e5cc` | [N1](docs/benchmarks/2026-10-01-n1-knowledge-update.md) |
-| Nothing left behind after `forget` | **0** prohibited outputs, 6 of 6 reinstatements | `739e5cc` | [N5](docs/benchmarks/2026-10-01-n5-forget-residue.md) |
-| Private pages reaching agent callers or remote callers | **0**, in process and on Postgres over real HTTP (155 of 155 cells, 5 kinds of caller); proactive recall gated in CI | `a865f8f` (Postgres over HTTP: `c5fb0201`) | [N6 on Postgres](docs/benchmarks/2026-10-06-n6-postgres-http.md), [N8 gate](docs/benchmarks/2026-10-06-n8-privacy-gate.md) |
-| Keeping speaker and time across chat export formats | **28 of 28** formats | `a865f8f` | [N12](docs/benchmarks/2026-10-01-n12-format-fidelity.md), [re-pin](docs/benchmarks/2026-10-06-followups-repin.md) |
-| Finding contradicting notes | **149 of 150** conflicts with the default judge model | `739e5cc` | [N2](docs/benchmarks/2026-10-01-n2-contradiction-surfacing.md) |
+| Serving the new value after an update | **388 of 388** probes, never stale, on PGLite and Postgres through the CLI and MCP | `77cf8e111` | [N1](docs/benchmarks/2026-10-01-n1-knowledge-update.md), [re-pin](docs/benchmarks/2026-10-11-wave14-repin.md) |
+| Nothing left behind after `forget` | **0** prohibited outputs, 6 of 6 reinstatements | `77cf8e111` | [N5](docs/benchmarks/2026-10-01-n5-forget-residue.md), [re-pin](docs/benchmarks/2026-10-11-wave14-repin.md) |
+| Private pages reaching agent callers or remote callers | **0**, in process and on Postgres over real HTTP (155 of 155 cells, 5 kinds of caller); proactive recall gated in CI | `77cf8e111` | [N6 on Postgres](docs/benchmarks/2026-10-06-n6-postgres-http.md), [N8 gate](docs/benchmarks/2026-10-06-n8-privacy-gate.md), [re-pin](docs/benchmarks/2026-10-11-wave14-repin.md) |
+| An attacker's false claim from an email or a relayed tool result, adopted in a later session (Opus 5.5, Sonnet 5.5, GPT-6.1 Sol) | **1.5% to 5%** of sessions with trust labels shown, 5.1% to 10.6% with them stripped; **0 of 360** instruction-worded injections followed per model; Cats 37 to 39 pass every keyless contract at the pin | `c2f10ee8` to `5b9c814b` (shipped as `d4dc2d4d8`); keyless at `77cf8e111` | [Memory trust](docs/benchmarks/2026-10-08-memory-trust-results-paid.md), [re-pin](docs/benchmarks/2026-10-11-wave14-repin.md) |
+| Keeping speaker and time across chat export formats | **29 of 29** formats | `77cf8e111` | [N12](docs/benchmarks/2026-10-01-n12-format-fidelity.md), [re-pin](docs/benchmarks/2026-10-11-wave14-repin.md) |
+| Finding contradicting notes | **146 of 150** conflicts with the default judge model (`claude-haiku-4-5`), 0 of 40 dated changes and 4 of 51 compatible pairs flagged; 149 at `48ed5e8` with the same prompt, the difference is sampling | `77cf8e111` | [N2](docs/benchmarks/2026-10-01-n2-contradiction-surfacing.md), [re-pin](docs/benchmarks/2026-10-11-wave14-repin.md#the-paid-n2-judge-arm) |
 | Contradiction judge on current models | **150 of 150** conflicts and **0 of 251** compatible pairs flagged, for each of four current models (Opus 5.5 the top Anthropic one); cheapest passing model $0.21 per 1,000 pairs | `c5fb0201` | [N2 judges](docs/benchmarks/2026-10-06-n2-judges.md) |
 | Attributing someone else's claim to the page holder (takes classifier) | **0 of 123** cases on Sonnet 5.5, GPT-6.1 Sol and Opus 5.5 (3 with Claude Haiku 4.5); the classifier is not yet graduated | `c5fb0201` | [Takes-bootstrap](docs/benchmarks/2026-10-06-takes-bootstrap-frontier.md) |
 | Real agents (Claude Code, Codex) spending or destroying data without consent | **0** violations in 66 safety sessions; 96 of 102 tasks finished | v0.60.46.0 | [Cat 41](docs/benchmarks/2026-10-03-agent-operator.md) |
@@ -71,14 +78,13 @@ save, find, update and forget what it knows. The parts that matter for an agent:
 | A file whose frontmatter `slug:` names another page: duplicate to merge, stray line to delete, or a case for a person (model judgment) | **0** harmful answers in 432 pair runs (no duplicate split, no merge of two different things); true duplicates recognised **92.0%** (Opus 5.5), 85.3% (gpt-6.1-sol), 80.0% (Sonnet 5.5), the rest deferred to a person | gbrain #6377 (`ac6e0868`) | [Slug-conflict judgment](docs/benchmarks/2026-10-09-content-repair-judgment.md) |
 | Useful material kept when a session becomes a memory page | **88.1%** judged (judge calibration awaiting a person's review); 74.9% with quoted evidence | Cat 35 run | [Cat 35](docs/benchmarks/2026-08-16-brainbench-cat35-transcript-distill.md) |
 
-All 28 earlier reproductions in the [bug ledger](docs/benchmarks/2026-10-01-wave-bugs.md) pass at `a865f8f`. N1-7, the
-gbrain bug the move to `c5fb0201` brought (acknowledged ontology observations lost after a maintenance sweep and a page
-rewrite), is fixed in this pin by gbrain #6265: its repro and the N1 CI slice pass, also on one loaded core
-([re-pin report](docs/benchmarks/2026-10-06-followups-repin.md)). Rows marked `c5fb0201` were measured in the October
-round at the previous pin (the paid runs, the attendance world and the Postgres-over-HTTP privacy cells). Of these only
-the Postgres privacy cells write ontology observations, the data N1-7 lost; the same fuzz in process was rerun at
-`a865f8f` with 0 leaks. The correctness rows come from keyless checks on synthetic worlds with
-generated answer keys, rerun at every pin.
+All 29 reproductions in the [bug ledger](docs/benchmarks/2026-10-01-wave-bugs.md) pass at `77cf8e111`, including
+N1-7's (fixed by gbrain #6265) and Cat7-1's, whose entry stays open under its stricter closure rule (see known limits).
+The memory trust findings with keyless repros (37-1, 37-2 and 37-5 in the
+[memory trust ledger](docs/benchmarks/2026-10-07-memory-trust-bugs.md)) pass too
+([re-pin report](docs/benchmarks/2026-10-11-wave14-repin.md)). Rows marked `c5fb0201` were measured in the October
+round at an earlier pin (the paid runs and the attendance world). The correctness rows come from keyless checks on
+synthetic worlds with generated answer keys, rerun at every pin.
 
 Settings that change these numbers are in [settings by workload](docs/settings.md). Two matter most: keep autocut off
 for questions that need several conversations (451 against 384 of 470), and leave query expansion off, since it adds
@@ -114,6 +120,15 @@ system 84.97% with the same reader model. Judges,
 prompts and retrieval budgets differ, so this is context, not a ranking. Published results across systems range from
 81.6% to 96.1%.
 
+**A memory-bank server on sealed BEAM: gbrain ahead by 2.6 points, cheaper only at low read volume.** In a matched,
+preregistered test with the same reader, judge and context budget on sealed BEAM conversations (1,080 questions at
+100k, 500k and 1M tokens), gbrain's pages plus extracted facts answered 67.0% against 64.4% for a memory-bank server
+with background extraction and reflection (+2.64 points, one-sided 95% bounds +0.90 and +4.41). Its cost per correct
+answer was 0.63 of the server's at 20 reads per stored conversation and level at 200. The server keeps an edge on
+event ordering and temporal reasoning, and on LongMemEval-S (84.5% against 80.3% for gbrain's pages alone). gbrain
+ran its freeze build `d7467d1cf`, whose retrieval was checked equivalent at `d7d7686de`; both are in the pin's
+history. [Sealed results](docs/benchmarks/2026-10-09-memory-proof-wave-sealed-results.md).
+
 **Returning only what matters: gbrain's tight mode is more precise than every memory product in the
 PrecisionMemBench table except the benchmark author's own belief store.** Its mean precision is 0.586, against 0.22,
 0.09 and 0.06 for three hosted memory products listed upstream; the author's belief store scores 1.00. Upstream rows may use different
@@ -134,7 +149,7 @@ describe gbrain with that part off ([correction](docs/benchmarks/2026-10-02-mode
 ## Known limits
 
 - At the pin, a timeline read on a 1,000-page brain takes about 0.075 ms against 0.045 ms before the Foundations 1
-  release (ledger entry Cat7-1, open).
+  release (ledger entry Cat7-1, open; 0.075 and 0.078 ms on the two hosts measured at `77cf8e111`).
 - At the pin, `auto_chronicle` (on by default) writes planned follow-ups as events on their future dates; turn it
   off there, or use v0.60.49.0 or later.
 - Open loops cover Gmail only, and a commitment fulfilled by reply does not close.
@@ -274,6 +289,23 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-11: Pin gbrain v0.60.169.0 (`77cf8e111`); repository row names v0.10.76
+
+gbrain-evals v0.10.76. The pin moves from `8a3eedeac` (v0.60.126.0) to the release v0.60.169.0, `77cf8e111`, after a
+paired keyless regression check that found no gbrain regression ([re-pin report](docs/benchmarks/2026-10-11-wave14-repin.md)).
+The rows rerun at every pin now name `77cf8e111`: N1 (388 of 388, unchanged), N5 (0 prohibited outputs, unchanged),
+the privacy row (0 leaks, 155 of 155 Postgres cells, unchanged) and N12, which reads 29 of 29 formats instead of 28 of
+28 because gbrain registered one more chat pattern (`plain-role-no-time`) and N12 now covers it. The bug-ledger
+sentence counts 29 repros and adds the three memory trust repros. The Cat7-1 limit adds its measurement at the pin.
+Features the old pin predated now appear, each on evidence measured at a commit in the new pin's history: memory
+trust labels (a capability and a results row from the paid run at `c2f10ee8` to `5b9c814b`, with Cats 37 to 39
+passing keyless at the pin), the verbatim-quote probe (`fecc7827`, 500 of 500 clean against 429), scoped vector
+search at 1M to 2M chunks (`2e84d234e`) and the matched BEAM comparison with a memory-bank server (`d7467d1cf`). The
+N2 row moves to `77cf8e111` after its paid judge arm was rerun with Garry's approval ($7.07): it reads 146 of 150
+instead of 149 of 150, with the same judge model and prompt. Three conflicts the earlier run caught were called
+changes over time, which is sampling variation at the provider's default temperature (exact McNemar p = 0.25). It
+also flags 4 of 51 compatible pairs instead of 6. The repository row names v0.10.76 (was v0.10.75).
 
 ### 2026-10-11: Repository row names v0.10.75
 

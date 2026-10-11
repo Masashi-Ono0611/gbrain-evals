@@ -2,6 +2,56 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.76] - 2026-10-11
+
+### Re-pin to gbrain v0.60.169.0 (`77cf8e111`)
+
+gbrain-evals installs gbrain release v0.60.169.0, master `77cf8e1116e9af67c1983adcbb3223b96f0991a5` (was `8a3eedeac`,
+v0.60.126.0, 43 first-parent merges earlier), after a preregistered keyless regression check on paired Ubicloud VMs
+([report](docs/benchmarks/2026-10-11-wave14-repin.md), [preregistration](docs/benchmarks/2026-10-11-wave14-repin-preregistration.md)
+with four amendments). The keyless runs cost $0 of provider spend and the paid N2 judge arm cost $7.07.
+
+- **No gbrain regression.** All 34 offline-tier categories pass at `77cf8e111`. Full N1 and N5 pass on PGLite and
+  Postgres through every interface. N6 on Postgres over HTTP passes with 155 of 155 cells and 0 leaks, and N6 and N8
+  pass attested. Every ledger repro, every preregistered check and the memory trust repros 37-1, 37-2 and 37-5 pass.
+- **Memory trust gates.** `eval/registry.ts` drops the hold on Cats 37 to 39. They fail at `8a3eedeac`, which
+  predates the feature, and pass every keyless contract at `77cf8e111`.
+- **The counted pair's two rule breaks were not gbrain.** N6 on Postgres lost `recall` coverage at the new pin (153
+  of 155) through harness defect N6-5. Cat 7 ran 1.3 to 2.7 times slower on every operation, `putPage` included,
+  because of the after VM's host. Two fresh hosts each running both pins (amendment 3) show N6 complete at both pins,
+  no Cat 7 operation more than 25% slower on both hosts, and the Cat7-1 repro passing at both pins. Cat7-1 stays
+  open: `get_timeline` p50 at 1,000 pages is 0.075 to 0.078 ms against the 0.056 ms closure bar. `traverse_paths_d1`
+  at 1,000 pages ran 20% to 30% slower in three pairings; it is below the confirmed-regression rule and recorded as
+  the operation to watch.
+- **Four harness fixes, each with a test, none changing a result at the old pin.**
+  - N6 decodes `delta`'s base64 cursors before masking them (N6-4).
+  - Cat 39 reads a fact row's page from `page_slug` (39-8, found when #6066's query facts arm returned fact rows).
+  - N6 gives an optional `question` its own variant without `include_expired` and `supersessions`, which `recall`
+    refuses alongside it (N6-5).
+  - The operator-wave check `edit-page-diff-order` reads the `edit_page` receipt block and ignores appended notice
+    blocks.
+- **A flaky harness test made deterministic.** `test_facts_extraction_and_lanes` (`eval/harness-provider/`) stores
+  one identical stub fact from five extraction windows running eight at a time. gbrain keeps the first insert, so the
+  conversation that owns the fact depended on timing. It failed on one core at both pins and in four of seven CI
+  runs on this branch. The test now extracts one window at a time with `d-a1` first, and it passes on one core at
+  both pins.
+- **Pin-following updates.** N12 renders gbrain's new `plain-role-no-time` pattern (29 of 29 formats). Four tests
+  that assumed the old pin's behaviour were updated (`tool-bridge`, `pglite-snapshot`, `cat38-state-resolution`,
+  `budgeted-delivery-h1`). The VM scripts for this check live in `docs/benchmarks/2026-10-11-wave14-repin/vm/`.
+- **Docs.** README, `docs/README.md`, `docs/settings.md`, `docs/comparison-systems.md`, `docs/retrieval-lessons.md`,
+  `eval/README.md` and `eval/CONTRIBUTING.md` name the new pin. README moves the rows rerun here to `77cf8e111` and
+  adds the features the old pin predated, each on evidence measured inside the new pin's history: memory trust
+  labels, the verbatim-quote probe, scoped vector search and the matched BEAM comparison.
+- **Paid N2 judge arm at the new pin (approved, $7.07 of a $30 cap).** The judge (`claude-haiku-4-5-20251001`, prompt
+  version 4, the same inputs to the token as the published run at `48ed5e8`) called 146 of 150 planted conflicts
+  contradictions, against 149. It flagged 0 of 40 dated changes and 4 of 51 compatible pairs (6 of 51 before), so all
+  three of the report's decision rules hold. The three lost conflicts are sampling variation (exact McNemar p =
+  0.25). README's N2 row moves to `77cf8e111` with 146 of 150. 2,774 requests went through the budget ledger, all
+  reconciled to provider usage, none refused.
+- **Recorded commits stay.** The sealed MPW (`d7467d1cf`), H1 (`8a3eedeac`), Q1 (`f05943e6`, `7aa2caa0`) and Cat 40
+  runs keep the commits they recorded. The report lists every place that reads the installed pin, including the Q1
+  campaign custody hash, which covers `package.json` and `bun.lock`.
+
 ## [0.10.75] - 2026-10-11
 
 ### Cat 40 Hard fix wave: plan, development record, preregistration and results
