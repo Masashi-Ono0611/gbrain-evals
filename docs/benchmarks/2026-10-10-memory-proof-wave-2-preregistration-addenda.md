@@ -157,3 +157,46 @@ The step-0 VM is destroyed and recorded in `VMS.md`.
 The intervals are paired bootstrap 95% intervals over questions, 9,999 draws, seed `20261010`. Results are broken out by question type, with multi-session and temporal reasoning first. Nothing here is a gate.
 
 **Budget.** The cells run on their own ledger, capped at $23: the store about $9.50, plus eight reads at about $1.30. The re-judge is capped at $2.50. Both come out of the dev release. Ledgers are mirrored to the integrator's primary machine with SHA-256 checked, and the VM is recorded in `iso/VMS.md` and destroyed afterwards.
+
+## Isolation finding, and a two-way `tokenBudget` test (October 11, 2026)
+
+**Finding.** None of the five tokenmax components accounts for the mode gap when it is switched off on its own. The default that does is a sixth one, which the isolation did not switch: the mode bundle's `tokenBudget`, which is 4,000 in `conservative` and unset in `tokenmax`. The in-cell judge (`gemini-3.5-flash`, complete on all 900 answers) gives these scores on the isolation store. The comparisons are paired 95% intervals against `b`.
+
+| Arm | Correct | Change vs `b` | Multi-session (22) | Temporal reasoning (27) |
+|---|---:|---|---:|---:|
+| `b` tokenmax | 83 | — | 11 | 22 |
+| `d` conservative | 91 | +8 (0 to +16) | 19 | 22 |
+| `comb` | 82 | −1 (−4 to +2) | 12 | 21 |
+| `t-rerank-off` | 82 | −1 (−3 to 0) | 11 | 22 |
+| `t-limit-10` | 83 | 0 (−3 to +3) | 11 | 22 |
+| `t-relational-off` | 83 | 0 | 11 | 22 |
+| `t-graph-off` | 83 | 0 | 11 | 22 |
+| `t-cr-none` | 84 | +1 (0 to +3) | 12 | 22 |
+| `c-rerank-on` | 87 | +4 (−1 to +10) | 15 | 22 |
+
+**Mechanism, from the code at `8d4f6ab6e` and the retrieval receipts.**
+
+- The harness asks for `return_unit: "page"`. With an evidence plan like that, `query` does not pass the call's `token_budget` down to ranking (`src/core/ops/search.ts:981`: `tokenBudget: !plan && … ? p.token_budget : undefined`). The call's budget applies only later, when pages are packed for delivery.
+- So ranking cuts its hits to the mode's own `tokenBudget` (`src/core/search/hybrid/rank.ts:487`, `enforceTokenBudget(sliced, resolvedMode.tokenBudget)`). That cut decides how many pages reach delivery.
+- Under `conservative`, the cut is 4,000 tokens of hits, and 8.4 pages per question reach delivery on average. Each page is delivered whole within the 8,100-token budget; one session ran to 19,199 characters.
+- Under `tokenmax`, nothing is cut, and 47.6 pages per question compete for the same 8,100 tokens. About 16 are delivered as fragments of roughly 600 tokens each, and 31.6 are dropped.
+- So `tokenmax` gives the answer model slivers of many sessions instead of whole sessions. Multi-session questions lose the most: 11 against 19 of 22.
+- The receipts agree on every arm. `d` and `c-rerank-on` deliver 8.4 and 8.2 pages per question. `b` and every tokenmax single-flip arm deliver 47.6 candidates.
+- The harness sends `limit: 50` on every call, so `search.searchLimit` cannot change the candidate count. That is why `t-limit-10` was a no-op.
+- Graph signals, relational retrieval and the contextual-retrieval read knob leave 85 to 92 of 100 contexts identical to `b`. A known no-op (`t-cr-none`) leaves 86, so those three are within noise. Turning the reranker off changes all 100 contexts but not the score.
+- Within `conservative`, adding the reranker changes which 8 pages survive the cut and costs about 4 points: `c-rerank-on` −4 against `d`, interval −10 to +2.
+
+**Two-way test (Garry, through the integrator, October 11).** The claim is tested in both directions on one rebuilt store of the same identity, `gbrain-longmemeval-s-e1c9dfc782e7`, at `8d4f6ab6e`.
+
+| Arm | Mode | Change | Expected |
+|---|---|---|---|
+| `b` | `tokenmax` | none (builds the store) | reference |
+| `d` | `conservative` | none | reference |
+| `t-tb-4000` | `tokenmax` | `search.tokenBudget: 4000` | recovers toward `d` |
+| `c-tb-unset` | `conservative` | `search.tokenBudget: 10000000` | falls toward `b` |
+
+`search.tokenBudget` accepts only a positive integer. So "unset" is a budget that no ranked list reaches, which matches `tokenmax`'s undefined budget.
+
+The four arms get their own joint blinded re-judge. The scope is LongMemEval-S dev only, and the result is exploratory. The cells run on their own ledger, capped at $16: the store about $11, plus three reads at about $1.30. The re-judge cap is $2.00, sized for the $0.59 per-call reservation; its actual spend is about $1.10. Specs are in `cells/mpw2/iso2/`, written by `mpw2-iso-specs.py`. Ledgers are mirrored, and the VM is recorded in `iso2/VMS.md` and destroyed afterwards.
+
+**Isolation re-judge cap.** The isolation's joint re-judge refused 107 of its 900 answers at $1.91 committed of its $2.50 cap. Each judge call reserves a worst case of $0.59, against an actual cost of about $0.003. With Garry's approval, the cap was raised to $3.00 for reservation headroom only. The reason is recorded in that ledger's cap change. Actual spend stays near $2.21.

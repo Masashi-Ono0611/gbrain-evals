@@ -28,13 +28,28 @@ ARMS = {
 }
 CAP_USD = 23
 
-if __name__ == "__main__":
-    OUT.mkdir(parents=True, exist_ok=True)
-    for i, (arm, (mode, flips)) in enumerate(ARMS.items()):
+# The two-way tokenBudget test (2026-10-11 addendum), on a rebuilt store of the same identity. `search.tokenBudget`
+# accepts only a positive integer, so "unset" is a budget no ranked list reaches.
+ARMS2 = {
+    "b": ("tokenmax", {}),
+    "d": ("conservative", {}),
+    "t-tb-4000": ("tokenmax", {"search.tokenBudget": "4000"}),
+    "c-tb-unset": ("conservative", {"search.tokenBudget": "10000000"}),
+}
+CAP2_USD = 16
+
+def write(out: Path, prefix: str, arms: dict, cap: int, label: str) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    for i, (arm, (mode, flips)) in enumerate(arms.items()):
         spec = dev["spec"]("lme", "v1" if arm == "comb" else "filler")
         pc = spec["provider_config"]
         pc["search_config"] = {**dev["read_knobs"](mode), **flips}
         spec["budget_usd"] = 12 if i == 0 else 2
-        spec["note"] = f"memory proof wave 2 mode isolation (exploratory), arm {arm}: see the 2026-10-11 addendum"
-        (OUT / f"lme-iso-{arm}.json").write_text(json.dumps(spec, indent=1) + "\n")
-    (OUT / "order.json").write_text(json.dumps({"cap_usd": CAP_USD, "order": list(ARMS)}, indent=1) + "\n")
+        spec["note"] = f"memory proof wave 2 {label} (exploratory), arm {arm}: see the 2026-10-11 addendum"
+        (out / f"{prefix}-{arm}.json").write_text(json.dumps(spec, indent=1) + "\n")
+    (out / "order.json").write_text(json.dumps({"cap_usd": cap, "order": list(arms)}, indent=1) + "\n")
+
+
+if __name__ == "__main__":
+    write(OUT, "lme-iso", ARMS, CAP_USD, "mode isolation")
+    write(HERE / "cells/mpw2/iso2", "lme-tb", ARMS2, CAP2_USD, "tokenBudget two-way test")
