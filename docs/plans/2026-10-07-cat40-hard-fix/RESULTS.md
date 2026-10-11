@@ -1,6 +1,6 @@
 # Cat 40 Hard fix wave: confirmation results
 
-Written 2026-10-11, after every counted cell of the confirmation in [PREREG.md](PREREG.md) finished. PREREG.md is unchanged; this file reports what it preregistered, in its wording. Development results ([DEV-RECORD.md](DEV-RECORD.md)) are not pooled with these.
+Written 2026-10-11, after every counted cell of the confirmation in [PREREG.md](PREREG.md) finished. PREREG.md is unchanged; this file reports what it preregistered, in its wording. Development results ([DEV-RECORD.md](DEV-RECORD.md)) are not pooled with these. The published report is gbrain-evals #76, `docs/benchmarks/2026-10-10-model-ladder-hard-confirmation.md`.
 
 ## Verdict
 
@@ -46,7 +46,7 @@ Successes out of 60 (20 tasks × 3 models).
 - **S's H1 is at the floor on both arms**: 4 of 60 with gbrain and 0 of 60 with fs, although the oracle answered all 60 H1 cells correctly. The H1 tasks are answerable from their evidence, but neither arm finds the full member set within 16 turns (53 of 60 gbrain H1 cells and 47 of 60 fs H1 cells hit the turn cap; 12 fs H1 cells overflowed the context). S's H1 result says almost nothing about either arm.
 - **fs suffers more from corpus size at the fixed 16-turn cap.** On S, fs had 22 context overflows (Sonnet 8, Opus 14) and one provider 413 "request too large", against 0 for gbrain, and 116 turn-cap stops against 80. The S corpus is about 21% larger than M's. Part of gbrain's larger lead on S comes from fs running out of turns or context rather than from fs reading the wrong documents; a larger turn cap would probably narrow the gap. The preregistration fixed the cap at 16 for both arms.
 - **gbrain gives more wrong answers.** It submits more often and is more often confidently wrong: 22 of 300 cells on M (fs 14) and 16 of 300 on S (fs 2). Most of these are Sonnet (15 on M, 13 on S). fs fails mostly by not answering in time.
-- **Sonnet's gain is the smallest** (+9 on M, +6 on S), and Sonnet hits gbrain's turn cap 40 times on S.
+- **Sonnet's gain is the smallest** (+9 on M, +6 on S), and Sonnet hits gbrain's turn cap 40 times on S. Per model, only Sol (both worlds) and Opus (S) have intervals above 0 on their own: Sonnet [−2, +20] on M and [−4, +16] on S, Opus [−2, +15] on M (`holdout_stats.py --hard-headline`); the pooled Δ is the preregistered endpoint.
 
 ## Secondary measures
 
@@ -100,10 +100,10 @@ Per the plan: the share of account-cells (H2–H4, the first four accounts of ea
 |---|---|---|---|---|---|---|
 | M | gbrain | 100% | 93% | 624 | 180/180 | 4, 5 |
 | M | fs | 99% | 98% | 624 | 180/180 | 5, 7 |
-| S | gbrain | pending | | | | |
-| S | fs | pending | | | | |
+| S | gbrain | 82% | 69% | 651 | 180/180 | 2, 5 |
+| S | fs | 77% | 73% | 651 | 176/180 | 3, 6 |
 
-M's world was regenerated from its seed for this count (digest `6f08629e…` and file SHA-256 `99c53db0…`, equal to the recorded values). S's DX measures need the sealed world, which stays on Garry's Mac; they are computed there with the same script, which prints counts only, and added here when that machine is next online. With gbrain the agent reaches its first alias query about one call sooner than with fs, while fs queries the nickname a little more often (98% vs 93%).
+M's world was regenerated from its seed for this count (digest `6f08629e…` and file SHA-256 `99c53db0…`, equal to the recorded values). S's were computed on Garry's Mac, where the sealed world stays, with the same script; only these counts left it. With gbrain the agent reaches its first alias query about one call sooner than with fs in both worlds. On M both arms see nearly every nickname and fs queries it a little more often (98% vs 93%); on S the sealed wording hides nicknames from both arms more often, gbrain sees more of them (82% vs 77%) and fs queries a little more of those it sees (73% vs 69%).
 
 ## Gates and oracle
 
