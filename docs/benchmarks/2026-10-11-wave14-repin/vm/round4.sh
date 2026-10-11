@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Amendment 3 (preregistration): on one VM, steps 9 and 10 at both pins with the N6-5 fix, then Cat 7 and the
+# Amendment 3 (preregistration): on one VM, steps 9 and 10 and the operator-wave checks at both pins with the N6-5
+# and E2 fixes, then Cat 7 and the
 # Cat7-1 repro interleaved between the pins on the same host. Run from the after checkout with the before
 # checkout's path as $1; both are this tree and differ only in package.json and bun.lock. Output goes to ~/out.
 set -u
@@ -23,6 +24,7 @@ for side in before after; do
   sudo docker rm -f n6-pg >/dev/null 2>&1
   bun eval/runner/n8-proactive-recall.ts --attest docs/benchmarks/2026-10-06-n8-privacy-gate-preregistration.md --output "$OUT/n8-attest" > "$OUT/n8-attest.log" 2>&1; echo $? > "$OUT/n8-attest.exit"
   bun eval/runner/n6-visibility-fuzz.ts --attest docs/benchmarks/2026-10-06-n8-privacy-gate-preregistration.md --output "$OUT/n6-attest" > "$OUT/n6-attest.log" 2>&1; echo $? > "$OUT/n6-attest.exit"
+  bun docs/benchmarks/2026-10-04-operator-wave-repin/checks/run-all.ts "$OUT/checks-aow.json" > "$OUT/checks-aow.log" 2>&1; echo $? > "$OUT/checks-aow.exit"
 done
 for i in 1 2 3; do
   if [ $((i % 2)) -eq 1 ]; then order="before after"; else order="after before"; fi

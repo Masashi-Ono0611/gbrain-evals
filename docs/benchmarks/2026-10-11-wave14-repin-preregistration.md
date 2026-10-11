@@ -174,11 +174,18 @@ stay the counted ones. Frozen before the next run:
    at `8a3eedeac`. A two-VM pair cannot separate a slower host from a slower gbrain, so the next run puts both pins on
    each host.
 
+3. **E2 check.** The operator-wave check `edit-page-diff-order` failed at both pins in the counted pair, and at
+   `8a3eedeac` in the first run. It is a parse defect in the check, at both pins: the check joined every text block of
+   the `edit_page` reply and parsed it as one JSON value, and gbrain sometimes appends a `first_run_decisions` notice as
+   a second block, so the parse failed and the check saw an empty diff. The reply's own diff was correct each time. The
+   check now reads the first block only; on the Capy machine it passes 10 of 10 runs at each pin. It broke no rule
+   (it failed at the old pin too) and is rerun below.
+
 The next run uses two fresh identical `standard-16` VMs started together. Each holds two copies of this tree, one per
-pin, differing only in `package.json` and `bun.lock`, and runs `vm/round4.sh`: steps 9 and 10 at both pins, then
+pin, differing only in `package.json` and `bun.lock`, and runs `vm/round4.sh`: steps 9 and 10 and the operator-wave checks at both pins, then
 three rounds of Cat 7 and the Cat7-1 repro alternating which pin goes first. It is judged as follows:
 
-- Steps 9 and 10 under the rules above, at both pins, on each VM.
+- Steps 9 and 10 and the operator-wave checks under the rules above, at both pins, on each VM.
 - For each Cat 7 operation and scale, the median of the three p50s at `77cf8e111` against the median at `8a3eedeac`
   on the same VM. A slowdown above 25% on both VMs is a confirmed regression and is bisected over the first-parent
   merges, on one VM with both ends interleaved. A slowdown on neither VM means the counted pair's slowdown came from
