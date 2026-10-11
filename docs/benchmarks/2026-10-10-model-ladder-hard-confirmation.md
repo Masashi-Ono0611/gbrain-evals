@@ -46,6 +46,8 @@ Successes out of 100 tasks; no model is at a ceiling on either arm.
 - **gbrain is more often confidently wrong**: 22 vs 14 wrong answers of 300 on M and 16 vs 2 on S, mostly Sonnet. fs fails mostly by not answering in time.
 - **Per model, only Sol (both worlds) and Opus (S) clear 0 on their own.** Sonnet's interval includes 0 in both worlds, and Opus's on M; the pooled result is the preregistered endpoint.
 
+**Alias precision (2026-10-11).** Before merge, alias derivation was checked on the owner's own brain (6,616 entity pages, read only, labels kept on the owner's machine) and on 890 public English Wikipedia articles. The first rule was right on 47 of 72 labeled aliases on the real brain (multi-word 12 of 24). The anchored rule (v2) that ships was right on 25 of 25 there and on 20 of 25 on the public set (from 50 of 198), with multi-word captures right on 20 of 22 across both. The samples were too small to reach the plan's 0.85 Wilson bound or 150 labels, and Garry Tan accepted the anchored rule with multi-word captures on (2026-10-11). The anchored build derives identical aliases, mention links and card identity lines on worlds M and S, the calibration world and the v1 world, so this result applies to the shipped build. Counts and the decision: [development record](https://github.com/garrytan/gbrain-evals/blob/plan/cat40-hard-fix/docs/plans/2026-10-07-cat40-hard-fix/DEV-RECORD.md#alias-precision-check-2026-10-11).
+
 ## Cost and latency
 
 | World | Model | gbrain $/success | fs $/success | gbrain agent p50 s | fs agent p50 s |
@@ -78,3 +80,4 @@ bun eval/runner/cat40/analyze.ts $D/main-cells/results.jsonl --expect-grid obser
 ## Changelog
 
 - 2026-10-11: first version.
+- 2026-10-11: alias precision check added (counts only).
