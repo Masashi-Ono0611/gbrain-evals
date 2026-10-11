@@ -2,11 +2,11 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
-## [Unreleased]
+## [0.10.74] - 2026-10-11
 
 ### Cat 40 Hard confirmation: gbrain ahead of plain files on a fresh and a sealed 55,000-document company
 
-On two worlds no development agent had seen, Sonnet 5.5, Opus 5.5 and GPT-6.1 Sol finished more Hard tasks with gbrain v0.60.139.0 (`3e4ff61ce`, gbrain #6271) than with plain files: +7.7 points on world M (fresh seed 20261021; 78.7% vs 71.0%, 95% CI +2.7 to +12.7) and +13.0 points on the sealed world S (66.0% vs 53.0%, CI +7.7 to +18.3). Both lower bounds are above 0, so the preregistered wording is "ahead" in both worlds and the kill criterion does not fire. Limits: gbrain trails on M's conflicting-source family H4 (47 vs 56 of 60), S's H1 is at the floor on both arms, fs overflowed the context 22 times on S at the fixed 16-turn cap, and gbrain gives more wrong answers. Report: [docs/benchmarks/2026-10-10-model-ladder-hard-confirmation.md](docs/benchmarks/2026-10-10-model-ladder-hard-confirmation.md); preregistration and full results in `docs/plans/2026-10-07-cat40-hard-fix/` (#93). Ledgers $572.34 (M) and $775.63 (S) of $900 each.
+On two worlds no development agent had seen, Sonnet 5.5, Opus 5.5 and GPT-6.1 Sol finished more Hard tasks with gbrain v0.60.139.0 (`3e4ff61ce`, gbrain #6271, since merged as gbrain v0.60.174.0, master `0df9f2ee7`) than with plain files: +7.7 points on world M (fresh seed 20261021; 78.7% vs 71.0%, 95% CI +2.7 to +12.7) and +13.0 points on the sealed world S (66.0% vs 53.0%, CI +7.7 to +18.3). Both lower bounds are above 0, so the preregistered wording is "ahead" in both worlds and the kill criterion does not fire. Limits: gbrain trails on M's conflicting-source family H4 (47 vs 56 of 60), S's H1 is at the floor on both arms, fs overflowed the context 22 times on S at the fixed 16-turn cap, and gbrain gives more wrong answers. Report: [docs/benchmarks/2026-10-10-model-ladder-hard-confirmation.md](docs/benchmarks/2026-10-10-model-ladder-hard-confirmation.md); preregistration and full results in `docs/plans/2026-10-07-cat40-hard-fix/` (#93). Ledgers $572.34 (M) and $775.63 (S) of $900 each.
 
 - **Confirmation steps.** `scripts/cat40-hard.sh step confirm-world|confirm-slots|confirm-oracle|confirm-cells` per world (`CONFIRM_WORLD=main|sealed`), seed 20261021 registered as `HARD_SEEDS.confirmation`, one ledger per world (`CONFIRM_CAP_USD` 900), and the 95% oracle gate.
 - **Warm-boot fix.** The slot build's warm start waits for the reply to one read-only `entity` call before the snapshot, so the snapshot no longer keeps tens of thousands of queued persistence effects that stalled every restore's first tool call; each slot receipt records `queued_effects` at snapshot.
@@ -124,6 +124,8 @@ $1,794).
   drawn ([calibration.md](docs/benchmarks/cat40-hard/calibration.md)). Projections now go per model, arm and family
   from round 1's measured Hard costs (2 to 5 times v1 per cell) plus the measured judge cost; a resumed step opens a
   new budget run (`--new-budget-run`) sized to the cells still missing. `knobs.round-2.json` makes H2 and H3 harder.
+
+- **Version.** Main is at 0.10.73, so this release is 0.10.74.
 
 ## [0.10.73] - 2026-10-11
 

@@ -11,7 +11,7 @@ On two worlds no development agent had seen, frontier agents using gbrain finish
 
 Both lower bounds are above 0, so under the preregistered rule gbrain is "ahead" in both worlds, the kill criterion does not fire, and the general claim is allowed. The intervals are task-clustered bootstraps (10,000 resamples of tasks, all models resampled together).
 
-gbrain v0.60.139.0 ([`3e4ff61ce`](https://github.com/garrytan/gbrain/commit/3e4ff61ce1ac553581fb5c1eb905cf48541fe344), gbrain #6271), measured 2026-10-10 to 2026-10-11, starter surface, reranking on. This build replaces the result of [October 7](2026-10-07-model-ladder-hard.md), where gbrain v0.60.95.0 trailed plain files by 11.3 points on a different held-out world; that result still describes v0.60.95.0.
+gbrain v0.60.139.0 ([`3e4ff61ce`](https://github.com/garrytan/gbrain/commit/3e4ff61ce1ac553581fb5c1eb905cf48541fe344), gbrain #6271), measured 2026-10-10 to 2026-10-11, starter surface, reranking on. #6271 has since merged as gbrain v0.60.174.0 (master `0df9f2ee7`); the shipped build derives identical aliases, mention links and card identity lines to the confirmed `3e4ff61ce` on worlds M and S, the calibration world and the v1 world, so the result applies to it. This build replaces the result of [October 7](2026-10-07-model-ladder-hard.md), where gbrain v0.60.95.0 trailed plain files by 11.3 points on a different held-out world; that result still describes v0.60.95.0.
 
 ## The experiment
 
@@ -81,3 +81,4 @@ bun eval/runner/cat40/analyze.ts $D/main-cells/results.jsonl --expect-grid obser
 
 - 2026-10-11: first version.
 - 2026-10-11: alias precision check added (counts only).
+- 2026-10-11: #6271 recorded as merged (gbrain v0.60.174.0, master `0df9f2ee7`); released in gbrain-evals v0.10.74.
