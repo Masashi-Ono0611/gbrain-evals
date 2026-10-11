@@ -424,5 +424,5 @@ says how many ran.
 
 - 2026-10-11 (Pacific), gate 2 passed: the paid development smoke on the stack build (`0df9f2ee`, version 2 world, seeds
   20261101 to 20261108, repeat 1, three readers, `t0b-score-v2`) scored 72 of 72 cells with no harness error, and the
-  rerank probe passed on all 8 slots. Descriptive only: 1 failure in 72 (Opus 5.5, stale correction), about $12.7.
+  rerank probe passed on all 8 slots. Descriptive only: 1 failure in 72 (Opus 5.5, stale correction), $12.56.
   Sealed cells start next under the order above.
