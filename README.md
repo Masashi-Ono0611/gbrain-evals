@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.76 (`VERSION`) |
+| This repository | gbrain-evals v0.10.77 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history. The search modes have been identical since v0.48.4.0, so retrieval results from those commits describe
@@ -289,6 +289,12 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-11: T0b sealed confirmation; repository row names v0.10.77
+
+gbrain-evals v0.10.77. The custodian-sealed T0b confirmation reports the shipped stack (v0.60.174.0) failing 5 of 576
+runs where v0.60.106.0 fails 271, verdict `10x` under `t0b-score-v2` and `improvement` under `t0b-score-v1`
+([report](docs/benchmarks/2026-10-11-t0b-sealed-confirmation.md)). The repository row names v0.10.77 (was v0.10.76).
 
 ### 2026-10-11: Pin gbrain v0.60.169.0 (`77cf8e111`); repository row names v0.10.76
 
