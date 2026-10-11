@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.72, with gbrain master `8a3eedeac` (v0.60.126.0) as the product under test. Results measured at
+gbrain-evals v0.10.73, with gbrain master `8a3eedeac` (v0.60.126.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -203,6 +203,11 @@ procedure with documented missing pieces; it is not the current refresh command.
 ### 2026-10-11: Cat 40 Hard confirmation
 
 gbrain-evals #76. The Cat 40 Hard row now leads with the October 10 confirmation (gbrain v0.60.139.0 ahead of plain files by +7.7 and +13.0 points on a fresh and a sealed world) and keeps the October 7 result (v0.60.95.0, −11.3) beside it, because the new result measures a different gbrain build.
+
+### 2026-10-11: Contributor fix wave
+
+gbrain-evals v0.10.73 (the opening names it; was v0.10.72). No report row changes: the release fixes the phase 1 run
+script on Bash 3.2 and makes the shared judge reject non-finite scores.
 
 ### 2026-10-11: Memory proof wave release
 

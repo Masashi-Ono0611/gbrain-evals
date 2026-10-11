@@ -125,6 +125,24 @@ $1,794).
   from round 1's measured Hard costs (2 to 5 times v1 per cell) plus the measured judge cost; a resumed step opens a
   new budget run (`--new-budget-run`) sized to the cells still missing. `knobs.round-2.json` makes H2 and H3 harder.
 
+## [0.10.73] - 2026-10-11
+
+### Contributor fix wave: Bash 3.2 resume args and non-finite judge scores
+
+- **`scripts/run-shootout-phase1.sh` runs on macOS Bash 3.2.** Under `set -u`, Bash before 4.4 treats an empty
+  `"${resume_args[@]}"` as unbound, so a first run with no output file to resume from exited before calling gbrain.
+  The expansion is now guarded the way `CAP_CMD` already was, as is the same pattern in
+  `eval/runner/longmemeval-batch.sh`. A repo-wide structural test (`test/eval/shell-nounset-arrays.test.ts`) fails
+  on any unguarded expansion of an array a `set -u` script declares empty. Reproduced in the official `bash:3.2`
+  image: the script exits 1 with `resume_args[@]: unbound variable` before the fix and reaches gbrain for both
+  no-reranker cells after it. Contributed by @armandovargash (supersedes #30).
+- **The shared judge rejects non-finite scores.** `parseCriterionScores` clamped every number to 0-5, so an
+  overflowing JSON score (`1e309` parses to `Infinity`) became 5/5 with no corrective retry, and `NaN` could reach
+  the overall score. A non-finite score is now malformed output: one corrective retry naming the criterion, then
+  `judge_failed`; Cat 29's pairwise judge uses the same parser and its existing `JudgeFailure` path. Finite
+  out-of-range scores still clamp. Published scores and receipts are not regenerated. Contributed by @BichengWang
+  (supersedes #128).
+
 ## [0.10.72] - 2026-10-11
 
 ### Memory proof wave: sealed BEAM results for gbrain #6066
