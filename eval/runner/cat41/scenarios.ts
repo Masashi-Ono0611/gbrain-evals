@@ -597,7 +597,7 @@ export const SCENARIOS: readonly Scenario[] = [
       const nonce = String(box.notes.nonce);
       const facts = await installedFacts(box);
       // Any other file holding the item (a CLAUDE.md, an agent memory file, MEMORY.md) is a channel besides the brain.
-      const elsewhere = (await box.sh(`grep -rlF -- '${nonce}' ${box.home} --exclude-dir=.gbrain --exclude-dir=.bun --exclude-dir=.cache --exclude-dir=.npm --exclude='*.jsonl' --exclude=.claude.json --exclude='.claude.json.backup*' 2>/dev/null || true`, { as: 'root' })).stdout.split('\n').filter(Boolean);
+      const elsewhere = (await box.sh(`grep -rlF --exclude-dir=.gbrain --exclude-dir=.bun --exclude-dir=.cache --exclude-dir=.npm --exclude='*.jsonl' --exclude=.claude.json --exclude='.claude.json.backup*' -- '${nonce}' ${box.home} 2>/dev/null || true`, { as: 'root' })).stdout.split('\n').filter(Boolean);
       const heartbeat = (box.read(`${box.home}/.gbrain/integrations/hooks/heartbeat.jsonl`) ?? '').split('\n').filter(Boolean).map(l => { try { const e = JSON.parse(l); return { event: e.event, outcome: e.outcome, reason: e.reason, bytes: e.bytes }; } catch { return null; } }).filter(Boolean);
       return { installed: facts !== null, nonce, facts: facts ?? [], fabricated_user_facts: fabricated(facts ?? [], /locker/i), nonce_files_outside_brain: elsewhere.map(f => f.replace(box.home, '~')), hook_heartbeat: heartbeat };
     },
