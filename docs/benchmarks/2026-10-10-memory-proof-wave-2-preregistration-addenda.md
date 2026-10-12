@@ -404,3 +404,28 @@ Wave-2 spend to date is $75.12.
 **Next.** `combined-v2+w5` uses `search.page_rank_budget_ratio` `0.40` in the dev checks and the W5 BEAM gate. Dev at the new pin is released under the re-scope amendment. Confirmation stays behind Garry's go.
 
 Receipts are under `2026-10-10-memory-proof-wave-2/w5/`, with the re-judge in `w5/rejudge/`. Ledgers are mirrored to the integrator's primary machine with matching SHA-256: `w5.sqlite` `362e22ff…`, `w5-rejudge.sqlite` `39f7e345…`. A compressed copy of the store, `gbrain-longmemeval-s-165df707838f` (sha256 `0a136a61…`), is kept beside them, so the dev group can reuse it. The VM is destroyed and recorded.
+
+## Dev at the W5 pin (October 12, 2026)
+
+Garry confirmed the floor reading of the ratio rule and the pick of 0.40, and released dev at the W5 pin, the $92 line. Dev is exploratory: it tunes nothing that the confirmation reads, except where this addendum says so.
+
+**Pin and knobs.** Every dev cell runs at gbrain `fe9e0397b7e523b8db3b83e1202fb297337e71b3` and sets the re-scope knob table explicitly. W5 is off (`search.page_rank_budget_ratio` `0`) on every arm except `v2-w5`, which sets it to `0.4`. The receipt check from the W5 pin addendum applies to every query-path row.
+
+**Groups and arms.** Each group runs on its own VM under its own stage ledger, in this order. The first cell of each group builds its store, except on LongMemEval-S.
+
+| Group | Arms, in run order | Stage cap |
+|---|---|---:|
+| `dev-lme` | `v2`, `raw`, `v2-facts-arm`, `v1`, `filler`, `one-call` | $12 |
+| `dev-locomo` | `v2`, `raw`, `v2-facts-arm`, `v1`, `one-call` | $26 |
+| `dev-beam-100k` | `v2`, `v2-w5`, `v2-facts-arm`, `v1`, `one-call`, `cost-matched` | $10 |
+| `dev-beam-500k` | `v2`, `v2-w5`, `v2-facts-arm`, `v1`, `one-call`, `cost-matched` | $19 |
+| `dev-beam-1m` | `v2`, `v2-w5`, `v2-facts-arm`, `v1`, `one-call`, `cost-matched` | $20 |
+
+The caps total $87, which leaves $5 of the $92 line for the A15 shadow probe.
+
+- **`v2-w5`** is `combined-v2` with W5 at ratio 0.40. Its page arm receives `delivered_tokens` minus the packed facts, so W5 cuts ranking to 0.40 of that per-question page budget.
+- **The gpt-6-luna rows are gone.** `luna-v1` on LoCoMo10 and the three BEAM splits is dropped, as the re-scope planned.
+- **LongMemEval-S reuses the W5 tuning store.** `gbrain-longmemeval-s-165df707838f` is restored from its mirrored copy (sha256 `0a136a61…`) onto the `dev-lme` VM before the first cell runs. The store id is derived from the ingest config, the harness lock and the gbrain build. All three are unchanged since the tuning run, so the dev cells resolve to the same store, and `v2`'s cap drops to $2. If the store did not resolve, `v2` would start an ingest and stop at that $2 cap.
+- **Store paths go to the A15 shadow probe and the gate-4 latency run** as each store exists. Both read the stores and never write to them.
+
+`mpw2-dev-specs.py` generates the specs. `tests/test_mpw2_dev_specs.py` checks the 29 dev specs: every knob is set, the ratio is `0.4` only on `v2-w5`, and every facts arm uses the measured-default extractor.

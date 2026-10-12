@@ -14,7 +14,7 @@ INGEST_KEYS = {"extraction.date_grounding", "facts.attribution", "facts.superses
 
 
 def test_dev_specs_exist():
-    assert len([p for p in SPECS if p.parent.name == "dev"]) == 30
+    assert len([p for p in SPECS if p.parent.name == "dev"]) == 29
 
 
 @pytest.mark.parametrize("path", SPECS, ids=lambda p: f"{p.parent.name}/{p.stem}")
@@ -29,8 +29,9 @@ def test_spec_sets_every_knob_and_validates(path):
     assert pc["search_config"]["search.reranker.enabled"] == ("false" if spec["lane"] == "raw" else "true")
     assert pc["search_config"]["search.query_facts_arm"] == "true" and pc["search_config"]["search.temporal_fact_reserve"] == "false"
     assert pc["search_config"]["search.tokenBudget"] == ("4000" if spec["lane"] == "raw" else "10000000")
-    assert pc["search_config"]["search.page_rank_budget_ratio"] == "0"
-    if spec["lane"] != "raw" and "extraction_model" not in pc:
+    assert pc["search_config"]["search.page_rank_budget_ratio"] == ("0.4" if path.stem.endswith("-v2-w5") else "0")
+    assert "extraction_model" not in pc
+    if spec["lane"] != "raw":
         assert pc["extraction_source"] == "measured_default" and spec["gbrain_credentials"] == ["voyage", "anthropic"]
     GbrainMemoryProvider({"gbrain_cli": "unused", "child_env": {}, "lane": spec["lane"], **pc})
 

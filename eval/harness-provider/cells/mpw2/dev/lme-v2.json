@@ -10,7 +10,7 @@
   "answer": "gemini:gemini-3.8-flash",
   "judge": "gemini:gemini-3.5-flash"
  },
- "budget_usd": 11,
+ "budget_usd": 2,
  "questions": {
   "ids": [
    "gpt4_2f8be40d",
@@ -148,5 +148,5 @@
   "voyage",
   "anthropic"
  ],
- "note": "memory proof wave 2 dev, lme arm v2: see the 2026-10-11 addendum"
+ "note": "memory proof wave 2 dev, lme arm v2: see the 2026-10-11 and 2026-10-12 addenda"
 }

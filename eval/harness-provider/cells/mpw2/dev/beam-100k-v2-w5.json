@@ -1,22 +1,20 @@
 {
  "dataset": "beam",
- "split": "500k",
+ "split": "100k",
  "provider": "gbrain",
  "mode": "rag",
- "lane": "combined",
+ "lane": "combined-v2",
  "seal": "dev",
  "target_tokens": 8000,
  "models": {
   "answer": "gemini:gemini-3.8-flash",
   "judge": "gemini:gemini-3.5-flash"
  },
- "budget_usd": 5,
+ "budget_usd": 2,
  "questions": {
   "units": [
-   "12",
-   "21",
-   "28",
-   "31"
+   "3",
+   "11"
   ]
  },
  "k": 10,
@@ -30,10 +28,8 @@
    "facts.attribution": "true",
    "facts.supersession_thresholds": "{\"voyage:voyage-4@1024\": 0.95}"
   },
-  "lane": "combined",
-  "extraction_model": "openai:gpt-6-luna",
-  "facts_tokens": 600,
-  "token_budget": 7500,
+  "extraction_source": "measured_default",
+  "lane": "combined-v2",
   "search_config": {
    "search.mode": "tokenmax",
    "search.reranker.enabled": "true",
@@ -46,12 +42,14 @@
    "search.entity_anchoring": "false",
    "recall.question_admission": "reserve",
    "search.tokenBudget": "10000000",
-   "search.page_rank_budget_ratio": "0"
-  }
+   "search.page_rank_budget_ratio": "0.4"
+  },
+  "facts_tokens": 600,
+  "delivered_tokens": 8100
  },
  "gbrain_credentials": [
   "voyage",
-  "openai"
+  "anthropic"
  ],
- "note": "memory proof wave 2 dev, beam-500k arm luna-v1: see the 2026-10-11 addendum"
+ "note": "memory proof wave 2 dev, beam-100k arm v2-w5: see the 2026-10-11 and 2026-10-12 addenda"
 }
