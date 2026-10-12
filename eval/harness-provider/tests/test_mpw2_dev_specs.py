@@ -76,3 +76,41 @@ def test_retune_arms_are_dev_v2_with_the_adaptive_w5_keys():
         assert GbrainMemoryProvider({"gbrain_cli": "unused", "child_env": {}, "lane": spec["lane"], **spec["provider_config"],
                                      "search_config": sc})._arm_page_rank_cut() == expect
     assert arms == {a: set(STORES) for a in ("ref", "f1.00", "f1.25", "f1.50")}
+
+
+CONFIRM = sorted(p for p in (CELLS / "confirm").glob("*.json") if p.name != "order.json")
+NON_DEV_UNITS = {"100k": 16, "500k": 28, "1m": 28}
+
+
+def test_confirmation_arms_are_dev_arms_with_w5_off_on_the_non_dev_data():
+    from mpw.gbrain_provider import GbrainMemoryProvider
+
+    order = json.loads((CELLS / "confirm/order.json").read_text())["order"]
+    assert {f"{g}-{a}.json" for g, arms in order.items() for a in arms} == {p.name for p in CONFIRM}
+    lme, beam = [], {s: [] for s in NON_DEV_UNITS}
+    for path in CONFIRM:
+        group, arm = path.stem.rsplit("-", 1) if not path.stem.endswith("one-call") else (path.stem[:-len("-one-call")], "one-call")
+        spec = json.loads(path.read_text())
+        if spec["provider"] == "comparator":
+            assert spec["lane"] == "combined" and spec["seal"] == "sealed" and set(spec["provider_config"]) == {"max_tokens", "max_chunk_tokens"}
+            continue
+        kind = "lme" if group.startswith("lme") else "beam-" + group.split("-")[1]
+        dev = json.loads((CELLS / "dev" / f"{kind}-{'one-call' if arm == 'one-call' else arm}.json").read_text())
+        sc, dev_sc = spec["provider_config"].pop("search_config"), dev["provider_config"].pop("search_config")
+        assert spec["provider_config"] == dev["provider_config"] and spec["lane"] == dev["lane"] and spec["models"] == dev["models"]
+        assert {k: v for k, v in sc.items() if k != "search.page_rank_cut"} == {k: v for k, v in dev_sc.items() if k != "search.page_rank_budget_ratio"}
+        assert sc["search.page_rank_cut"] == "off" and set(sc) == W5A_KEYS and "reuse_store" not in spec
+        assert GbrainMemoryProvider({"gbrain_cli": "unused", "child_env": {}, "lane": spec["lane"], **spec["provider_config"],
+                                     "search_config": sc})._arm_page_rank_cut() is None
+        if kind == "lme":
+            assert spec["seal"] == "public"
+            if arm == "v2":
+                lme += spec["questions"]["ids"]
+        else:
+            assert spec["seal"] == "sealed"
+            if arm == "v2":
+                beam[kind.removeprefix("beam-")] += spec["questions"]["units"]
+    dev_ids = set(json.loads((CELLS / "step0/lme-s-dev-comb.json").read_text())["questions"]["ids"])
+    assert len(lme) == len(set(lme)) == 400 and not set(lme) & dev_ids
+    dev_units = {s: set(json.loads((CELLS / "dev" / f"beam-{s}-v2.json").read_text())["questions"]["units"]) for s in NON_DEV_UNITS}
+    assert {s: len(set(u)) for s, u in beam.items()} == NON_DEV_UNITS and all(not set(u) & dev_units[s] for s, u in beam.items())

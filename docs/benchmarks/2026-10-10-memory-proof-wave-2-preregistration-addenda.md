@@ -732,3 +732,36 @@ No file under import, extraction, embedding, chunking, sync, schema or migration
 The cell reads the store's mirrored snapshot, which is restored onto its VM. The store ids built at this pin would be `401ed80f84ff`, `8cb8837fc59e`, `6f436863f40b` and `8e8247cbea63`. Against each snapshot's `store.json`, all 16 specs resolve through `reusedStoreIdentity`: the identities differ in `pins.gbrain` alone. The harness pins, ingest revision `gbrain-ingest-2`, ingest config and credentials are all unchanged. A cell whose store did not resolve would fail before ingesting, rather than re-ingest.
 
 **Specs.** The 16 re-tune specs are in `eval/harness-provider/cells/mpw2/retune/`, written by `mpw2-retune-specs.py`. Each one is dev's `v2` spec for its group with two changes. First, W5's keys replace the fixed-ratio key: `ref` sets `search.page_rank_cut: off`, and `f1.00`, `f1.25` and `f1.50` set `whole_pages` with factor `1`, `1.25` and `1.5`. Second, each spec sets `reuse_store` and the go addendum's cell budget. `tests/test_mpw2_dev_specs.py` checks that every re-tune spec is otherwise identical to its dev `v2` spec. The dev and W5 tuning specs stay as they ran at `fe9e0397b`.
+
+## Confirmation specs (October 12, 2026)
+
+This addendum is written before any confirmation cell runs. `eval/harness-provider/mpw2-confirm-specs.py` writes the specs to `cells/mpw2/confirm/`. Every gbrain arm is its dev spec at the adaptive W5 pin, with the re-tune's knob table and `search.page_rank_cut: off`. `combined-v2+w5` (`v2-w5`) is the exception: it runs `whole_pages` at the re-tune's picked factor. Its specs are written only once the pick is recorded, and none are written if no factor is eligible. `tests/test_mpw2_dev_specs.py` checks three things: that every arm matches its dev spec apart from W5's keys and the data; that LongMemEval-S covers the 400 non-dev questions once; and that BEAM covers the 16, 28 and 28 non-dev conversations once, none of them in wave 2's dev units.
+
+**Groups.** Each group runs on one VM with one ledger, and its first cell builds the store that the group's other gbrain cells share. `raw` builds a store of its own.
+
+| Group | Data | Arms, in order |
+|---|---|---|
+| `lme-1` to `lme-4` | LongMemEval-S, wave 1's four shards of 100 histories (the comparator's wave-1 400 questions, in order) | `v2`, `v1`, `one-call`, `raw` |
+| `beam-100k` | BEAM-100K non-dev, 16 conversations | `v2`, `v1`, then `v2-w5` |
+| `beam-500k-1`, `beam-500k-2` | BEAM-500K non-dev, 14 conversations each | `v2`, `v1`, then `v2-w5` |
+| `beam-1m-1`, `beam-1m-2` | BEAM-1M non-dev, 14 conversations each | `v2`, `v1`, then `v2-w5` |
+| `comparator-beam-*` | The same five BEAM groups, from `mpw-sealed-specs.py`'s comparator spec (facts plus chunks at its dev-fitted knobs) | `comparator` |
+
+The groups split the larger datasets so ingest runs in parallel. Each LongMemEval-S history is its own brain and each BEAM conversation is its own unit, so the split changes what no question sees. The pooled scores concatenate the groups. BEAM cells use seal `sealed`, so BEAM-100K and BEAM-1M publish aggregates only. LongMemEval-S cells use `public`, as in wave 1.
+
+**Budgets.** Cell budgets are expected spend plus reservation headroom. The first gbrain cell of each store pays its ingest.
+
+| Group kind | `v2` | `v1` | `v2-w5` | `one-call` | `raw` | Comparator | Expected per group |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| LongMemEval-S shard | $18 | $6 | | $6 | $8 | | $15.50 |
+| BEAM-100K | $16 | $15 | $15 | | | $20 | $25, comparator $8 |
+| BEAM-500K, per 14 | $20 | $14 | $14 | | | $35 | $27, comparator $17 |
+| BEAM-1M, per 14 | $24 | $15 | $15 | | | $55 | $32.50, comparator $34 |
+
+The expected totals are:
+
+- LongMemEval-S, $62;
+- gbrain BEAM, $144 with `v2-w5`;
+- the comparator's BEAM regeneration, about $108 (the harness's own estimate is $100).
+
+These match the go addendum's lines. Each stage cap is its expected spend plus its largest cell budget, as the go addendum sets. Those caps add up to more than the confirmation budget, so the run script also keeps a running total across confirmation ledgers. A cell starts only if the confirmation spend so far plus that cell's budget stays within $485 less the re-tune's actual spend.
