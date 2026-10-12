@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.78, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.79, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -200,6 +200,11 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-12: Cat 40 warm-boot drain fix
+
+gbrain-evals v0.10.79 (the opening names it; was v0.10.78). No report row changes: the release fixes the Cat 40 warm
+boot and adds the D2/D4 notice smoke under `benchmarks/2026-10-12-d2d4-smoke/`.
 
 ### 2026-10-12: Retire the Cat 40 v1 success headline
 
