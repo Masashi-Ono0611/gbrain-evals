@@ -21,7 +21,7 @@ const dir = process.argv[2];
 if (!dir) throw new Error('usage: verdict.ts <pass dir>');
 const scores: Score[] = readFileSync(join(dir, 'scores.jsonl'), 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l));
 const runsDir = join(dir, 'runs');
-const attempts = existsSync(runsDir) ? readdirSync(runsDir) : [];
+const attempts = existsSync(runsDir) ? readdirSync(runsDir).sort() : [];
 
 const s1 = (ms: number) => Math.round(ms / 100) / 10;
 const median = (xs: number[]) => { const a = [...xs].sort((x, y) => x - y); const m = a.length >> 1; return a.length ? (a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2) : null; };
