@@ -230,3 +230,108 @@ The scores come from the joint blinded re-judge of the four arms. Intervals are 
 | **Total** | **$39.58** |
 
 Receipts are under `2026-10-10-memory-proof-wave-2/iso/` and `iso2/`. Ledgers are mirrored to the integrator's primary machine with matching SHA-256: `iso.sqlite` `206d2e2f…`, `iso-rejudge.sqlite` `1a5057b5…`, `iso2.sqlite` `ddb723f9…`, `iso2-rejudge.sqlite` `3f37128a…`. Both VMs are destroyed and recorded.
+
+## Re-scope: W5 honors the caller's budget in page mode (October 11, 2026)
+
+**Decision (Garry, through the integrator, October 11).** Step 0's mode-dominates rule fired, and the wave paused for re-scope. The isolation and the two-way test (both above) traced the 10-point mode gap to one cause. Under `return_unit: "page"`, ranking cuts candidates to the mode's `tokenBudget` instead of the caller's budget. Garry chose option 1: make page-mode ranking honor the caller's budget.
+
+**W5** is that change. It is built on gbrain#6445's branch beside W3. It adds one `search.*` key, off by default. When the key is on, page-unit ranking candidates are capped at `min(mode cut, ratio × caller token_budget)`, and the applied cut is reported in `_meta`. The wave now covers:
+
+- W1, shipped in v0.60.169.0;
+- W3, the rerank gate, stage 1, with its shadow probe pending;
+- W5.
+
+The dev pin moves to the head of #6445 once W5 is on it. The next addendum records the SHA and the W5 key's exact name before any W5 cell runs.
+
+### W5 dev tuning (exploratory, LongMemEval-S dev only)
+
+**Store.** One measured-default LongMemEval-S dev store at the new pin, with the explicit knobs below.
+
+**Arms.** Six arms, all `filler-removed` (no facts block, 8,100 page tokens):
+
+| Arm | Mode | W5 | `search.tokenBudget` |
+|---|---|---|---|
+| `b` | `tokenmax` | off | unset (`10000000`) |
+| `d` | `conservative` | off | `4000` |
+| `w5-0.40` | `tokenmax` | on, ratio 0.40 (cap 3,240 tokens) | unset |
+| `w5-0.50` | `tokenmax` | on, ratio 0.50 (cap 4,050) | unset |
+| `w5-0.75` | `tokenmax` | on, ratio 0.75 (cap 6,075) | unset |
+| `w5-1.00` | `tokenmax` | on, ratio 1.00 (cap 8,100) | unset |
+
+`b` builds the store. All six arms get one joint blinded re-judge with the preregistered judge.
+
+**Ratio rule, fixed before the run.** Among the four W5 arms, pick the one with the most multi-session questions correct (of 22) on the joint re-judge. The choice is subject to all of the following:
+
+1. its overall score is at least `b`'s;
+2. in every other question type, it is within 1 question of `b`;
+3. it beats `b` on multi-session by at least 2 questions.
+
+Ties go to the higher overall score, then to the larger ratio, which is the smaller change from the caller's budget. If no ratio passes, W5 does not go to the counted gates, and Garry decides. The chosen ratio is recorded here before any counted W5 cell runs.
+
+**Budget.** About $20: the store about $11, five reads at about $1.30, and the re-judge about $1.60 (cap $2.50, sized for the $0.59 per-call reservation).
+
+### W5 gate on BEAM
+
+The BEAM data is the 72 non-dev conversations. Under GBRA-49's ruling, it is regression and descriptive evidence, reused, not held-out confirmation.
+
+- **Lanes.** `combined-v2` with W5 off, and `combined-v2+w5` with W5 on at the dev-chosen ratio. Both use the same pin and the same store; only the read differs.
+- **Statistic.** Gate 2's: wave 1's restricted wild cluster bootstrap-t, stratified by size, with conversations as clusters (Webb six-point weights, 9,999 draws, seed `20261010`), on the joint BEAM re-judge.
+- **Pass.** Both conditions must hold:
+  - the one-sided 95% lower bound of (W5-on − W5-off), pooled, is above −3 points;
+  - no question kind's two-sided 95% interval lies entirely below −3 points (TC6), across multi-session, contradiction, temporal, event ordering and abstention.
+- **A pass flips the default.** The W5 key ships on, at the dev-chosen ratio. A failure keeps it off, and the result is reported as measured.
+- The pooled point estimate and the multi-session difference are reported beside the gate, whichever way it lands.
+
+### Knob table for every stage-2 and stage-3 arm
+
+Every arm sets these keys explicitly in `search_config`, on top of the ingest keys in the explicit-knob addendum. This replaces that addendum's read-time table.
+
+| Key | Value |
+|---|---|
+| `search.mode` | `tokenmax` on facts-store lanes; `conservative` on `raw@pin` |
+| `search.tokenBudget` | `10000000` with `tokenmax` (the bundle's unset budget; the key takes only a positive integer); `4000` with `conservative` |
+| W5's key | off, except on `combined-v2+w5` and the W5 tuning arms |
+| `search.reranker.enabled`, `search.reranker.model` | `true` with `tokenmax` and `false` with `conservative`; `voyage:rerank-2.5` |
+| `search.reranker.gate`, `search.reranker.gate_min_gap` | `off`, `0.05` (`shadow` only on the A15 replay, `on` only on `combined-v2+gate`) |
+| `search.query_facts_arm`, `search.temporal_fact_reserve` | `true`, `false` |
+| `search.evidence_date_header`, `search.entity_anchoring` | `false`, `false` |
+| `recall.question_admission` | `reserve`, except dev's `facts_arm` tuning lane |
+
+`tests/test_mpw2_dev_specs.py` is extended to require `search.tokenBudget` and W5's key once the pin addendum names it. The dev specs are regenerated at the new pin.
+
+### Dev and confirmation, re-planned
+
+**Dev changes from the dev-cells addendum.**
+
+- The dev groups run at the new pin with the table above.
+- The LongMemEval-S dev group reuses the W5 tuning store, so it does not build a store of its own.
+- The gpt-6-luna continuity rows on BEAM and LoCoMo10 are dropped. Step 0's arm comb remains the gpt-6-luna continuity row.
+- A `combined-v2+w5` lane runs on each BEAM dev split at the chosen ratio, as a dev check before the BEAM gate.
+- The A15 shadow probe runs on the rebuilt BEAM dev stores, as before.
+
+**Confirmation changes.**
+
+- `filler-removed@pin` is dropped: step 0 showed that removing the facts block changes nothing at this budget (a − comb −1, b − a 0).
+- LoCoMo10's `raw@pin` is dropped. Gate 1 reads LongMemEval-S only, so LoCoMo10's raw lane was descriptive.
+- `combined-v2+w5` is added on BEAM non-dev for the W5 gate.
+
+**Budget within the $650 cap.**
+
+| Line | Status | USD |
+|---|---|---:|
+| Step 0, five arms and re-judge | spent | 16.44 |
+| Mode isolation, nine arms and re-judge | spent | 23.80 |
+| Two-way `tokenBudget` test, four arms and re-judge | spent | 15.78 |
+| W5 dev tuning, LongMemEval-S | next, released by this amendment | 20 |
+| Dev at the new pin: BEAM 100k / 500k / 1M and LoCoMo10 groups, the LongMemEval-S group on the tuning store, `combined-v2+w5` BEAM dev checks, A15 probe | released after the W5 pick | 92 |
+| Confirmation: LongMemEval-S (ingest, `combined-v1@pin`, `combined-v2`, `raw@pin`) | behind Garry's go | 50 |
+| Confirmation: LoCoMo10 (ingest, `combined-v1@pin`, `combined-v2`) | behind Garry's go | 33 |
+| Confirmation: BEAM non-dev (ingest, `combined-v1@pin`, `combined-v2`) | behind Garry's go | 120 |
+| Confirmation: BEAM `combined-v2+w5` | behind Garry's go | 45 |
+| Confirmation: the comparator's BEAM regeneration | behind Garry's go | 105 |
+| Confirmation: joint re-judges (BEAM $89 with the W5 lane, LoCoMo10 $12, LongMemEval-S $6) | behind Garry's go | 107 |
+| **Subtotal** | | **628** |
+| Reserve | | 22 |
+| W3 `combined-v2+gate` replay, only if A15 shows a would-skip rate of at least 25% | contingent | 35 |
+
+The contingent W3 replay exceeds the reserve by $13. If A15 calls for it, it needs either a trim recorded here or Garry's decision on the cap before it runs. Confirmation stays behind Garry's explicit go.
