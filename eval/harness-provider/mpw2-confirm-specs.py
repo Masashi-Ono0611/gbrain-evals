@@ -21,7 +21,7 @@ retune = runpy.run_path(str(HERE / "mpw2-retune-specs.py"))
 sealed = runpy.run_path(str(HERE / "mpw-sealed-specs.py"))
 OUT = HERE / "cells/mpw2/confirm"
 
-W5_PICK: float | None = None
+W5_PICK: float | None = 1.5
 LME_400 = json.loads((REPO / "docs/benchmarks/2026-10-09-memory-proof-wave-matched/cells/longmemeval-s-comparator-rag-d7a615c1cd51/spec.json")
                      .read_text())["questions"]["ids"]
 NON_DEV = {

@@ -82,14 +82,15 @@ CONFIRM = sorted(p for p in (CELLS / "confirm").glob("*.json") if p.name != "ord
 NON_DEV_UNITS = {"100k": 16, "500k": 28, "1m": 28}
 
 
-def test_confirmation_arms_are_dev_arms_with_w5_off_on_the_non_dev_data():
+def test_confirmation_arms_are_dev_arms_on_the_non_dev_data_with_w5_only_on_v2_w5():
     from mpw.gbrain_provider import GbrainMemoryProvider
 
     order = json.loads((CELLS / "confirm/order.json").read_text())["order"]
     assert {f"{g}-{a}.json" for g, arms in order.items() for a in arms} == {p.name for p in CONFIRM}
     lme, beam = [], {s: [] for s in NON_DEV_UNITS}
     for path in CONFIRM:
-        group, arm = path.stem.rsplit("-", 1) if not path.stem.endswith("one-call") else (path.stem[:-len("-one-call")], "one-call")
+        arm = next(a for a in ("one-call", "v2-w5", "comparator", "v2", "v1", "raw") if path.stem.endswith("-" + a))
+        group = path.stem[:-len(arm) - 1]
         spec = json.loads(path.read_text())
         if spec["provider"] == "comparator":
             assert spec["lane"] == "combined" and spec["seal"] == "sealed" and set(spec["provider_config"]) == {"max_tokens", "max_chunk_tokens"}
@@ -98,10 +99,12 @@ def test_confirmation_arms_are_dev_arms_with_w5_off_on_the_non_dev_data():
         dev = json.loads((CELLS / "dev" / f"{kind}-{'one-call' if arm == 'one-call' else arm}.json").read_text())
         sc, dev_sc = spec["provider_config"].pop("search_config"), dev["provider_config"].pop("search_config")
         assert spec["provider_config"] == dev["provider_config"] and spec["lane"] == dev["lane"] and spec["models"] == dev["models"]
-        assert {k: v for k, v in sc.items() if k != "search.page_rank_cut"} == {k: v for k, v in dev_sc.items() if k != "search.page_rank_budget_ratio"}
-        assert sc["search.page_rank_cut"] == "off" and set(sc) == W5A_KEYS and "reuse_store" not in spec
+        assert {k: v for k, v in sc.items() if not k.startswith("search.page_rank_cut")} == {k: v for k, v in dev_sc.items() if k != "search.page_rank_budget_ratio"}
+        w5 = arm == "v2-w5"
+        assert sc["search.page_rank_cut"] == ("whole_pages" if w5 else "off") and "reuse_store" not in spec
+        assert set(sc) == (W5A_KEYS | {"search.page_rank_cut_factor"} if w5 else W5A_KEYS) and (not w5 or sc["search.page_rank_cut_factor"] == "1.5")
         assert GbrainMemoryProvider({"gbrain_cli": "unused", "child_env": {}, "lane": spec["lane"], **spec["provider_config"],
-                                     "search_config": sc})._arm_page_rank_cut() is None
+                                     "search_config": sc})._arm_page_rank_cut() == (1.5 if w5 else None)
         if kind == "lme":
             assert spec["seal"] == "public"
             if arm == "v2":
@@ -114,3 +117,4 @@ def test_confirmation_arms_are_dev_arms_with_w5_off_on_the_non_dev_data():
     assert len(lme) == len(set(lme)) == 400 and not set(lme) & dev_ids
     dev_units = {s: set(json.loads((CELLS / "dev" / f"beam-{s}-v2.json").read_text())["questions"]["units"]) for s in NON_DEV_UNITS}
     assert {s: len(set(u)) for s, u in beam.items()} == NON_DEV_UNITS and all(not set(u) & dev_units[s] for s, u in beam.items())
+    assert all(arms[-1] == "v2-w5" for g, arms in order.items() if g.startswith("beam"))

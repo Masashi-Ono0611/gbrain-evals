@@ -799,3 +799,15 @@ LongMemEval-S scores come from the joint blinded re-judge of the four cells. BEA
 | `retune-rejudge` | `4ef8301e…` |
 
 The re-tune cost $27.44 for the 16 cells and $1.05 for the re-judge, $28.49 in all against the $29 line. That leaves $456.51 of the $485 for confirmation. The four VMs and the smoke VM are destroyed and recorded.
+
+## Amendment after the re-tune: W5 confirms at factor 1.50 (October 12, 2026)
+
+**The rule changed after the results were seen.** This amendment came after the dev re-tune results were seen, so it is a post-hoc change to the preregistered eligibility rule, not part of it. Garry approved it through GBRA-40 on October 12, 2026; the binding text is in the wave's decisions file.
+
+**What happened.** Under the go addendum's rule, every factor passed conditions 1 to 4. Each missed condition 5, LongMemEval-S multi-session at least `ref` plus 2, by exactly one question: 17 correct against the 18 required (`ref` had 16). No factor was eligible, and the rule sent W5 to Garry ([re-tune result](#adaptive-w5-re-tune-result-no-factor-is-eligible-october-12-2026)).
+
+**The choice.** W5 runs in confirmation at factor 1.50. That is the rule's own tie-break pick: the three factors tie on multi-session at 17, and 1.50 has the highest pooled BEAM score (74.40, against 73.91 and 73.68). Condition 5 is set aside for this one pick. Nothing else about the rule or the gates changes.
+
+**What it governs.** BEAM non-dev confirmation adds `combined-v2+w5` (`v2-w5`) as the last arm of each BEAM group. It is dev's `v2` spec with `search.page_rank_cut: whole_pages` and `search.page_rank_cut_factor: 1.5`, at gbrain `71b6d85bce8bf80aacec2dffe96e29cf0202c8d2`, reading its group's store. The cell budgets are $15 for BEAM-100K, $14 per BEAM-500K group and $15 per BEAM-1M group, as the confirmation specs addendum set. The W5 gate reads BEAM pooled, as preregistered in the re-scope addendum. A pass flips the default on at factor 1.50. If W5 fails, it ships off. Because the rule was changed after the results were seen, the W5 gate's result is reported with this amendment beside it.
+
+**Budget.** The confirmation expectation is about $442, which includes `v2-w5`'s roughly $43 and the BEAM joint re-judge with the W5 lane. The run script's guard holds total confirmation spend, plus the budget of each cell before it starts, within the $456.51 that remains after the re-tune.
