@@ -2,6 +2,23 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.78] - 2026-10-12
+
+### Retire the Cat 40 v1 success headline
+
+The README's Cat 40 row reported 95.6% success for gbrain and for plain files on five frontier models. gbrain ran
+without its reranker in all 500 of those cells (gbrain-evals #110), and the world is at its ceiling, so a rerun could
+only confirm parity. The claim is retired without a rerun.
+
+- **Kept:** the permission result, 0 of 100 finance-only leaks into the agent's context, which does not depend on
+  reranking.
+- **Retired:** the frontier tie and the older six-model lead (75.7% against 72.8%), on the README and as the current
+  reading of the [Cat 40 report](docs/benchmarks/2026-10-02-model-ladder.md#retired-2026-10-12). Its numbers stay as
+  measured.
+- **Replaced by:** a README row for the [Cat 40 Hard confirmation](docs/benchmarks/2026-10-10-model-ladder-hard-confirmation.md),
+  where gbrain is ahead of plain files by +7.7 points on a fresh world and +13.0 on a sealed one with reranking
+  verified.
+
 ## [0.10.77] - 2026-10-11
 
 ### T0b sealed confirmation: 10x fewer end-to-end memory failures than v0.60.106.0
