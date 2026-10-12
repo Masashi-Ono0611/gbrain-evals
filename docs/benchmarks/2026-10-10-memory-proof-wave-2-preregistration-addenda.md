@@ -511,3 +511,66 @@ With no would-skip question, the decision metric, the token-weighted overlap on 
 Confirmation cells are sized with reservation headroom, as dev now is. That headroom raises the cell budgets, not the expected spend.
 
 **Open before confirmation: W5 at 0.40 under-fills on BEAM.** On the dev reruns, `combined-v2+w5` delivers a mean of 6,395 tokens on BEAM-100K and 5,516 on BEAM-500K (p95 8,072 and 7,117). Both are outside the delivered-context gate. `combined-v2` on the same stores is inside it. Every counted cell must pass that gate, and a failing cell is reported as failing, not rerun at another setting. So the W5 BEAM lane at ratio 0.40 would very likely fail as preregistered. The dev results addendum reports the figures. The lane's design needs Garry's decision before any confirmation cell runs.
+
+## Dev results at the W5 pin (October 12, 2026)
+
+Dev is finished at pin `fe9e0397b`. It is exploratory: the scores come from each cell's own judge, with no joint re-judge, and they decide nothing counted. Each count is questions correct out of scheduled. Every cell listed is complete with no failures. "Delivered" is the mean and p95 of cl100k tokens inserted into the prompt, and a ✗ marks a cell outside the ±10% delivered-context gate. The cell ids are the final cells. The undersized first attempts are listed in the sizing addendum.
+
+| Arm | LongMemEval-S (100) | LoCoMo10 (322) | BEAM-100K (40) | BEAM-500K (80) | BEAM-1M (80) |
+|---|---|---|---|---|---|
+| `v2` | 89 · 8,109 / 8,168 | 294 · 7,996 / 8,110 | 28 · 8,088 / 8,241 | 63 · 8,079 / 8,117 | 61 · 8,055 / 8,086 |
+| `v2-w5` (ratio 0.40) | — | — | 26 · 6,395 / 8,072 ✗ | 63 · 5,516 / 7,117 ✗ | 62 · 5,731 / 7,813 ✗ |
+| `v2-facts-arm` | 84 · 8,108 / 8,166 | 291 · 8,003 / 8,109 | 28 · 8,090 / 8,255 | 59 · 8,078 / 8,112 | 64 · 8,053 / 8,087 |
+| `v1` | 84 · 8,129 / 8,163 | 288 · 8,098 / 8,141 | 25 · 8,087 / 8,252 | 58 · 8,077 / 8,111 | 63 · 8,053 / 8,088 |
+| `one-call` | 88 · 6,753 / 7,217 ✗ | 290 · 8,811 / 9,541 ✗ | 28 · 6,977 / 7,846 ✗ | 66 · 7,195 / 8,052 ✗ | 64 · 6,934 / 7,826 ✗ |
+| `cost-matched` | — | — | 29 · 7,550 / 7,688 | 65 · 7,644 / 7,670 | 64 · 7,802 / 7,836 |
+| `filler` | 83 · 8,142 / 8,175 | — | — | — | — |
+| `raw` | 89 · 8,051 / 8,097 | 261 · 7,936 / 8,111 | — | — | — |
+
+Cell ids:
+
+- **LongMemEval-S:** `v2` `f02883e4aecc`, `v2-facts-arm` `5a7efee7d191`, `v1` `c0da1a55e3e7`, `one-call` `c193e6a772dd`, `filler` `eef394954ce4`, `raw` `7c5334de0c07`.
+- **LoCoMo10:** `v2` `2f62795d5cba`, `v2-facts-arm` `7d060e25504b`, `v1` `e2e5a72d7606`, `one-call` `a9624ac36941`, `raw` `25f128e66c28`.
+- **BEAM-100K:** `v2` `8e7808d33768`, `v2-w5` `f43e2ca16da4`, `v2-facts-arm` `4004773b0080`, `v1` `8dc1c0b754ee`, `one-call` `c54dc1722bfb`, `cost-matched` `a66844e70a7a`.
+- **BEAM-500K:** `v2` `ad97e7360014`, `v2-w5` `0e927a150ca8`, `v2-facts-arm` `2a61b1906667`, `v1` `02f7bddfc3a7`, `one-call` `7d8b5dd18eac`, `cost-matched` `c7c3eb9581d1`.
+- **BEAM-1M:** `v2` `7fd28dd638b5`, `v2-w5` `4c08e5d3af99`, `v2-facts-arm` `8ba7376f9367`, `v1` `781f92c45ca8`, `one-call` `1b400bf5c2f1`, `cost-matched` `067e482cd0e1`.
+
+Each id carries its dataset prefix: `longmemeval-s-`, `locomo-locomo10-` or `beam-<size>-`, then `gbrain-rag-`.
+
+- **W5 at 0.40 under-fills on every BEAM split.** It delivers 5,516 to 6,395 tokens on average. Its correct counts track `v2`: 26 against 28, 63 against 63, and 62 against 61. As the A15 addendum notes, the W5 BEAM lane at this ratio would fail the delivered-context gate as preregistered, and its design waits on Garry's decision.
+- **`one-call` misses the delivered-context gate everywhere.** It under-fills on LongMemEval-S and BEAM and over-fills on LoCoMo10. The cause, from the recall packer analysis, is that recall re-counts delivered blocks at four characters per token instead of with delivery's tokenizer, and sizes delivery to the whole budget before the facts take their share. The fix lands after the pin. The dev rows stay as measured at `fe9e0397b`.
+- **`v2` against `v1`, in-cell and exploratory:** +5 on LongMemEval-S, +6 on LoCoMo10, +3 on BEAM-100K, +5 on BEAM-500K, −2 on BEAM-1M.
+
+**Spend.**
+
+| Stage | Spend | Cap |
+|---|---:|---:|
+| `dev-lme` | $8.64 | $12 |
+| `dev-locomo` | $29.41 | $39 |
+| `dev-beam-100k` | $9.15 | $14 |
+| `dev-beam-500k` | $20.51 | $28 |
+| `dev-beam-1m` | $21.99 | $34 |
+| **Total** | **$89.70** | |
+
+The A15 probe's own spend is reported with A15. Wave-2 spend to date, without A15, is $164.82.
+
+**Custody.** All five dev VMs are destroyed and recorded in each stage's `VMS.md`. The stores are snapshotted to the integrator's primary machine under `wave2/stores/`:
+
+| Store | sha256 |
+|---|---|
+| `gbrain-longmemeval-s-165df707838f` | `0a136a61…` |
+| `gbrain-locomo-locomo10-f974c95acfa8` | `f07919c4…` |
+| `gbrain-locomo-locomo10-ce690034b506` (raw) | `629cf5f5…` |
+| `gbrain-beam-100k-6824b3680877` | `854adb7d…` |
+| `gbrain-beam-500k-8222a93c39c3` | `4cbd1f9d…` |
+| `gbrain-beam-1m-5f98c3307942` (4 units) | `890bbd16…` |
+
+The stage ledgers are mirrored with matching SHA-256:
+
+| Ledger | sha256 |
+|---|---|
+| `dev-lme.sqlite` | `c317dffc…` |
+| `dev-locomo.sqlite` | `98556d3b…` |
+| `dev-beam-100k.sqlite` | `a2f09a47…` |
+| `dev-beam-500k.sqlite` | `4373a588…` |
+| `dev-beam-1m.sqlite` | `9ccc9a19…` |
