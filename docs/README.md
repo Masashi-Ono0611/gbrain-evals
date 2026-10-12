@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.80, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.81, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -48,6 +48,7 @@ describe current behavior first, then the older work behind a decision.
 | With the answer key hidden, how accurate are gbrain's answers, and does the reader prompt or the amount of evidence matter more? | [September 29 opaque-id answer re-run](benchmarks/2026-09-29-longmemeval-opaque-qa.md) |
 | Does taking brief notes before answering help when the original conversations remain available? | [September 25 reading-notes comparison](benchmarks/2026-09-25-reading-notes.md) |
 | Does gbrain help frontier agents on hard, indirectly referenced company questions at 55,000 documents? | [October 10 Cat 40 Hard confirmation](benchmarks/2026-10-10-model-ladder-hard-confirmation.md): gbrain v0.60.139.0 ahead of plain files on a fresh world (+7.7 points, 95% CI +2.7 to +12.7) and a sealed one (+13.0, +7.7 to +18.3); behind on M's conflicting-source family; [October 7 result](benchmarks/2026-10-07-model-ladder-hard.md) on v0.60.95.0 (−11.3) |
+| Should new installs default to `balanced`, and should `query` expand on every mode? | [October 12 low-hanging-fruit wave gates](benchmarks/2026-10-12-lhf-wave.md) ([preregistration](benchmarks/2026-10-12-lhf-wave-preregistration.md); gbrain `f77f1418c`): `query` without expansion on `balanced` keeps 451 vs 448 of 470 LongMemEval-S questions at a sixth of the latency, so expansion follows the mode; `balanced` ties `tokenmax` 451 vs 451 on LongMemEval-S, but the Cat 40 Hard 25-row rerank pool is inconclusive (−0.93 points, lower bound −1.55), so `tokenmax` stays the new-install default |
 | Why did the last-session verbatim probe miss, and does the fix change recall? | [October 9 verbatim-probe paired verdict, gbrain #6391 (`f05943e65`)](benchmarks/2026-10-09-verbatim-probe-preregistration.md): the misses were reads the probe classified as degraded; after the fix all 500 probes read clean (was 429), strict recall@10 unchanged at 496 of 500 |
 | How well does scoped vector search hold up at 1M to 2M chunks, and what fixes it? | [October 9 HNSW scale mirror, from gbrain #6380 (`2e84d234e`)](benchmarks/2026-10-09-hnsw-scale.md): pooled attempts that scan 20,000 tuples lift random 10% scope recall@50 from 0.52 to 0.77 to 0.96 to 0.99 at +16 to 36 ms p50; chunk statistics refreshed after bulk writes keep the HNSW plan; topic-coherent selective sources remain a gap |
 | Does relaxed HNSW scan order help filtered vector search on Postgres, and what does it cost? | [October 7 fix wave 11 mirror, W6.3 from gbrain `capy/fix-wave-11`](benchmarks/2026-10-07-hnsw-relaxed-order.md): on real 1024- and 1536-dimension embeddings, recall@10 at a 50% source filter rises 2.1 and 1.7 points with latency unchanged within noise, so `relaxed_order` ships default-on |
@@ -200,6 +201,11 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-12: Low-hanging-fruit wave gates
+
+gbrain-evals v0.10.81 (the opening names it; was v0.10.80). Adds the retrieval row for the
+[October 12 low-hanging-fruit wave gates](benchmarks/2026-10-12-lhf-wave.md).
 
 ### 2026-10-12: Cat 41 `gbrain setup claude-code` TTHW
 
