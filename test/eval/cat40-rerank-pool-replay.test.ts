@@ -163,9 +163,10 @@ describe('paired bootstrap lower bound (10,000 resamples, seed 1)', () => {
 });
 
 describe('gate verdict (margin -1 point)', () => {
-  test('a lower bound exactly at -0.01 passes; just below is inconclusive; an estimate below the margin fails', () => {
-    expect(gateVerdict({ estimate: 0, lower: -0.01 })).toBe('pass');
-    expect(gateVerdict({ estimate: 0, lower: -1 / 100 })).toBe('pass');
+  test('a lower bound exactly at -0.01 is inconclusive (strictly above is required); just above passes; an estimate below the margin fails', () => {
+    expect(gateVerdict({ estimate: 0, lower: -0.01 })).toBe('inconclusive');
+    expect(gateVerdict({ estimate: 0, lower: -1 / 100 })).toBe('inconclusive');
+    expect(gateVerdict({ estimate: 0, lower: -0.0099999 })).toBe('pass');
     expect(gateVerdict({ estimate: 0, lower: -0.0100001 })).toBe('inconclusive');
     expect(gateVerdict({ estimate: -0.01, lower: -0.03 })).toBe('inconclusive');
     expect(gateVerdict({ estimate: -0.0101, lower: -0.03 })).toBe('fail');

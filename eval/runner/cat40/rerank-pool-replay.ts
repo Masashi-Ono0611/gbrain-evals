@@ -35,7 +35,7 @@
  * call whose operation fails identically in both arms is excluded and
  * counted. The gate: gold hit@5 under 25 minus under 50, paired over calls,
  * one-sided 95% lower bound by paired bootstrap (10,000 resamples, seed 1);
- * pass when the lower bound is at least -0.01 (1 point), fail when the point
+ * pass when the lower bound is strictly above -0.01 (1 point), fail when the point
  * estimate is below it, inconclusive otherwise.
  *
  * Paid run (forward upstream; build the slot first, see the runbook section in
@@ -310,11 +310,11 @@ export function pairedBootstrapLowerBound(diffs: readonly number[], opts: { resa
 }
 
 export type Verdict = 'pass' | 'inconclusive' | 'fail' | 'invalid';
-/** The gate: pass when the lower bound is at least the margin (no more than 1 point below), fail when the estimate is below it. */
+/** The gate (the wave's Measurement rule): pass when the lower bound is strictly above the margin, fail when the estimate is below it. */
 export function gateVerdict(b: Pick<PairedBound, 'estimate' | 'lower'>, margin = MARGIN, valid = true): Verdict {
   if (!valid || b.estimate === null || b.lower === null) return 'invalid';
   const eps = 1e-12;
-  if (b.lower >= margin - eps) return 'pass';
+  if (b.lower > margin + eps) return 'pass';
   if (b.estimate < margin - eps) return 'fail';
   return 'inconclusive';
 }

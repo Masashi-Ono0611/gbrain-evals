@@ -79,4 +79,8 @@ A shard or arm that reaches its cap stops before the request that would cross it
 
 ## Amendments
 
-None yet.
+### 2026-10-12, before any Cat 40 call: the rerank-pool replay
+
+The procedure is [`cat40-hard/RERANK_POOL_REPLAY.md`](cat40-hard/RERANK_POOL_REPLAY.md) as of this commit, run by `eval/runner/cat40/rerank-pool-replay.ts`. In short: the 1,030 recorded hybrid `search` calls of the 2026-10-10 Hard confirmation's `gbrain-hard` cells (966 from tasks naming gold documents) are replayed on a freshly built world M brain (seed 20261021, frozen knobs, one slot, `text-embedding-3-large`) at the measurement tree, through `gbrain serve --surface starter`, under `search.reranker.top_n_in` 50 and 25 with `search.mode` pinned to `tokenmax` in both arms, so only the pool differs. The gate is gold hit@5 (any of the first five rows is one of the task's gold documents) under 25 minus under 50, paired over calls, with the same bootstrap, seed and margin as above: pass when the lower bound is strictly above -0.01, fail when the estimate is below -0.01, otherwise inconclusive. This is stricter than the plan's wording ("no more than 1 point below"), which reads as the point estimate; the stricter reading keeps an underpowered result from passing. The bootstrap resamples calls, not cells, so calls from one cell are treated as independent; the report also gives the estimate by task family. Also reported: top-20 overlap and how often fused rows 26 to 50 enter the top 20.
+
+Budget: both runs use this program's ledger (`~/.capy/work/lhf/ledger.sqlite`). Slot build cap $4 (measured $2.74 at the confirmation), replay cap $1 (estimate $0.33).

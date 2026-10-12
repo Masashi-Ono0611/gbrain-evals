@@ -28,7 +28,7 @@ Per call and arm, `calls.ndjson` records the top 20 rows, which rows from fused 
 
 The estimate is gold hit@5 under 25 minus under 50, paired over calls. The interval is a one-sided 95% lower bound from a paired bootstrap over calls (10,000 resamples, seed 1, mulberry32). The margin is -0.01 (1 point).
 
-- **pass:** lower bound at least -0.01. The default flip may ship (with the LongMemEval comparisons also passing, plan item 1).
+- **pass:** lower bound strictly above -0.01. The default flip may ship (with the LongMemEval comparisons also passing, plan item 1).
 - **fail:** point estimate below -0.01.
 - **inconclusive:** anything else. An inconclusive result does not ship as a default.
 - **invalid:** any rerank failure, skip, pass-through or missing rerank request in either arm invalidates that arm; a call that fails in only one arm is a missing pair and invalidates the comparison; an arm stopped by its budget is incomplete. Calls whose operation fails identically in both arms are excluded and counted. An invalid run is repeated after a named repair.
