@@ -2,7 +2,7 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
-## [0.10.80] - 2026-10-12
+## [0.10.81] - 2026-10-12
 
 ### Low-hanging-fruit wave paid gates: `query` expansion follows the mode; `balanced` stays opt-in
 
@@ -19,6 +19,27 @@ The paid gates of the low-hanging-fruit plan (#134), run at gbrain `f77f1418c` u
   −1.55, needs above −1.0). New installs with a chat key are still recommended `tokenmax`.
 - **Tooling.** The via-operation LongMemEval driver, its analysis script with unit tests, the arm runner and the Cat 40
   rerank-pool replay runner. Spend $13.64 of a $30 cap.
+
+## [0.10.80] - 2026-10-12
+
+### Cat 41: time to a working memory with `gbrain setup claude-code`
+
+The wave 2 measurement of `gbrain setup claude-code` on gbrain v0.60.184.0 (`a618302c9`), with real Claude Code
+sessions on Opus 5.5, three runs per cell, against targets frozen before any paid session
+([report](docs/benchmarks/2026-10-12-cat41-setup-tthw.md),
+[preregistration](docs/benchmarks/2026-10-12-cat41-setup-tthw-preregistration.md)).
+
+- **Wired recall missed:** 3/3 correct, 83.8 s mean against the 60 s target (the documented path on v0.60.130.0 was
+  98.8 s).
+- **First push missed, 0/3:** the SessionStart hook prints nothing while Claude Code is still starting gbrain's
+  server, so no fresh session saw the remembered item without a tool call.
+- **Faster-setup threshold met as scored:** 35% lower median than the by-hand path on the same release. Only the
+  by-hand runs got a scripted reply; without that session the gap is 23%, under the 25% threshold. Both are reported.
+- **Consent negatives not met as written:** no capture, no unrequested fact write and no paid request, but every run's
+  `gbrain doctor` sent one unbilled `GET /v1/models` with the user's key.
+- **Harness:** five named-only Claude Code scenarios (the release-gate `all` set is unchanged), scorer v6 (re-scoring
+  the published re-baseline gives identical scores) and a recorded `--preregistration` attestation. Spend $8.37 of a
+  $25 cap.
 
 ## [0.10.79] - 2026-10-12
 
