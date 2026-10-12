@@ -5,3 +5,4 @@ Any VM listed as created without a later "destroyed" line can be removed from an
 | time | VM | event |
 |---|---|---|
 | 2026-10-12T20:04:46Z | `ubirun-gbra52-1791835463-0221bc1f` | created |
+| 2026-10-12T21:12:57Z | `ubirun-gbra52-1791835463-0221bc1f` | destroyed |
