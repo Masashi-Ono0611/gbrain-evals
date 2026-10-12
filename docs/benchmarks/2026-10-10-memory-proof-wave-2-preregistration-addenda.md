@@ -574,3 +574,102 @@ The stage ledgers are mirrored with matching SHA-256:
 | `dev-beam-100k.sqlite` | `a2f09a47…` |
 | `dev-beam-500k.sqlite` | `4373a588…` |
 | `dev-beam-1m.sqlite` | `9ccc9a19…` |
+
+## Garry's go: adaptive W5, a dev re-tune, then confirmation on BEAM and LongMemEval-S (October 12, 2026)
+
+Garry approved the following through GBRA-40; the binding text is in the wave's decisions file. This addendum fixes the re-tune grid, its pick rule and the confirmation plan before the new pin exists and before any of this spend.
+
+**Why W5 changes.** The fixed ratio failed on BEAM dev. At 0.40, `combined-v2+w5` delivered a mean of 6,395, 5,516 and 5,731 tokens on BEAM-100K, BEAM-500K and BEAM-1M, all outside the delivered-context gate. BEAM's exchange-split pages are small, so 0.40 of the page budget leaves too few pages to fill it. The counted W5 gate never ran. The dev results addendum has the full dev table.
+
+**The redesign.** W5 becomes adaptive. Page-unit ranking stops adding candidates once their whole pages would fill the caller's budget times an overfill factor. That replaces the fixed ratio, which was a proxy for the same thing. It is built as `search.page_rank_cut: whole_pages`, with the factor as a second key. The pin addendum records both exact key names, their off values and what `_meta` reports, before any re-tune cell runs. W5 stays off by default until the counted W5 gate passes.
+
+**W3** ships as the shadow grade only (TC2; A15 0 of 542). No W3-on arm runs. The one-call recall fill fix ships on the same build, PR-B.
+
+### Re-tune (exploratory, dev only)
+
+**Pin.** PR-B's head with adaptive W5 and the one-call fix. The pin addendum records the SHA.
+
+**Arms.** These run on LongMemEval-S dev (100 questions) and on BEAM-100K, BEAM-500K and BEAM-1M dev (40, 80 and 80 questions). Every arm is the `combined-v2` lane, the lane the W5 gate reads, and every arm sets the full knob table.
+
+| Arm | W5 |
+|---|---|
+| `ref` | off (the reference: `v2`, re-run at the new pin) |
+| `f1.00` | adaptive, factor 1.00 |
+| `f1.25` | adaptive, factor 1.25 |
+| `f1.50` | adaptive, factor 1.50 |
+
+That is 16 cells. `ref` is dev's `v2` arm at the new pin.
+
+**Scores.**
+
+- **LongMemEval-S.** One joint blinded re-judge of the four LongMemEval-S cells with the preregistered judge. The score is mean points over the 100 questions. Multi-session is the number correct among the 22 `multi-session` questions without the `_abs` suffix.
+- **BEAM.** Each cell's own judge. The BEAM score is the question-weighted mean of `mean_score` over the 200 BEAM dev questions, pooled across the three splits.
+
+**Pick rule, fixed now.** A factor is eligible only if every one of these holds:
+
+1. All four of its cells pass the delivered-context gate: mean and p95 both within 7,200 to 8,800 cl100k tokens. The four are LongMemEval-S, BEAM-100K, BEAM-500K and BEAM-1M.
+2. All four of its cells are complete, with no answer, retrieval or judge failures, and the receipt check of the reported cut holds on every row.
+3. Its LongMemEval-S score is at least `ref`'s.
+4. Its pooled BEAM score is at least `ref`'s.
+5. Its LongMemEval-S multi-session count is at least `ref`'s plus 2.
+
+Among eligible factors, the pick is the one with the most LongMemEval-S multi-session correct. Ties go to the higher pooled BEAM score, then the higher LongMemEval-S score, then the smaller factor. The `ref` cells must themselves pass conditions 1 and 2. If one does not, the run is fixed and that cell rerun before the rule is applied. If no factor is eligible, W5 does not run in confirmation and stays off by default, and Garry decides what follows. The pick is recorded here before any confirmation cell runs.
+
+**Stores and cell ids.**
+
+- **Store ids.** A store's id commits to the gbrain build that loaded it, so a new pin gives every store a new id. The dev stores are snapshots from `fe9e0397b`.
+- **Reusing the dev stores.** The re-tune reuses them only if `git diff fe9e0397b <pin>` in gbrain touches no ingest, extraction, embedding, schema or migration code. W5 and the one-call fix are read-time only. The pin addendum records that check.
+- **How reuse works.** A reusing cell sets `reuse_store` with the store id and the reason (harness: `reuse_store`). The harness reads the snapshot only if its identity differs from this build's in the gbrain pin alone. Every other field must match: dataset, split, ingest revision, ingest config, credentials and harness pins. The reuse and its reason are part of the cell id.
+- **Cell ids.** Every re-tune and confirmation cell has a new id, because the pin changed.
+- **If the diff touches ingest,** the dev stores are rebuilt at the pin. That adds about $15 and about 4 hours.
+
+**Budget.** The expected actual spend is about $29:
+
+| Item | Expected |
+|---|---:|
+| Four LongMemEval-S reads | $5.40 |
+| Twelve BEAM reads | $22.40 |
+| LongMemEval-S re-judge | $1 |
+
+Cell budgets carry reservation headroom: $2 for LongMemEval-S cells, $4 for BEAM-100K and $7 for BEAM-500K and BEAM-1M. The stage caps are $10, $10, $16 and $18, and the re-judge cap is $2.50. That runs about $9 above the decision's $20 estimate. The difference is the BEAM `ref` arm and the three BEAM splits at dev cost, and it comes out of the reserve below.
+
+### Confirmation (counted), BEAM and LongMemEval-S
+
+**Data.** BEAM non-dev, 72 conversations and 1,440 questions. LongMemEval-S, the 400 questions outside the dev subset. LoCoMo10 confirmation is not in this go, so gate 2's LoCoMo10 test and gate 3's LoCoMo10 report are recorded as not run.
+
+| Lane | Datasets | Role |
+|---|---|---|
+| `combined-v2` | BEAM, LongMemEval-S | counted |
+| `combined-v1@pin` | BEAM, LongMemEval-S | counted reference, gate 2 |
+| `raw@pin` | LongMemEval-S | counted reference, gate 1 |
+| `combined-v2+w5`, at the picked factor | BEAM | counted, W5 gate; dropped if no factor is eligible |
+| `recall-one-call`, at the fixed build | LongMemEval-S | descriptive, decides nothing |
+| The comparator, regenerated | BEAM | counted, gate 3 |
+
+**Gates.**
+
+| Gate | Result |
+|---|---|
+| 1 | LongMemEval-S, `combined-v2` against `raw@pin` |
+| 2 | BEAM pooled, `combined-v2` against `combined-v1@pin` at 2 points |
+| 3 | BEAM pooled, against the comparator at 3.5 points. LongMemEval-S is reported against the comparator's wave-1 answers in the joint re-judge |
+| W5 | BEAM pooled, as preregistered in the re-scope addendum. A pass flips the default on, at the picked factor |
+| 4 | Recorded as failed (A15) |
+| 5 | Cost |
+
+Every counted cell must pass the delivered-context gate, and a failing cell is reported as failing.
+
+**Budget inside the remaining $485.**
+
+| Line | Expected USD |
+|---|---:|
+| Re-tune: 16 cells and the LongMemEval-S re-judge | 29 |
+| LongMemEval-S: ingest (about $38), `combined-v1@pin`, `combined-v2`, `recall-one-call`, `raw@pin` with its own store | 62 |
+| BEAM non-dev: ingest (about $30), `combined-v1@pin`, `combined-v2`, `combined-v2+w5`, about $40 per lane | 151 |
+| The comparator's BEAM regeneration | 105 |
+| BEAM joint re-judge: `combined-v1@pin`, `combined-v2`, `combined-v2+w5`, the comparator | 89 |
+| LongMemEval-S joint re-judge: four gbrain lanes and the comparator's wave-1 answers | 7 |
+| **Subtotal** | **443** |
+| Reserve | 42 |
+
+`recall-one-call` on BEAM would cost about $62 more with its re-judge share. That doesn't fit with a reserve, so it runs on LongMemEval-S only. Confirmation cells carry reservation headroom like dev's: each stage cap is its expected spend plus the largest cell budget. A stage that would need more than its line stops and reports. Ledgers are mirrored to the integrator's primary machine after each cell.
