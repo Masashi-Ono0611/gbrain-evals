@@ -1,0 +1,286 @@
+{
+  "generated_by": "analyze.ts",
+  "bootstrap": {
+    "clusters": "conversation",
+    "draws": 10000,
+    "seed": 42
+  },
+  "floor_reused": {
+    "f-gpt61sol": "2026-10-08-beam-1m-failure-analysis/arms/a1-nomem-gpt61sol"
+  },
+  "retrieval": {
+    "r-div": {
+      "status": "complete",
+      "rows": 220,
+      "errors": 0,
+      "rerank_states": {
+        "reranked": 220
+      },
+      "reranked_queries": 167,
+      "rerank_requests": {
+        "voyage:rerank-2.5": 167
+      },
+      "strict_at_5": 56,
+      "strict_at_10": 83,
+      "answerable": 198,
+      "feasible_at_5": {
+        "n": 145,
+        "strict": 56
+      },
+      "feasible_at_10": {
+        "n": 160,
+        "strict": 83
+      },
+      "any_at_5": 155,
+      "ndcg_at_10": 0.52,
+      "latency_ms": {
+        "p50": 455.4,
+        "p95": 757.3
+      },
+      "usd": 0.4155
+    },
+    "r-off": {
+      "status": "complete",
+      "rows": 220,
+      "errors": 0,
+      "rerank_states": {
+        "off": 220
+      },
+      "reranked_queries": 0,
+      "rerank_requests": {},
+      "strict_at_5": 46,
+      "strict_at_10": 72,
+      "answerable": 198,
+      "feasible_at_5": {
+        "n": 145,
+        "strict": 46
+      },
+      "feasible_at_10": {
+        "n": 160,
+        "strict": 72
+      },
+      "any_at_5": 140,
+      "ndcg_at_10": 0.4668,
+      "latency_ms": {
+        "p50": 236.9,
+        "p95": 371.2
+      },
+      "usd": 0.7478
+    },
+    "r-on": {
+      "status": "complete",
+      "rows": 220,
+      "errors": 0,
+      "rerank_states": {
+        "reranked": 220
+      },
+      "reranked_queries": 220,
+      "rerank_requests": {
+        "voyage:rerank-2.5": 220
+      },
+      "strict_at_5": 55,
+      "strict_at_10": 76,
+      "answerable": 198,
+      "feasible_at_5": {
+        "n": 145,
+        "strict": 55
+      },
+      "feasible_at_10": {
+        "n": 160,
+        "strict": 76
+      },
+      "any_at_5": 152,
+      "ndcg_at_10": 0.5088,
+      "latency_ms": {
+        "p50": 339.9,
+        "p95": 541.8
+      },
+      "usd": 0.139
+    }
+  },
+  "retrieval_paired": {
+    "r-on minus r-off": {
+      "strict_at_5": {
+        "n": 198,
+        "a": 0.2323,
+        "b": 0.2778,
+        "delta": 0.0455,
+        "ci95": [
+          0.0152,
+          0.0808
+        ],
+        "better": 13,
+        "worse": 4
+      },
+      "strict_at_10": {
+        "n": 198,
+        "a": 0.3636,
+        "b": 0.3838,
+        "delta": 0.0202,
+        "ci95": [
+          -0.0152,
+          0.0556
+        ],
+        "better": 11,
+        "worse": 7
+      },
+      "strict_at_5_feasible": {
+        "n": 145,
+        "a": 0.3172,
+        "b": 0.3793,
+        "delta": 0.0621,
+        "ci95": [
+          0.0201,
+          0.1088
+        ],
+        "better": 13,
+        "worse": 4
+      },
+      "strict_at_10_feasible": {
+        "n": 160,
+        "a": 0.45,
+        "b": 0.475,
+        "delta": 0.025,
+        "ci95": [
+          -0.0187,
+          0.0688
+        ],
+        "better": 11,
+        "worse": 7
+      }
+    },
+    "r-div minus r-on": {
+      "strict_at_5": {
+        "n": 198,
+        "a": 0.2778,
+        "b": 0.2828,
+        "delta": 0.0051,
+        "ci95": [
+          -0.0152,
+          0.0253
+        ],
+        "better": 5,
+        "worse": 4
+      },
+      "strict_at_10": {
+        "n": 198,
+        "a": 0.3838,
+        "b": 0.4192,
+        "delta": 0.0354,
+        "ci95": [
+          0,
+          0.0657
+        ],
+        "better": 9,
+        "worse": 2
+      },
+      "strict_at_5_feasible": {
+        "n": 145,
+        "a": 0.3793,
+        "b": 0.3862,
+        "delta": 0.0069,
+        "ci95": [
+          -0.021,
+          0.035
+        ],
+        "better": 5,
+        "worse": 4
+      },
+      "strict_at_10_feasible": {
+        "n": 160,
+        "a": 0.475,
+        "b": 0.5188,
+        "delta": 0.0438,
+        "ci95": [
+          0,
+          0.0818
+        ],
+        "better": 9,
+        "worse": 2
+      }
+    },
+    "r-div minus r-off": {
+      "strict_at_5": {
+        "n": 198,
+        "a": 0.2323,
+        "b": 0.2828,
+        "delta": 0.0505,
+        "ci95": [
+          0.0253,
+          0.0758
+        ],
+        "better": 16,
+        "worse": 6
+      },
+      "strict_at_10": {
+        "n": 198,
+        "a": 0.3636,
+        "b": 0.4192,
+        "delta": 0.0556,
+        "ci95": [
+          0.0101,
+          0.1111
+        ],
+        "better": 19,
+        "worse": 8
+      },
+      "strict_at_5_feasible": {
+        "n": 145,
+        "a": 0.3172,
+        "b": 0.3862,
+        "delta": 0.069,
+        "ci95": [
+          0.0347,
+          0.102
+        ],
+        "better": 16,
+        "worse": 6
+      },
+      "strict_at_10_feasible": {
+        "n": 160,
+        "a": 0.45,
+        "b": 0.5188,
+        "delta": 0.0688,
+        "ci95": [
+          0.0123,
+          0.1358
+        ],
+        "better": 19,
+        "worse": 8
+      }
+    }
+  },
+  "answers": {
+    "f-gpt61sol": {
+      "status": "complete",
+      "all": {
+        "n": 220,
+        "mean_score": 0.2857,
+        "all_items_met": 41
+      },
+      "answerable": {
+        "n": 198,
+        "mean_score": 0.2064,
+        "all_items_met": 19
+      },
+      "abstention": {
+        "n": 22,
+        "mean_score": 1,
+        "all_items_met": 22
+      },
+      "qa_errors": 0,
+      "reused_answers": 0,
+      "stopped_at_limit": 0,
+      "input_tokens_per_answer": 97,
+      "output_tokens_per_answer": 213,
+      "committed_wrong_detector": {
+        "all": 119,
+        "answerable": 119,
+        "abstention": 0
+      },
+      "usd": 0.6038
+    }
+  },
+  "answers_paired": {},
+  "spend_usd_this_measurement": 1.3023
+}

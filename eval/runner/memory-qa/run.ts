@@ -161,7 +161,7 @@ export interface MemoryQaRow {
 }
 
 /** The part of hybridSearch's onMeta report the reranker fidelity check reads. */
-type SearchMeta = { degraded?: Array<string | { stage?: string }> };
+type SearchMeta = { degraded?: Array<string | { stage?: string; reason?: string }> };
 
 const DEFAULT_PINS: Record<string, string> = { 'search.mode': 'balanced', 'search.autocut': 'false' };
 const RECYCLE_EVERY = 25;
@@ -588,7 +588,7 @@ export async function runArm(a: RunArgs): Promise<{ receipt: Record<string, unkn
               const latency = performance.now() - t0;
               let rerank: MemoryQaRow['rerank'] = { state: !results.length ? 'no_results' : rerankOn ? 'reranked' : 'off' };
               if (rerank.state === 'reranked') {
-                const stages = (seen.meta?.degraded ?? []).map(d => (typeof d === 'string' ? d : d.stage ?? '')).filter(st => /rerank/.test(st));
+                const stages = (seen.meta?.degraded ?? []).map(d => (typeof d === 'string' ? d : `${d.stage ?? ''}${d.reason ? `: ${d.reason}` : ''}`)).filter(st => /rerank/.test(st));
                 if (!results.some(r => r.rerank_score !== undefined) || stages.length) {
                   throw rerankerInactive(`question ${q.id} came back ${stages.length ? `with a rerank degradation (${stages.join(', ')})` : 'without rerank scores'} although the reranker is on; the run stopped there`, rerankModel ?? 'the default reranker');
                 }
