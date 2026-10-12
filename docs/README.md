@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.77, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.78, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -200,6 +200,11 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-12: Retire the Cat 40 v1 success headline
+
+gbrain-evals v0.10.78 (the opening names it; was v0.10.77). The Model Ladder report now marks its success figures as
+retired, keeping the permission result; for agent-task success the index already links the Cat 40 Hard confirmation.
 
 ### 2026-10-11: T0b sealed confirmation
 
