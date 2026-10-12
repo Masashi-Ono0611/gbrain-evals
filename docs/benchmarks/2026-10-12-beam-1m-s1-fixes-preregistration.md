@@ -120,4 +120,4 @@ Conservative is never flipped: it has no reranker, and the knob without one was 
 
 ## Amendments
 
-(none yet)
+1. **2026-10-12, after the retrieval smoke and before cell 1.** The smoke (R-on settings, `--limit 2`, one shard holding two conversations, $0.13) found a harness defect: the runner's per-conversation reset truncated gbrain's schema-seeded `persistence_brain` singleton, and gbrain since #6482 refuses every write without it, so the second conversation's import failed (`requires exactly one known boolean persistence state`). Commit `59ddb918` keeps the seeded singletons (`persistence_brain`, `shared_skill_state`, `page_generation_clock`) across the reset in this runner, `longmemeval.ts` and `systems/gbrain.ts`; the smoke's second conversation then imported, searched and reranked. Every counted cell uses one conversation per shard, so none of them resets. Rows record the configured rerank model (`rerank.model`); the ledger's per-model rerank count remains the evidence. No rule, arm, reader or estimate changes.
