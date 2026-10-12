@@ -2,6 +2,24 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.80] - 2026-10-12
+
+### Low-hanging-fruit wave paid gates: `query` expansion follows the mode; `balanced` stays opt-in
+
+The paid gates of the low-hanging-fruit plan (#134), run at gbrain `f77f1418c` under the
+[preregistration](docs/benchmarks/2026-10-12-lhf-wave-preregistration.md)
+([report](docs/benchmarks/2026-10-12-lhf-wave.md)).
+
+- **Item 1b passes.** On `balanced`, `query` without expansion answered 451 of 470 LongMemEval-S questions in strict
+  `recall_all@5`, against 448 with expansion (+5/−2, lower bound −0.21 points). Operation latency p50 fell from
+  2,216 ms to 370 ms. gbrain's `query` now expands only when the search mode says so.
+- **Item 1's default flip does not ship.** `balanced` tied `tokenmax` on LongMemEval-S, 451 vs 451 for both `search`
+  and `query` with expansion off, so both comparisons passed. The Cat 40 Hard world M rerank-pool replay was
+  inconclusive: gold hit@5 37.0% under a 25-row pool against 37.9% under 50 over 966 calls (−0.93 points, lower bound
+  −1.55, needs above −1.0). New installs with a chat key are still recommended `tokenmax`.
+- **Tooling.** The via-operation LongMemEval driver, its analysis script with unit tests, the arm runner and the Cat 40
+  rerank-pool replay runner. Spend $13.64 of a $30 cap.
+
 ## [0.10.79] - 2026-10-12
 
 ### Cat 40 warm boot waits for gbrain's persistence drain; D2/D4 smoke records

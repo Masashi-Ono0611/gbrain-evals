@@ -41,7 +41,7 @@ describe('lhf-wave LongMemEval decision rule', () => {
   });
 
   test('the bootstrap is deterministic for a seed', () => {
-    const diffs = Array.from({ length: N }, (_, i) => (i % 7 === 0 ? -1 : i % 11 === 0 ? 1 : 0));
+    const diffs: number[] = Array.from({ length: N }, (_, i) => (i % 7 === 0 ? -1 : i % 11 === 0 ? 1 : 0));
     expect(pairedLowerBound(diffs)).toBe(pairedLowerBound(diffs));
     const estimate = diffs.reduce((a, b) => a + b, 0) / diffs.length;
     expect(pairedLowerBound(diffs)).toBeLessThan(estimate);
