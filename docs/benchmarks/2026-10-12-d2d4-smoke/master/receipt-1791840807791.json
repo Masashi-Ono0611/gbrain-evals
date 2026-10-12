@@ -76,7 +76,7 @@
     "--gbrain",
     "/workspace/gbrain@a618302c",
     "--gbrain-root",
-    "/home/user/.capy/work/cat40/gbrain-master",
+    "~/.capy/work/cat40/gbrain-master",
     "--gbrain-label",
     "master",
     "--surface",
@@ -122,7 +122,7 @@
     "input_tokens": 767458,
     "output_tokens": 3516,
     "basis": "budget ledger cat40-model-ladder-2026-10-12T21-28-16-415Z-98d38807: 85 paid requests, 0 charged at their reservation because usage was unavailable",
-    "ledger": "/home/user/.capy/work/gbrain-evals/.budget/d2d4-smoke.sqlite",
+    "ledger": ".budget/d2d4-smoke.sqlite",
     "program_cap_usd": 8,
     "overshoot_usd": 0,
     "event_loop_lag_ms": {

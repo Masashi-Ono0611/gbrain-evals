@@ -15,7 +15,7 @@
     "--arms": "gbrain",
     "--world": "eval/data/model-ladder-wide-dev/world.json",
     "--gbrain": "/workspace/gbrain@a618302c",
-    "--gbrain-root": "/home/user/.capy/work/cat40/gbrain-master",
+    "--gbrain-root": "~/.capy/work/cat40/gbrain-master",
     "--gbrain-label": "master",
     "--surface": "full",
     "--advertised": "starter",
