@@ -67,6 +67,7 @@ from __future__ import annotations
 
 import atexit
 import json
+import math
 import os
 import re
 import shutil
@@ -755,7 +756,7 @@ class GbrainMemoryProvider(MemoryProvider):
         return docs, None, {"lane": "recall-one-call", "requested": args, "facts": fact_meta, "results": len(pages),
                             "facts_order": recalled["facts_order"], "budget_tokens": recalled.get("budget_tokens"),
                             "budget_used": recalled.get("budget_used"), "dropped_count": recalled.get("dropped_count"),
-                            "budget_packing": recalled.get("budget_packing"), "tokenizer": "cl100k",
+                            "budget_packing": recalled.get("budget_packing"), "page_rank_cut": recalled.get("page_rank_cut"), "tokenizer": "cl100k",
                             "tokens_delivered": count_tokens(render_rag_context(docs)), "rendered_tokens": count_tokens(render_rag_context(docs)),
                             "budget_clamped": False, "entity_anchored": 0,
                             "timing": {"lock_wait_ms": round(wait_ms, 1), "unit_open_ms": round((t1 - t0) * 1000 - wait_ms, 1),
@@ -884,7 +885,33 @@ class GbrainMemoryProvider(MemoryProvider):
         }
         if delivery.get("tokenizer") not in (None, "cl100k"):
             raise GbrainRetrieveError(f"gbrain packed evidence with tokenizer {delivery.get('tokenizer')!r}, not cl100k")
+        cut = self._check_page_rank_cut(args, retrieval.get("page_rank_cut"))
+        if cut:
+            meta_out["page_rank_cut"] = cut
         return u, docs, meta_out, retrieval.get("saved_facts") or []
+
+    def _check_page_rank_cut(self, args: dict, cut: dict | None) -> dict | None:
+        """W5's `page_rank_cut` must match the cell's `search.page_rank_budget_ratio`: with a positive ratio, a page-unit
+        call with a caller budget reports applied_cut = min(mode `search.tokenBudget`, floor(ratio x budget)); with the
+        ratio off, no cut is reported. A mismatch fails the row, so a receipt never carries an arm that ran another cut."""
+        sc = self.cfg.get("search_config") or {}
+        try:
+            ratio = float(sc.get("search.page_rank_budget_ratio", "0"))
+        except ValueError:
+            ratio = 0.0
+        engaged = math.isfinite(ratio) and ratio > 0 and args.get("return_unit") == "page" and "token_budget" in args
+        if not engaged:
+            if cut:
+                raise GbrainRetrieveError(f"gbrain applied a page rank cut {json.dumps(cut)} with search.page_rank_budget_ratio off")
+            return None
+        budget = int(args["token_budget"])
+        mode_cut = int(sc["search.tokenBudget"]) if sc.get("search.tokenBudget") else None
+        ratio_cut = max(1, math.floor(ratio * budget))
+        expected = ratio_cut if mode_cut is None else min(mode_cut, ratio_cut)
+        if not isinstance(cut, dict) or cut.get("ratio") != ratio or cut.get("caller_budget") != budget or cut.get("applied_cut") != expected:
+            raise GbrainRetrieveError(f"page_rank_cut {json.dumps(cut)} does not match ratio {ratio} x budget {budget} "
+                                      f"(mode cut {mode_cut}): expected applied_cut {expected}")
+        return cut
 
     def direct_answer(self, query: str, user_id: str | None = None, query_timestamp: str | None = None):
         args = {"question": query}

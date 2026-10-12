@@ -335,3 +335,24 @@ Every arm sets these keys explicitly in `search_config`, on top of the ingest ke
 | W3 `combined-v2+gate` replay, only if A15 shows a would-skip rate of at least 25% | contingent | 35 |
 
 The contingent W3 replay exceeds the reserve by $13. If A15 calls for it, it needs either a trim recorded here or Garry's decision on the cap before it runs. Confirmation stays behind Garry's explicit go.
+
+## W5 pin, key and receipt check (October 11, 2026)
+
+**Pin.** W5 dev tuning runs at gbrain `fe9e0397b7e523b8db3b83e1202fb297337e71b3`, the head of #6445's branch. Its parent is the previous dev pin `8d4f6ab6e`, so the pin is that tree plus W5 and nothing else. Every W5 tuning cell runs with `GBRAIN_SHA` set to this SHA, and the pin does not change mid-run.
+
+**Key.** `search.page_rank_budget_ratio`, registered in `KNOWN_CONFIG_KEYS` and read by `src/core/search/page-rank-cut.ts`. It is off when unset, empty, zero, negative, non-numeric or not finite (`Infinity` included); the specs write `0` for off.
+
+**Where it applies.** Only page-unit calls that carry a caller `token_budget`: `query`, `search` and recall's hybrid page arm. Chunk-unit calls and calls without a caller budget never engage it. When on, ranking cuts its hits to `min(mode search.tokenBudget, max(1, floor(ratio × caller budget)))`, using the caller budget after any remote clamp. Under `tokenmax` with `search.tokenBudget` `10000000`, the ratio sets the cut.
+
+**What it reports.** `page_rank_cut {ratio, caller_budget, mode_cut, applied_cut, candidates, kept}`, in `_meta` on `query` and `search`, and top level on `recall`. It is absent when the key is off.
+
+**Tests at the pin.** A local smoke run against the pin, through the wave-2 provider with `token_budget` 1,500, reported `{ratio 0.5, caller_budget 1500, mode_cut 10000000, applied_cut 750}` with the ratio at `0.5`, and no `page_rank_cut` with it at `0`. The provider suites (`test_gbrain_facts`, `test_page_rank_cut`, `test_mpw2_dev_specs`) pass against the pin. GitHub Test run 38189090777 was dispatched by hand, because #6445 conflicts with master while it is held as the pin. Its shard 4 fails one gbrain test: `test/config-search-registry.test.ts`, "every registered search.* key has a reader", which expects the new key in that test's own list of directly read keys. It reproduces locally. The missing entry is in the test, not the code path, so the measurement is unaffected. The fix is a one-line test change on #6445, and it does not move the W5 tuning pin.
+
+**Receipt check.** On every query-path row, the provider checks the reported cut against the arm's spec before keeping the row:
+
+- with the ratio off, a reported `page_rank_cut` fails the row;
+- with it on, `ratio` must equal the spec's ratio, `caller_budget` must equal the spec's `token_budget`, and `applied_cut` must equal `min(search.tokenBudget, floor(ratio × token_budget))`; a missing or different cut fails the row.
+
+The checked object is kept in each row's metadata as `page_rank_cut`. The one-call recall path records the object but does not check it, and no W5 tuning arm uses that path.
+
+**Specs.** Six arms in `eval/harness-provider/cells/mpw2/w5/` (`lme-b`, `lme-d`, `lme-w5-0.40`, `lme-w5-0.50`, `lme-w5-0.75`, `lme-w5-1.00`), with `order.json` putting `b` first to build the store. The stage cap is $18, `b`'s cell cap is $12 and the other cells' caps are $2 each. All six are `filler-removed` at `token_budget` 8,100 and set every key in the re-scope knob table, including `search.tokenBudget` and `search.page_rank_budget_ratio`. `mpw2-iso-specs.py` generates them, and `tests/test_mpw2_dev_specs.py` checks each arm's mode and ratio. The dev specs are regenerated with both new keys, with the ratio `0` (off), and with `search.tokenBudget` `4000` on `raw` and `10000000` elsewhere.

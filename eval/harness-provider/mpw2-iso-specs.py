@@ -38,6 +38,14 @@ ARMS2 = {
 }
 CAP2_USD = 16
 
+# W5 dev tuning (re-scope addendum): the knob table with `search.tokenBudget` and W5's ratio, at the W5 pin.
+ARMS3 = {
+    "b": ("tokenmax", None),
+    "d": ("conservative", None),
+    **{f"w5-{r:.2f}": ("tokenmax", r) for r in (0.40, 0.50, 0.75, 1.00)},
+}
+CAP3_USD = 18
+
 def write(out: Path, prefix: str, arms: dict, cap: int, label: str) -> None:
     out.mkdir(parents=True, exist_ok=True)
     for i, (arm, (mode, flips)) in enumerate(arms.items()):
@@ -50,6 +58,18 @@ def write(out: Path, prefix: str, arms: dict, cap: int, label: str) -> None:
     (out / "order.json").write_text(json.dumps({"cap_usd": cap, "order": list(arms)}, indent=1) + "\n")
 
 
+def write_w5(out: Path) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    for i, (arm, (mode, ratio)) in enumerate(ARMS3.items()):
+        spec = dev["spec"]("lme", "filler")
+        spec["provider_config"]["search_config"] = dev["read_knobs_v2"](mode, ratio=ratio)
+        spec["budget_usd"] = 12 if i == 0 else 2
+        spec["note"] = f"memory proof wave 2 W5 dev tuning (exploratory), arm {arm}: see the 2026-10-11 re-scope addendum"
+        (out / f"lme-{arm}.json").write_text(json.dumps(spec, indent=1) + "\n")
+    (out / "order.json").write_text(json.dumps({"cap_usd": CAP3_USD, "order": list(ARMS3)}, indent=1) + "\n")
+
+
 if __name__ == "__main__":
     write(OUT, "lme-iso", ARMS, CAP_USD, "mode isolation")
     write(HERE / "cells/mpw2/iso2", "lme-tb", ARMS2, CAP2_USD, "tokenBudget two-way test")
+    write_w5(HERE / "cells/mpw2/w5")

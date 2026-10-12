@@ -28,6 +28,13 @@ def read_knobs(mode: str, admission: str = "reserve") -> dict:
             "recall.question_admission": admission}
 
 
+def read_knobs_v2(mode: str, admission: str = "reserve", ratio: float | None = None) -> dict:
+    """The re-scope addendum's knob table: `read_knobs` plus the mode's `search.tokenBudget` (10000000 stands for
+    tokenmax's unset budget) and W5's `search.page_rank_budget_ratio` (0 is off)."""
+    return {**read_knobs(mode, admission), "search.tokenBudget": "4000" if mode == "conservative" else "10000000",
+            "search.page_rank_budget_ratio": "0" if ratio is None else f"{ratio:g}"}
+
+
 DATASETS = {
     "lme": {"dataset": "longmemeval", "split": "s", "questions": {"ids": LME_IDS}, "facts_tokens": 1800, "extra": {}},
     "locomo": {"dataset": "locomo", "split": "locomo10", "questions": {"units": ["conv-42", "conv-44"]}, "facts_tokens": 1800, "extra": {}},
@@ -55,15 +62,15 @@ def spec(group: str, arm: str) -> dict:
     measured = {"extraction_source": "measured_default"}
     facts_cfg = {**EMBED, "facts_limit": 100, **d["extra"], "gbrain_config": INGEST_KNOBS}
     if arm == "raw":
-        lane, pc, creds = "raw", {**EMBED, "token_budget": 8100, "gbrain_config": INGEST_KNOBS, "search_config": read_knobs("conservative")}, ["voyage"]
+        lane, pc, creds = "raw", {**EMBED, "token_budget": 8100, "gbrain_config": INGEST_KNOBS, "search_config": read_knobs_v2("conservative")}, ["voyage"]
     elif arm == "luna-v1":
         lane, pc, creds = "combined", {**facts_cfg, "lane": "combined", "extraction_model": "openai:gpt-6-luna",
                                        "facts_tokens": d["facts_tokens"], "token_budget": 8100 - d["facts_tokens"],
-                                       "search_config": read_knobs("tokenmax")}, ["voyage", "openai"]
+                                       "search_config": read_knobs_v2("tokenmax")}, ["voyage", "openai"]
     else:
         lane = {"v2": "combined-v2", "v2-facts-arm": "combined-v2", "cost-matched": "combined-v2", "v1": "combined",
                 "filler": "filler-removed", "one-call": "recall-one-call"}[arm]
-        pc = {**facts_cfg, **measured, "lane": lane, "search_config": read_knobs("tokenmax", "facts_arm" if arm == "v2-facts-arm" else "reserve")}
+        pc = {**facts_cfg, **measured, "lane": lane, "search_config": read_knobs_v2("tokenmax", "facts_arm" if arm == "v2-facts-arm" else "reserve")}
         if lane == "combined-v2":
             pc |= {"facts_tokens": d["facts_tokens"], "delivered_tokens": d["cost_matched"] if arm == "cost-matched" else 8100}
         elif lane == "combined":

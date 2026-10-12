@@ -40,7 +40,9 @@
    "search.temporal_fact_reserve": "false",
    "search.evidence_date_header": "false",
    "search.entity_anchoring": "false",
-   "recall.question_admission": "facts_arm"
+   "recall.question_admission": "facts_arm",
+   "search.tokenBudget": "10000000",
+   "search.page_rank_budget_ratio": "0"
   },
   "facts_tokens": 600,
   "delivered_tokens": 8100
