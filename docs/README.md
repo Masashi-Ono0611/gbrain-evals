@@ -205,8 +205,9 @@ procedure with documented missing pieces; it is not the current refresh command.
 
 The "real tasks" row gained the [October 12 setup TTHW report](benchmarks/2026-10-12-cat41-setup-tthw.md): the wave 2
 measurement of `gbrain setup claude-code` on v0.60.184.0 against the targets preregistered in
-[its preregistration](benchmarks/2026-10-12-cat41-setup-tthw-preregistration.md) (faster-setup threshold met as scored
-with a stated caveat; wired-recall, first-push and consent targets missed as written).
+[its preregistration](benchmarks/2026-10-12-cat41-setup-tthw-preregistration.md) (faster-setup threshold met as scored,
+35% lower median, with the like-for-like gap of 23% beside it because only the by-hand runs got a scripted reply;
+wired-recall, first-push and consent targets missed as written).
 
 ### 2026-10-12: Retire the Cat 40 v1 success headline
 
