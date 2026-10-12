@@ -6,7 +6,7 @@
 #   bash eval/harness-provider/mpw2-cell-vm.sh <stage> down
 #
 # Env: UBICLOUD_API_TOKEN, GEMINI_API_KEY, OPENAI_API_KEY, VOYAGE_API_KEY, ANTHROPIC_API_KEY; COMMIT (default HEAD,
-# must be pushed). The VM's name is recorded in $OUT/VMS.md and pushed when it is created, so a lost run machine
+# must be pushed); STUB_UPSTREAM=1 runs the cell keyless against the stub upstream (a smoke, no real spend). The VM's name is recorded in $OUT/VMS.md and pushed when it is created, so a lost run machine
 # cannot strand it. Each finished cell's public receipt (JSON files with VM paths scrubbed, a tarball of stages,
 # scorer and the request log without bodies, the stage ledger's status) is pushed as soon as the cell ends. The
 # stage ledger sqlite is private: it is copied to ~/.capy/work/mpw2/<stage>/ledger.sqlite after every cell for the
@@ -75,7 +75,7 @@ $S ssh "$vm" "cat > ~/run-$name.sh" <<EOS
 set -a; . ~/.mpw-keys; set +a
 export PATH=\$HOME/.bun/bin:\$HOME/.local/bin:\$PATH
 cd ~/work/gbrain-evals
-L="--budget-ledger \$HOME/cells/ledger.sqlite"; G="--gbrain \$HOME/work/gbrain@${SHA:0:9}"
+L="--budget-ledger \$HOME/cells/ledger.sqlite${STUB_UPSTREAM:+ --stub-upstream}"; G="--gbrain \$HOME/work/gbrain@${SHA:0:9}"
 mkdir -p ~/cells
 test -f ~/cells/ledger.sqlite || bun eval/runner/budget-ledger.ts init \$L --program-cap-usd ${STAGE_CAP_USD:?STAGE_CAP_USD} --reason "memory proof wave 2, stage $stage" >/dev/null
 cid=\$(bun run harness:cell plan $spec --cells-dir ~/cells \$G \$L 2>/dev/null | python3 -c "import json,sys; t=sys.stdin.read(); print(json.loads(t[t.index('{'):])['cell_id'])")

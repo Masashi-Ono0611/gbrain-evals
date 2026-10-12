@@ -7,7 +7,8 @@ except `v2-w5`, which runs `whole_pages` at the re-tune's picked factor (`W5_PIC
 One VM and one ledger per group, and each group's first cell builds the store its other gbrain cells share
 (`raw` builds its own). LongMemEval-S runs as wave 1's four shards of 100 histories, so its comparator answers
 from wave 1 cover the same 400 questions. BEAM is the 72 non-dev conversations, with BEAM-500K and BEAM-1M in two
-groups of 14. The comparator's BEAM cells are regenerated from `mpw-sealed-specs.py` on the same groups.
+groups of 14. The comparator's BEAM cells are regenerated from `mpw-sealed-specs.py` on the same groups. `confirm-smoke/` holds the comparator's keyless smoke, the BEAM-100K comparator spec on dev
+conversation 3, which runs against the stub upstream before any paid comparator cell.
 """
 import json
 import runpy
@@ -90,4 +91,8 @@ if __name__ == "__main__":
         for arm in group_arms:
             spec = comparator_spec(group.removeprefix("comparator-")) if arm == "comparator" else gbrain_spec(group, arm)
             (OUT / f"{group}-{arm}.json").write_text(json.dumps(spec, indent=1) + "\n")
+    smoke = sealed["specs"]({"beam/100k": ["3"], "beam/500k": [], "beam/1m": []}, False)["sealed-beam-100k-comparator"]
+    smoke |= {"seal": "dev", "budget_usd": 1, "note": "memory proof wave 2 confirmation: the comparator's keyless stub-upstream smoke on BEAM-100K dev conversation 3"}
+    (HERE / "cells/mpw2/confirm-smoke").mkdir(exist_ok=True)
+    (HERE / "cells/mpw2/confirm-smoke/comparator-beam-100k-dev3.json").write_text(json.dumps(smoke, indent=1) + "\n")
     (OUT / "order.json").write_text(json.dumps({"caps_usd": {g: cap(g) for g in ORDER}, "order": ORDER}, indent=1) + "\n")
