@@ -11,7 +11,8 @@
 # scorer and the request log without bodies, the stage ledger's status) is pushed as soon as the cell ends. The
 # stage ledger sqlite is private: it is copied to ~/.capy/work/mpw2/<stage>/ledger.sqlite after every cell for the
 # operator to mirror, never committed. BEAM-100K and BEAM-1M per-question rows stay out of git (GBRA-49 ruling):
-# their cells publish summary and spend only.
+# their cells publish summary and spend only, and the operator keeps a custody copy under
+# ~/.capy/work/mpw2/<stage>/private/ for the joint re-judge.
 set -uo pipefail
 stage=${1:?stage}; arg=${2:?spec or down}
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
@@ -106,6 +107,9 @@ dest=$OUT/cells/$cid; mkdir -p "$dest"
 aggregates_only=$(git -C "$REPO" show "$COMMIT:$spec" | python3 -c "import json,sys; s=json.load(sys.stdin); print(int(s['dataset'] == 'beam' and s['split'] in ('100k', '1m') and s.get('seal') != 'dev'))")
 if [ "$aggregates_only" = 1 ]; then
   $S ssh "$vm" "cd ~/cells/$cid && tar -cf - summary.json spend.json" | tar -xf - -C "$dest"
+  mkdir -p "$M/private"
+  $S ssh "$vm" "cd ~/cells && tar -czf - --exclude=proxy/bodies $cid" > "$M/private/$cid.tgz" && tar -tzf "$M/private/$cid.tgz" >/dev/null \
+    || { log "$cid custody copy failed"; exit 1; }
 else
   $S ssh "$vm" "cd ~/cells/$cid && tar -czf ~/receipt-$cid.tgz --exclude=proxy/bodies stages scorer proxy timestamp-manifest.json && tar -cf - *.json" | tar -xf - -C "$dest"
   $S ssh "$vm" "cat ~/receipt-$cid.tgz" > "$dest/receipt.tgz"
