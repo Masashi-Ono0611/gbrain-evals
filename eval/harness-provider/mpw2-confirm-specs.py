@@ -92,7 +92,7 @@ if __name__ == "__main__":
             spec = comparator_spec(group.removeprefix("comparator-")) if arm == "comparator" else gbrain_spec(group, arm)
             (OUT / f"{group}-{arm}.json").write_text(json.dumps(spec, indent=1) + "\n")
     smoke = sealed["specs"]({"beam/100k": ["3"], "beam/500k": [], "beam/1m": []}, False)["sealed-beam-100k-comparator"]
-    smoke |= {"seal": "dev", "budget_usd": 1, "note": "memory proof wave 2 confirmation: the comparator's keyless stub-upstream smoke on BEAM-100K dev conversation 3"}
+    smoke |= {"seal": "dev", "budget_usd": 10, "note": "memory proof wave 2 confirmation: the comparator's keyless stub-upstream smoke on BEAM-100K dev conversation 3"}
     (HERE / "cells/mpw2/confirm-smoke").mkdir(exist_ok=True)
     (HERE / "cells/mpw2/confirm-smoke/comparator-beam-100k-dev3.json").write_text(json.dumps(smoke, indent=1) + "\n")
     (OUT / "order.json").write_text(json.dumps({"caps_usd": {g: cap(g) for g in ORDER}, "order": ORDER}, indent=1) + "\n")
