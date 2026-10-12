@@ -161,14 +161,14 @@ export interface MemoryQaRow {
 }
 
 /** The part of hybridSearch's onMeta report the reranker fidelity check reads. */
-type SearchMeta = { rerank?: { model_resolved: string }; degraded?: Array<string | { stage?: string }> };
+type SearchMeta = { degraded?: Array<string | { stage?: string }> };
 
 const DEFAULT_PINS: Record<string, string> = { 'search.mode': 'balanced', 'search.autocut': 'false' };
 const RECYCLE_EVERY = 25;
 const repoRelative = (p: string) => p.replace(resolve(import.meta.dir, '../../..') + '/', '');
 /** Planning estimate for one session through the conversation-facts extractor (product default model). */
 const FACTS_USD_PER_SESSION = 0.03;
-const PRESERVE_TABLES = new Set(['sources', 'config', 'gbrain_cycle_locks', 'subagent_rate_leases']);
+const PRESERVE_TABLES = new Set(['sources', 'config', 'gbrain_cycle_locks', 'subagent_rate_leases', 'persistence_brain', 'shared_skill_state', 'page_generation_clock']);
 
 function kv(list: string[], flag: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -593,7 +593,7 @@ export async function runArm(a: RunArgs): Promise<{ receipt: Record<string, unkn
                   throw rerankerInactive(`question ${q.id} came back ${stages.length ? `with a rerank degradation (${stages.join(', ')})` : 'without rerank scores'} although the reranker is on; the run stopped there`, rerankModel ?? 'the default reranker');
                 }
                 fidelity.reranked_queries++;
-                if (seen.meta?.rerank?.model_resolved) rerank = { ...rerank, model: seen.meta.rerank.model_resolved };
+                if (rerankModel) rerank = { ...rerank, model: rerankModel };
               }
               retrieved = uniqueInOrder(results.map(r => bySlug.get(r.slug) ?? `?${r.slug}`)).slice(0, a.topK);
               row = { ...base, ...scoreRetrieval(retrieved, q.gold), retrieved, latency_ms: Math.round(latency * 10) / 10, rerank, error: null };

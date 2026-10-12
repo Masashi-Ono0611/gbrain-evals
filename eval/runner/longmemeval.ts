@@ -402,7 +402,7 @@ export function sutPages(q: QuestionSessions): { pages: Array<{ slug: string; co
 
 // ─── Harness ──────────────────────────────────────────────────────
 
-const PRESERVE_TABLES = new Set(['sources', 'config', 'gbrain_cycle_locks', 'subagent_rate_leases']);
+const PRESERVE_TABLES = new Set(['sources', 'config', 'gbrain_cycle_locks', 'subagent_rate_leases', 'persistence_brain', 'shared_skill_state', 'page_generation_clock']);
 
 async function resetTables(engine: PGLiteEngine): Promise<void> {
   const rows = await engine.executeRaw<{ tablename: string }>(
