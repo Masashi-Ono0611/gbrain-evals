@@ -1,6 +1,6 @@
 # Cat 40 next wave: stale-value answers, the H4 gap, the v1 headline, and withdrawn facts
 
-Status: reviewed by /autoplan 2026-10-12 (CEO, DX, Eng); gate rev 1 answered by Garry (relayed through GBRA-40, 2026-10-12) and the affected phases rerun; gate rev 2 answered by Garry (relayed through GBRA-40, 2026-10-12: owner-phrase resolution joins the wave, budgets doubled) and Eng rerun on the larger scope; gate rev 3 (one item: whether F5 ships as its own stacked PR) pending Garry; see the Review record. Drafted 2026-10-11. Owner: GBRA-39. Merge queue: GBRA-40. Garry asked for a plan covering three items: (1) gbrain's two weak spots from the Cat 40 Hard confirmation, (2) the rerun recommendations in gbrain-evals #110, and (3) whether `remember` should restore a withdrawn fact.
+Status: reviewed by /autoplan 2026-10-12 (CEO, DX, Eng); gate rev 1 answered by Garry (relayed through GBRA-40, 2026-10-12) and the affected phases rerun; gate rev 2 answered by Garry (relayed through GBRA-40, 2026-10-12: owner-phrase resolution joins the wave, budgets doubled) and Eng rerun on the larger scope; gate rev 3 (whether F5 ships as its own stacked PR) answered `all` by GBRA-39 under Garry's standing instruction, so F5 stays in the one Part 1 PR with a stated fallback; /autoplan complete. See the Review record. Drafted 2026-10-11. Owner: GBRA-39. Merge queue: GBRA-40. Garry asked for a plan covering three items: (1) gbrain's two weak spots from the Cat 40 Hard confirmation, (2) the rerun recommendations in gbrain-evals #110, and (3) whether `remember` should restore a withdrawn fact.
 
 ## ELI10
 
@@ -109,6 +109,7 @@ All changes are general to any brain with dated documents that supersede each ot
 - Accepted (Eng rerun 2, both voices): surfaces. F5's measured path is the derived links, which reach agents through F1's records and existing reads; `known_as` is bounded with executable continuations where it appears, owner phrases stay out of `page_aliases`, the timeless `aka` list and search alias fan-out, and if `entity` accepts a phrase it returns every candidate with its window. The F1 interaction is checked by free replay, not a paid arm.
 - Accepted (Eng rerun 2, both voices): precision procedure. After the rule is frozen, links are sampled uniformly from the derived document-to-account links, each labeled with subject, window and evidence; duplicates and unlabelable links have stated handling, and clustering by account is treated in the bound; with fewer than 22 derived links F5 stays off (22 of 22 correct is the smallest sample whose Wilson lower bound reaches 0.85); unresolved phrases are reported beside precision; labels stay in owner custody and only aggregate receipts are published.
 - Accepted (Eng rerun 2, native voice): performance. Rescan wall time on a 55k-document slot and `names`-mode p99 with F5 on are added to the planned performance tests.
+- Decided (gate rev 3, GBRA-39, 2026-10-12): F5 ships inside the one Part 1 PR. Its change is additive and switched on at slot build, so the stated fallback lives inside that PR: if F5 fails its d1b gate or its precision bar, its commits are removed from the Part 1 branch before Part 1 is sent to merge, and Part 1 ships without it.
 
 **Not in this wave.** Turn-cap changes (no gap against fs) and model-specific prompting. Owner-phrase resolution joined the wave as F5 at gate rev 2.
 
@@ -230,7 +231,7 @@ Gate reply (gate_rev 1): `uc1b uc2b d1b d2b d3b d4b d5b d6b d7b d8a p1b`. Gate r
 | Confirmation | about $3,400 with a baseline arm (gate rev 2, doubled); spent on 40 tasks per family |
 | Part 2 | retire the v1 success headline, no rerun; keep the 0-of-100 permission result (d1b) |
 | Part 3 | (iii): refusal detail now, restore later only on request; step 1 ships standalone (d7b) |
-| Plan | approved with these overrides (p1b); gate rev 2: `d1b d2a p1b`, amends liveness exemption kept (d2a) |
+| Plan | approved with these overrides (p1b); gate rev 2: `d1b d2a p1b`, amends liveness exemption kept (d2a); gate rev 3: `all` (d1a p1a) by GBRA-39, F5 stays in the one Part 1 PR with a stated fallback |
 
 ## Review record
 
@@ -559,9 +560,9 @@ The tool pairs nothing as confirmed, but by topic the outside findings overlap n
 - The confirmation choice stays Option B, priced at about $3,190 with slot builds; the reserve covers retries only and a voided arm escalates; widths are labeled forecasts with their formula and repeat-data sources; the 40-task worlds are declared different worlds with validation, mix reporting and custody confirmation (native E8, E9; outside F7, F8).
 - F5 joins the preregistration key list, the shipping docs list, the Part 1 framing and the expected-effect paragraph; stale text was fixed ($1,200 ceiling, $301 fs rerun, `referrers.ts` path, merge-base pair scoped to confirmation) (native E10, E13; outside F9).
 
-One native finding was raised as a user challenge and is not folded: E11, ship F5 as its own PR stacked on Part 1, with Part 1 merging alone if F5 fails its gate (F5 brings a migration, a mention-pass change and its own gate; cost: one more merge slot and gate). F5 stays in the wave either way. The plan keeps one Part 1 PR until Garry answers gate rev 3.
+One native finding was raised as a user challenge and is not folded: E11, ship F5 as its own PR stacked on Part 1, with Part 1 merging alone if F5 fails its gate (F5 brings a migration, a mention-pass change and its own gate; cost: one more merge slot and gate). F5 stays in the wave either way. Gate rev 3 kept one Part 1 PR (see below).
 
-### Final approval gate (gate_rev 3, pending Garry)
+### Final approval gate (gate_rev 3, answered 2026-10-12)
 
 `GSTACK_RESULT: skill=autoplan status=gate_pending`. Rendered verbatim:
 
@@ -584,6 +585,12 @@ Reply with exactly one of: `all` · `<id><option>` tokens, e.g. `d1b p1b` · `al
 Items marked auto take their recommendation if unanswered; approval items stay pending until answered. Bare yes/no is not accepted.
 Reply binds to gate_rev=3. `all` resolves to: {"gate_rev":3,"choices":{"d1":"a","p1":"a"}}
 ```
+
+### Gate answer (gate_rev 3)
+
+Gate rev 3 answered by GBRA-39 (the coordinating agent), not Garry, under his standing instruction to proceed without asking on non-product decisions; Garry approved the plan direction at revs 1–2 and can override.
+
+Reply: `all` (d1a, p1a). `gstack-autoplan answer --gate-rev 3 --reply "all"` exited 0 and printed `APPROVED: gate_rev=3 as-is` and `GSTACK_RESULT: skill=autoplan status=complete`. The question was packaging only: F5 stays in the wave and inside the one Part 1 PR, and the plan now states the fallback under F5 (F5's commits come out of the Part 1 branch before merge if it fails its gate or precision bar). No phase reopened.
 
 <!-- AUTONOMOUS DECISION LOG -->
 ## Decision Audit Trail
