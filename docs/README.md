@@ -146,6 +146,7 @@ These documents fix a method before measuring. They publish no capability scores
 | Will a release still look better on questions nobody tuned against? | [September 29 sealed confirmation set](benchmarks/2026-09-29-sealed-confirmation-protocol.md) |
 | What end-to-end task does a 10x memory claim stand on, and what sample can show it? | [October 8 program primary preregistration (T0) and power (PW)](benchmarks/2026-10-08-program-primary-preregistration.md) |
 | What harder workload replaces T0's ceiling, and how was it calibrated? | [October 8 harder program primary preregistration (T0b), with its three calibration rounds](benchmarks/2026-10-08-program-primary-hard-preregistration.md) |
+| Does `gbrain setup claude-code` meet the wave 2 setup targets once the scripted user answers both arms alike and gbrain#6562 has shipped? | [October 12 Cat 41 setup re-measure preregistration](benchmarks/2026-10-12-cat41-setup-remeasure-preregistration.md) (same frozen targets as the [first run](benchmarks/2026-10-12-cat41-setup-tthw.md), which stands; [v7 re-score of the first run's transcripts](benchmarks/2026-10-12-cat41-setup-tthw/rescore-v7.json)) |
 
 ## Data and methods
 
@@ -201,6 +202,13 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-12: Cat 41 setup re-measure preregistered
+
+"Protocols and preregistrations" gained the [Cat 41 setup re-measure preregistration](benchmarks/2026-10-12-cat41-setup-remeasure-preregistration.md):
+the scripted user now replies to any closing question in every arm (scorer `cat41-score-v7`), the first run's
+transcripts are re-scored beside its report without changing it, and the paid cells wait for a gbrain release with
+gbrain#6562 and lane 31's trailing-question fix.
 
 ### 2026-10-12: Low-hanging-fruit wave gates
 
