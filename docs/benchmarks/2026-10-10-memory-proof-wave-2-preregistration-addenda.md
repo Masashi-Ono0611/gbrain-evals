@@ -765,3 +765,37 @@ The expected totals are:
 - the comparator's BEAM regeneration, about $108 (the harness's own estimate is $100).
 
 These match the go addendum's lines. Each stage cap is its expected spend plus its largest cell budget, as the go addendum sets. Those caps add up to more than the confirmation budget, so the run script also keeps a running total across confirmation ledgers. A cell starts only if the confirmation spend so far plus that cell's budget stays within $485 less the re-tune's actual spend.
+
+## Adaptive W5 re-tune result: no factor is eligible (October 12, 2026)
+
+All 16 re-tune cells ran at gbrain `71b6d85` on the dev stores through `reuse_store`, and all 16 pass every in-cell gate. Every row of the three factor arms carries a checked `page_rank_cut`, and no `ref` row carries one. Both `ref` cells' groups pass conditions 1 and 2, so the rule applies as written.
+
+| Arm | LongMemEval-S points | Multi-session (of 22) | BEAM-100K | BEAM-500K | BEAM-1M | BEAM pooled (200) | Delivered context, LongMemEval-S / BEAM, mean range |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `ref` (W5 off) | 89.0 | 16 | 63.29 | 73.12 | 70.84 | 70.24 | 8,108 / 8,054–8,088 |
+| `f1.00` | 92.0 | 17 | 71.85 | 76.58 | 72.27 | 73.91 | 7,922 / 7,777–7,870 |
+| `f1.25` | 91.0 | 17 | 71.08 | 77.15 | 71.50 | 73.68 | 7,947 / 7,979–8,029 |
+| `f1.50` | 92.0 | 17 | 68.10 | 76.59 | 75.36 | 74.40 | 7,982 / 8,005–8,047 |
+
+LongMemEval-S scores come from the joint blinded re-judge of the four cells. BEAM scores are each cell's own `mean_score`, times 100. Every p95 lies between 8,013 and 8,241.
+
+**Rule.** Each factor passes conditions 1 to 4: delivered context, completeness with the cut checked, LongMemEval-S at least `ref`, and pooled BEAM at least `ref`. Each fails condition 5, because its multi-session count of 17 is below `ref`'s 16 plus 2. **No factor is eligible.** As the go addendum fixes, W5 does not run in confirmation, it stays off by default, and Garry decides what follows. No `v2-w5` confirmation spec is written.
+
+**Descriptive, decides nothing.** All three factors score above `ref` on LongMemEval-S (+2 to +3 points) and on pooled BEAM (+3.4 to +4.2 points). The LongMemEval-S gain is in temporal reasoning (26 against 24) and one multi-session question. The adaptive cut fills the budget on BEAM's small pages, where the fixed 0.40 ratio left a mean of 5,516 to 6,395 tokens. These are dev numbers on 100 and 200 questions, not a gate.
+
+**Run notes.**
+
+- The runner script was edited while three groups' watchers were running. Bash reads a script as it runs, so those watchers stopped with a syntax error. They were `beam-100k` `f1.00`, `beam-500k` `f1.00` and `beam-1m` `ref`. Their cells kept running on their VMs and finished, but each group's next arm started while the previous cell was still finishing. The three cells were collected afterwards, unchanged, and all pass every gate. The LongMemEval-S watcher, also started before the edit, was stopped by hand, and its four cells ran in order.
+- The comparator's keyless smoke (`confirm-smoke/`, BEAM-100K dev conversation 3, the stub upstream) installed the pinned release and ran ingest, retrieval, answers and judging. The first run had a budget of $1, which left the proxy's reservations too little room, so two answers were refused. The rerun at $10 of stub budget completed all 20 questions with no failure. Its delivered context, 11,717 tokens, comes from the stub: the stub returns the same fact for every extraction, and each copy renders with its own chunk quote. At these knobs the comparator delivered 7,560 / 8,401 on BEAM-100K in wave 1. So the comparator's BEAM-100K cell runs first, and its delivered-context gate is read before the BEAM-500K and BEAM-1M comparator cells start.
+
+**Receipts and spend.** Receipts are in `2026-10-10-memory-proof-wave-2/retune-{lme,beam-100k,beam-500k,beam-1m}/`, with the re-judge in `retune-lme/rejudge/` (its `analysis.json` holds the rule's output). Ledgers are mirrored to the integrator's primary machine with matching SHA-256:
+
+| Ledger | SHA-256 |
+|---|---|
+| `retune-lme` | `ddb822d6…` |
+| `retune-beam-100k` | `a1266e1c…` |
+| `retune-beam-500k` | `354832c1…` |
+| `retune-beam-1m` | `f6e3c778…` |
+| `retune-rejudge` | `4ef8301e…` |
+
+The re-tune cost $27.44 for the 16 cells and $1.05 for the re-judge, $28.49 in all against the $29 line. That leaves $456.51 of the $485 for confirmation. The four VMs and the smoke VM are destroyed and recorded.
