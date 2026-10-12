@@ -2,6 +2,20 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.79] - 2026-10-12
+
+### Cat 40 warm boot waits for gbrain's persistence drain; D2/D4 smoke records
+
+- **Harness fix.** gbrain answers tool calls while it is still draining queued persistence effects. The Cat 40 warm
+  boot treated the first answer as the end of the drain, stopped the server and snapshotted the slot: one master slot
+  was saved with 5,081 effects still queued. `eval/runner/cat40/gbrain-arm.ts` now holds the server until gbrain
+  reports no drain in progress; the rebuilt slot has 0 queued.
+- **D2/D4 smoke** ([verdict](docs/benchmarks/2026-10-12-d2d4-smoke/VERDICT.md), preregistered with one amendment
+  written before any cell). D2's `hidden_tool_content` notice passes: gpt-6.1-sol 10/10 on the branch against 1/10 on
+  master, Opus 5.5 and Sonnet 5.5 10/10 (all at the ceiling, so the smoke cannot rank them), 0 leaks, 0 unsafe writes,
+  0 `unknown_tool` answers after a notice. D4's `grant_blocked_operations` is not exercised by Cat 40's stdio arm, as
+  preregistered. Spend $3.30 of an $8 cap.
+
 ## [0.10.78] - 2026-10-12
 
 ### Retire the Cat 40 v1 success headline
