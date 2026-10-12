@@ -356,3 +356,51 @@ The contingent W3 replay exceeds the reserve by $13. If A15 calls for it, it nee
 The checked object is kept in each row's metadata as `page_rank_cut`. The one-call recall path records the object but does not check it, and no W5 tuning arm uses that path.
 
 **Specs.** Six arms in `eval/harness-provider/cells/mpw2/w5/` (`lme-b`, `lme-d`, `lme-w5-0.40`, `lme-w5-0.50`, `lme-w5-0.75`, `lme-w5-1.00`), with `order.json` putting `b` first to build the store. The stage cap is $18, `b`'s cell cap is $12 and the other cells' caps are $2 each. All six are `filler-removed` at `token_budget` 8,100 and set every key in the re-scope knob table, including `search.tokenBudget` and `search.page_rank_budget_ratio`. `mpw2-iso-specs.py` generates them, and `tests/test_mpw2_dev_specs.py` checks each arm's mode and ratio. The dev specs are regenerated with both new keys, with the ratio `0` (off), and with `search.tokenBudget` `4000` on `raw` and `10000000` elsewhere.
+
+## W5 dev tuning result: ratio 0.40 is picked (October 12, 2026)
+
+**The preregistered ratio rule picks `w5-0.40`.** All four W5 ratios pass the rule's three conditions. `w5-0.40` has the most multi-session questions correct, 16 of 22 against `b`'s 11, and scores 90 against `b`'s 82. The result is exploratory, LongMemEval-S dev only, on one store at `fe9e0397b`. The rule is applied with the full six-arm set, as preregistered.
+
+The scores come from the joint blinded re-judge of the six arms. Intervals are paired bootstrap 95% intervals over questions, 9,999 draws, seed `20261010`.
+
+| Arm | Score | vs `b` | vs `d` | Multi-session (22) | Temporal reasoning (27) | Pages kept by the W5 cut per question |
+|---|---:|---|---|---:|---:|---:|
+| `b` tokenmax, W5 off | 82 | — | −9 (−17 to −2) | 11 | 22 | — |
+| `d` conservative, W5 off | 91 | +9 (+2 to +17) | — | 19 | 22 | — |
+| `w5-0.40`, cut 3,240 | 90 | +8 (+2 to +14) | −1 (−7 to +5) | 16 | 24 | 5.9 |
+| `w5-0.50`, cut 4,050 | 88 | +6 (+1 to +12) | −3 (−9 to +3) | 15 | 22 | 7.2 |
+| `w5-0.75`, cut 6,075 | 88 | +6 (+2 to +11) | −3 (−10 to +3) | 14 | 23 | 10.3 |
+| `w5-1.00`, cut 8,100 | 88 | +6 (+2 to +11) | −3 (−9 to +3) | 14 | 23 | 13.5 |
+
+**Rule check, question counts against `b`.**
+
+| Arm | Overall ≥ `b` | Multi-session vs `b` (needs +2) | Other types vs `b` (each needs ≥ −1) | Passes |
+|---|---|---:|---|---|
+| `w5-0.40` | yes, 90 | +5 | temporal reasoning +2, single-session user +1, all others 0 | yes |
+| `w5-0.50` | yes, 88 | +4 | single-session preference +1, single-session user +1, all others 0 | yes |
+| `w5-0.75` | yes, 88 | +3 | temporal reasoning +1, single-session preference +1, single-session user +1, all others 0 | yes |
+| `w5-1.00` | yes, 88 | +3 | temporal reasoning +1, single-session preference +1, single-session user +1, all others 0 | yes |
+
+Condition 2, "within 1 question of `b`", is read as a floor: no other type loses more than one question. No arm loses a question in any type. A two-sided reading would exclude `w5-0.40`, which gains two temporal-reasoning questions, and would pick `w5-0.50` instead. The floor reading is applied because the condition guards against regressions. `analysis.json` records both readings for each arm.
+
+- **The cut closes most of the mode gap.** `w5-0.40` recovers 89% of `d − b` (8 of 9 points) and sits 1 point below `d`, with an interval that includes zero. The other ratios recover 67%.
+- **Multi-session rises as the cut tightens.** 14, 14, 15 and 16 of 22 from ratio 1.00 down to 0.40, against `b`'s 11 and `d`'s 19. `d` still leads on multi-session by 3. That matches the two-way finding that the reranker's choice of surviving pages costs some multi-session questions under `tokenmax`.
+- **Abstentions fall.** `b` abstains on 19 questions. The W5 arms abstain on 11 to 14, and `d` on 10.
+- **The receipt check holds on every row.** All 100 rows of each W5 arm report `applied_cut` 3,240, 4,050, 6,075 and 8,100 respectively. The ratio-off arms report no cut. Every cell passes all four gates, with no answer or retrieval failures.
+
+**Stage cap raise.** Arm `w5-1.00` was refused before it spent anything, because its $2.00 run budget exceeded the $1.80 left under the $18.00 stage cap. With Garry's approval, the stage cap was raised to $19.50, inside the re-scope's roughly $20 W5 tuning line. The reason is recorded in the stage ledger's cap change.
+
+**Spend.**
+
+| Item | Spend |
+|---|---:|
+| Store and arm `b` | $10.92 |
+| Arms `d`, `w5-0.40`, `w5-0.50`, `w5-0.75`, `w5-1.00` | $6.66 |
+| Joint re-judge (cap $2.50) | $1.53 |
+| **Total** | **$19.10** |
+
+Wave-2 spend to date is $75.12.
+
+**Next.** `combined-v2+w5` uses `search.page_rank_budget_ratio` `0.40` in the dev checks and the W5 BEAM gate. Dev at the new pin is released under the re-scope amendment. Confirmation stays behind Garry's go.
+
+Receipts are under `2026-10-10-memory-proof-wave-2/w5/`, with the re-judge in `w5/rejudge/`. Ledgers are mirrored to the integrator's primary machine with matching SHA-256: `w5.sqlite` `362e22ff…`, `w5-rejudge.sqlite` `39f7e345…`. A compressed copy of the store, `gbrain-longmemeval-s-165df707838f` (sha256 `0a136a61…`), is kept beside them, so the dev group can reuse it. The VM is destroyed and recorded.
