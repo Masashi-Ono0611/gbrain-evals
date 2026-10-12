@@ -276,10 +276,10 @@ const recalledViaMcp = (r: RunView) => r.mcpCalls.some(c => c.session === r.sess
 
 const setupInstall = (ctx: PromptCtx) => `Install gbrain for me with \`bun install -g ${ctx.installSpec}\`, then run \`gbrain setup claude-code\` (its instructions for agents: ${ctx.docsBase}/AGENTS.md).`;
 
-/** The scripted reply when the agent asks or has not registered gbrain yet, then a new native session. */
 /** The scripted user: the fixed reply whenever the agent's turn closes asking for input, or gbrain is not registered yet (up to 3). */
 const scriptedReply = (): Followup => ({ mode: 'resume', prompt: SCRIPTED_REPLY, when: (t, box) => asksForInput(t) || !harnessRegistered(box), max: 3 });
 
+/** The scripted user's replies, then a new native session. */
 const installFollowups = (recallPrompt: string): Followup[] => [
   scriptedReply(),
   { mode: 'new', prompt: recallPrompt, useHarnessRegistrations: true },
