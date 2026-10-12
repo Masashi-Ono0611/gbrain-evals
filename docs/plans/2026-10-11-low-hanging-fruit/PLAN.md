@@ -1,9 +1,9 @@
-# Low-hanging fruit for retrieval, latency and cost: plan (draft for approval)
+# Low-hanging fruit for retrieval, latency and cost: plan
 
 Date: 2026-10-11. Scope: gbrain master `da434385` (v0.60.175.0) and gbrain-evals main `a89535fc` (v0.10.77, pins
 gbrain v0.60.169.0). Inputs: three read-only audits run on 2026-10-11 (cost, latency, retrieval), each re-checked
 against code before use, plus the committed Cat 40 Hard confirmation receipts
-(`docs/benchmarks/2026-10-10-model-ladder-hard-confirmation/main-cells`). Nothing here authorizes spending or a merge.
+(`docs/benchmarks/2026-10-10-model-ladder-hard-confirmation/main-cells`). Status: approved by Garry on 2026-10-12 ("Approve all": items 0 to 5, item 1b and the item 1 default flip under their gates, $30 cap; relayed by GBRA-40). Item 0 ships alone first (gbrain #6528); the wave starts after gbrain #6445 merges.
 
 ## URGENT, outside this plan
 
