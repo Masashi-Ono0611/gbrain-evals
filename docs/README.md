@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.78, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.80, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -203,11 +203,16 @@ procedure with documented missing pieces; it is not the current refresh command.
 
 ### 2026-10-12: Cat 41 `gbrain setup claude-code` TTHW
 
-The "real tasks" row gained the [October 12 setup TTHW report](benchmarks/2026-10-12-cat41-setup-tthw.md): the wave 2
+gbrain-evals v0.10.80 (the opening names it; was v0.10.79). The "real tasks" row gained the [October 12 setup TTHW report](benchmarks/2026-10-12-cat41-setup-tthw.md): the wave 2
 measurement of `gbrain setup claude-code` on v0.60.184.0 against the targets preregistered in
 [its preregistration](benchmarks/2026-10-12-cat41-setup-tthw-preregistration.md) (faster-setup threshold met as scored,
 35% lower median, with the like-for-like gap of 23% beside it because only the by-hand runs got a scripted reply;
 wired-recall, first-push and consent targets missed as written).
+
+### 2026-10-12: Cat 40 warm-boot drain fix
+
+gbrain-evals v0.10.79 (the opening names it; was v0.10.78). No report row changes: the release fixes the Cat 40 warm
+boot and adds the D2/D4 notice smoke under `benchmarks/2026-10-12-d2d4-smoke/`.
 
 ### 2026-10-12: Retire the Cat 40 v1 success headline
 
