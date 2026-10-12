@@ -26,7 +26,7 @@ log() { echo "$(date -u +%FT%TZ) [mpw2 $stage] $*" | tee -a "$M/watch.log"; }
 publish() {  # commit and push paths under $OUT, one writer at a time
   (
     flock 9
-    cd "$REPO" && git add "$@" && git commit -q -m "$MSG" && git fetch -q origin \
+    cd "$REPO" && git add "$@" && { git diff --cached --quiet -- "$@" || git commit -q -m "$MSG"; } && git fetch -q origin \
       && git merge -q --no-edit "origin/$BRANCH" && git push -q origin "HEAD:$BRANCH"
   ) 9>"$HOME/.capy/work/mpw2/publish.lock"
 }
@@ -118,3 +118,5 @@ $S ssh "$vm" 'cat ~/cells/ledger-status.json' > "$OUT/ledger-status.json"
   for (const f of process.argv.slice(1)) writeFileSync(f, scrubMachinePaths(readFileSync(f, "utf8"), undefined, "/home/ubi"));
 ' "$dest"/*.json "$OUT/ledger-status.json") || { log "path scrub failed; receipt not published"; exit 1; }
 MSG="mpw2 $stage: receipt for $cid ($name)" publish "$dest" "$OUT/ledger-status.json" && log "receipt pushed: $cid" || { log "receipt push failed"; exit 1; }
+python3 -c "import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))['ok'] is True else 1)" "$dest/summary.json" \
+  || { log "$cid did not pass its gates (summary ok is not true); receipt published as measured, the stage stops here"; exit 2; }
