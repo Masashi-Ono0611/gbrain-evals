@@ -468,3 +468,46 @@ The BEAM-100K and BEAM-500K stores, and the LoCoMo10 store, are complete. BEAM-1
 Garry approved the caps on 2026-10-12, taking about $6 from the reserve, which goes from $22 to about $16. Each stage ledger records its cap change and the reason. A larger budget is a new cell, so every rerun arm gets a new cell id. LoCoMo10's `v2` and `raw` keep their passing cells.
 
 **LongMemEval-S finished at $8.64.** `v2`, `raw`, `v2-facts-arm`, `v1` and `filler` pass every gate. `one-call` (`longmemeval-s-gbrain-rag-c193e6a772dd`, W5 off) is complete but fails the delivered-context gate: it delivers a mean of 6,753 tokens (p95 7,217) against the 8,000 target. The facts section is small and accounts for none of the shortfall: 2.8 facts and 97 tokens per question. The loss is in the pages section. gbrain packs pages until its own estimate reaches 7,673 tokens of the 8,100 budget, leaving 357 unused, and those pages measure 6,657 tokens in cl100k. So gbrain's page estimate runs 13% above cl100k, and page granularity leaves the rest of the budget unused. The cell is published as measured and not rerun, because a larger budget would not change it.
+
+## A15 fails its floor: W3 ships as the shadow grade only (October 12, 2026)
+
+**Result.** The A15 shadow probe replayed every dev question with `search.reranker.gate: shadow` at pin `fe9e0397b`, on the LongMemEval-S, BEAM-100K, BEAM-500K and LoCoMo10 dev stores. Every question was eligible, and every one graded `not_strong` for `cosine_below_floor`. The would-skip rate is 0 of 542, against the 25% the prereg requires both pooled and on BEAM dev alone. voyage-4's top cosine never reaches the 0.80 floor; the highest on any question is 0.781.
+
+| Store | Questions | Would-skip | Top cosine p50 / max | Rank-1 fused = reranked | Context change, shadow vs shadow (noise) | Context change, reranked vs no reranker |
+|---|---:|---:|---|---:|---:|---:|
+| LongMemEval-S | 100 | 0 | 0.457 / 0.781 | 71% | 5.0% | 100% |
+| BEAM-100K | 40 | 0 | 0.549 / 0.753 | 27.5% | 0% | 100% |
+| BEAM-500K | 80 | 0 | 0.567 / 0.732 | 27.5% | 2.5% | 100% |
+| LoCoMo10 | 322 | 0 | 0.527 / 0.700 | 59.6% | 1.9% | 97.8% |
+| Pooled | 542 | 0 | 0.522 / 0.781 | 54.6% | 2.4% | 98.7% |
+
+With no would-skip question, the decision metric, the token-weighted overlap on would-skip questions, has nothing to measure. The reranker changes the delivered context on nearly every question: mean token overlap with and without it is 0.526 (0.662 at page level).
+
+**Consequences, under TC2.**
+
+- **W3 ships as the shadow grade only.** Stage 2, the skip path, is not built, and the stage-2 work is reverted. `search.reranker.gate` stays `off` by default, with `shadow` available.
+- **Gate 4 is recorded as failed.** Stage 2 is not built, so `combined-v2+gate` has no cell, and the gate cannot default to `on`. The paired latency run has no skipped query to save time on: query p50 is 464 ms with the gate in shadow and 469 ms with it on, against 71 ms with no reranker.
+- **The W3 `combined-v2+gate` replay is dropped,** and with it the $35 contingent line.
+- **Confirmation drops every W3-on arm.** It keeps the `combined-v2` comparisons (gates 1 to 3 and 5) and the W5 BEAM gate.
+
+**Files.** The aggregate report, the probe and the analysis script are under `2026-10-10-memory-proof-wave-2/a15/` (`a15-report.txt` sha256 `a7d26768…`). The per-question rows stay private. They are mirrored to the integrator's primary machine under `wave2/a15/`: `lme.ndjson` `1ea2506f…`, `beam100k.ndjson` `c226f240…`, `beam500k.ndjson` `de9e674f…`, `locomo.ndjson` `767b6008…`, plus the two latency sample files.
+
+### Budget within the $650 cap, without W3
+
+| Line | Status | USD |
+|---|---|---:|
+| Step 0, mode isolation, two-way test | spent | 56.02 |
+| W5 dev tuning, LongMemEval-S | spent | 19.10 |
+| Dev at the W5 pin, with the sizing reruns and A15 | running; caps $127, expected actual about $98 | 98 |
+| Confirmation: LongMemEval-S (ingest, `combined-v1@pin`, `combined-v2`, `raw@pin`) | behind Garry's go | 50 |
+| Confirmation: LoCoMo10 (ingest, `combined-v1@pin`, `combined-v2`) | behind Garry's go | 33 |
+| Confirmation: BEAM non-dev (ingest, `combined-v1@pin`, `combined-v2`) | behind Garry's go | 120 |
+| Confirmation: BEAM `combined-v2+w5` | behind Garry's go | 45 |
+| Confirmation: the comparator's BEAM regeneration | behind Garry's go | 105 |
+| Confirmation: joint re-judges (BEAM $89 with the W5 lane, LoCoMo10 $12, LongMemEval-S $6) | behind Garry's go | 107 |
+| **Subtotal** | | **633** |
+| Reserve | | 17 |
+
+Confirmation cells are sized with reservation headroom, as dev now is. That headroom raises the cell budgets, not the expected spend.
+
+**Open before confirmation: W5 at 0.40 under-fills on BEAM.** On the dev reruns, `combined-v2+w5` delivers a mean of 6,395 tokens on BEAM-100K and 5,516 on BEAM-500K (p95 8,072 and 7,117). Both are outside the delivered-context gate. `combined-v2` on the same stores is inside it. Every counted cell must pass that gate, and a failing cell is reported as failing, not rerun at another setting. So the W5 BEAM lane at ratio 0.40 would very likely fail as preregistered. The dev results addendum reports the figures. The lane's design needs Garry's decision before any confirmation cell runs.
