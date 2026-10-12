@@ -811,3 +811,13 @@ The re-tune cost $27.44 for the 16 cells and $1.05 for the re-judge, $28.49 in a
 **What it governs.** BEAM non-dev confirmation adds `combined-v2+w5` (`v2-w5`) as the last arm of each BEAM group. It is dev's `v2` spec with `search.page_rank_cut: whole_pages` and `search.page_rank_cut_factor: 1.5`, at gbrain `71b6d85bce8bf80aacec2dffe96e29cf0202c8d2`, reading its group's store. The cell budgets are $15 for BEAM-100K, $14 per BEAM-500K group and $15 per BEAM-1M group, as the confirmation specs addendum set. The W5 gate reads BEAM pooled, as preregistered in the re-scope addendum. A pass flips the default on at factor 1.50. If W5 fails, it ships off. Because the rule was changed after the results were seen, the W5 gate's result is reported with this amendment beside it.
 
 **Budget.** The confirmation expectation is about $442, which includes `v2-w5`'s roughly $43 and the BEAM joint re-judge with the W5 lane. The run script's guard holds total confirmation spend, plus the budget of each cell before it starts, within the $456.51 that remains after the re-tune.
+
+## The comparator's BEAM-100K cell runs a second time (October 12, 2026)
+
+Auto-approved under Garry's standing rule, 2026-10-12.
+
+**What happened.** The joint BEAM re-judge reads every lane's per-question answers. BEAM-100K and BEAM-1M non-dev cells publish aggregates only, so their answers have to come from the operator's custody copy. The runner gained that copy step (commit `4d3b19e1`) after the comparator's BEAM-100K cell (`beam-100k-comparator-rag-e02a541ef80d`) had started. That cell finished at 21:12 UTC. It passed every gate, delivering a mean of 7,525 tokens with a p95 of 8,320. Its VM was then destroyed, and its per-question answers went with it. Its aggregates stay published as measured. They can't enter the joint re-judge.
+
+Of the gbrain cells that started before the change, the three BEAM-100K and BEAM-1M `v2` cells were copied by hand from their VMs, which outlive their first cell.
+
+**The choice.** The comparator's BEAM-100K group runs once more, as `comparator-beam-100k-r2`. It uses the same spec with a $21 budget, which gives it a new cell id. The joint BEAM-100K re-judge uses this second cell whatever its result, and both cells' in-cell scores are reported. The expected cost is about $11, inside the $456.51.

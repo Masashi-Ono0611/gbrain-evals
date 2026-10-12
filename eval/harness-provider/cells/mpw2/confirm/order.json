@@ -13,7 +13,8 @@
   "comparator-beam-500k-1": 35,
   "comparator-beam-500k-2": 35,
   "comparator-beam-1m-1": 55,
-  "comparator-beam-1m-2": 55
+  "comparator-beam-1m-2": 55,
+  "comparator-beam-100k-r2": 21
  },
  "order": {
   "lme-1": [
@@ -78,6 +79,9 @@
    "comparator"
   ],
   "comparator-beam-1m-2": [
+   "comparator"
+  ],
+  "comparator-beam-100k-r2": [
    "comparator"
   ]
  }

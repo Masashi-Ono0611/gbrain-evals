@@ -44,6 +44,10 @@ BUDGET = {
     "beam-1m": {"v2": 24, "v1": 15, "v2-w5": 15},
 }
 COMPARATOR_BUDGET = {"beam-100k": 20, "beam-500k": 35, "beam-1m": 55}
+# The comparator's first BEAM-100K cell ran before the runner kept custody copies of aggregates-only cells, so its
+# per-question rows went with its VM. This second cell of the same group (a new budget, so a new cell id) is the one
+# the joint re-judge reads (confirmation run addendum).
+REPEATS = {"comparator-beam-100k-r2": ("beam-100k", 21)}
 EXPECTED = {"lme": 15.5, "beam-100k": 25, "beam-500k": 27, "beam-1m": 32.5, "comparator-beam-100k": 8, "comparator-beam-500k": 17,
             "comparator-beam-1m": 34}
 
@@ -58,11 +62,11 @@ def gbrain_spec(group: str, arm: str) -> dict:
     return s
 
 
-def comparator_spec(group: str) -> dict:
+def comparator_spec(group: str, budget: float | None = None) -> dict:
     kind, questions = GROUPS[group]
     split = kind.removeprefix("beam-")
     s = sealed["specs"]({f"beam/{x}": questions["units"] if x == split else [] for x in ("100k", "500k", "1m")}, False)[f"sealed-beam-{split}-comparator"]
-    s |= {"budget_usd": COMPARATOR_BUDGET[kind], "note": f"memory proof wave 2 confirmation (counted), comparator BEAM regeneration, {group}"}
+    s |= {"budget_usd": budget or COMPARATOR_BUDGET[kind], "note": f"memory proof wave 2 confirmation (counted), comparator BEAM regeneration, {group}"}
     return s
 
 
@@ -72,10 +76,12 @@ def arms(group: str) -> list[str]:
     return ["v2", "v1"] + (["v2-w5"] if W5_PICK is not None else [])
 
 
-ORDER = {**{g: arms(g) for g in GROUPS}, **{f"comparator-{g}": ["comparator"] for g in GROUPS if g.startswith("beam")}}
+ORDER = {**{g: arms(g) for g in GROUPS}, **{f"comparator-{g}": ["comparator"] for g in GROUPS if g.startswith("beam")}, **{g: ["comparator"] for g in REPEATS}}
 
 
 def cap(group: str) -> float:
+    if group in REPEATS:
+        return REPEATS[group][1]
     kind = GROUPS[group.removeprefix("comparator-")][0]
     if group.startswith("comparator-"):
         return COMPARATOR_BUDGET[kind]
@@ -89,7 +95,7 @@ if __name__ == "__main__":
         old.unlink()
     for group, group_arms in ORDER.items():
         for arm in group_arms:
-            spec = comparator_spec(group.removeprefix("comparator-")) if arm == "comparator" else gbrain_spec(group, arm)
+            spec = (comparator_spec(*REPEATS[group]) if group in REPEATS else comparator_spec(group.removeprefix("comparator-"))) if arm == "comparator" else gbrain_spec(group, arm)
             (OUT / f"{group}-{arm}.json").write_text(json.dumps(spec, indent=1) + "\n")
     smoke = sealed["specs"]({"beam/100k": ["3"], "beam/500k": [], "beam/1m": []}, False)["sealed-beam-100k-comparator"]
     smoke |= {"seal": "dev", "budget_usd": 10, "note": "memory proof wave 2 confirmation: the comparator's keyless stub-upstream smoke on BEAM-100K dev conversation 3"}
