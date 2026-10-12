@@ -10,7 +10,7 @@
   "answer": "gemini:gemini-3.8-flash",
   "judge": "gemini:gemini-3.5-flash"
  },
- "budget_usd": 6,
+ "budget_usd": 9,
  "questions": {
   "units": [
    "conv-42",

@@ -52,12 +52,14 @@ DATASETS = {
 # Per-cell caps (USD). The first cell of a store pays its ingest.
 BUDGET = {
     "lme": {"v2": 2, "raw": 4, "v2-facts-arm": 2, "v1": 2, "filler": 2, "one-call": 2},
-    "locomo": {"v2": 7, "raw": 6, "v2-facts-arm": 6, "v1": 6, "one-call": 6},
-    "beam-100k": {"v2": 3, "v2-w5": 2, "v2-facts-arm": 2, "v1": 2, "one-call": 2, "cost-matched": 2},
-    "beam-500k": {"v2": 5, "v2-w5": 3.5, "v2-facts-arm": 3.5, "v1": 3.5, "one-call": 3.5, "cost-matched": 3.5},
-    "beam-1m": {"v2": 5, "v2-w5": 3.5, "v2-facts-arm": 3.5, "v1": 3.5, "one-call": 3.5, "cost-matched": 3.5},
+    "locomo": {"v2": 7, "raw": 6, "v2-facts-arm": 9, "v1": 9, "one-call": 9},
+    "beam-100k": {a: 4 for a in ("v2", "v2-w5", "v2-facts-arm", "v1", "one-call", "cost-matched")},
+    "beam-500k": {a: 7 for a in ("v2", "v2-w5", "v2-facts-arm", "v1", "one-call", "cost-matched")},
+    "beam-1m": {"v2": 10, **{a: 7 for a in ("v2-w5", "v2-facts-arm", "v1", "one-call", "cost-matched")}},
 }
-CAPS = {"lme": 12, "locomo": 26, "beam-100k": 10, "beam-500k": 19, "beam-1m": 20}
+# Budgets are reservation headroom: the metering proxy reserves each in-flight call's worst case (about $0.37 per
+# judge call), so a cell needs several times its actual spend (2026-10-12 sizing addendum).
+CAPS = {"lme": 12, "locomo": 39, "beam-100k": 14, "beam-500k": 28, "beam-1m": 34}
 
 
 def spec(group: str, arm: str) -> dict:

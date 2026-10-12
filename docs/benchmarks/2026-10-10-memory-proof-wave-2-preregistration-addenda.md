@@ -429,3 +429,42 @@ The caps total $87, which leaves $5 of the $92 line for the A15 shadow probe.
 - **Store paths go to the A15 shadow probe and the gate-4 latency run** as each store exists. Both read the stores and never write to them.
 
 `mpw2-dev-specs.py` generates the specs. `tests/test_mpw2_dev_specs.py` checks the 29 dev specs: every knob is set, the ratio is `0.4` only on `v2-w5`, and every facts arm uses the measured-default extractor.
+
+## Dev cell budgets were sized below the proxy's reservations (October 12, 2026)
+
+**The error.** The metering proxy reserves each call's worst case before it forwards the call, about $0.37 for a judge call. The proxy refuses a call when the cell's remaining budget is smaller than the reservations already open. BEAM's rubric judge and LoCoMo10's 300-odd questions keep several calls in flight at once. With the dev budgets of $2 to $5, cells therefore ran out of reservation room while their actual spend was a fraction of the budget. Refused calls are never forwarded, so the spend figures are real. The runner treated any cell with a summary as finished, so it went on to the next arm. It now stops the stage when a cell's summary is not `ok` (ec877ee0).
+
+**The incomplete cells.** Each is published as measured, with `ok: false`, and none is used for any comparison:
+
+| Group | Arm | Cell | Spend | Missing of scheduled |
+|---|---|---|---:|---|
+| BEAM-100K | `v2` | `beam-100k-gbrain-rag-ca55ad8fdcd8` | $1.17 | 4 of 40 |
+| BEAM-100K | `v2-w5` | `beam-100k-gbrain-rag-c6c9cd82a32a` | $0.24 | 31 of 40 |
+| BEAM-100K | `v2-facts-arm` | `beam-100k-gbrain-rag-3cf5cfb62931` | $0.40 | 25 of 40 |
+| BEAM-100K | `v1` | `beam-100k-gbrain-rag-ac6117f19c29` | $0.53 | 20 of 40 |
+| BEAM-100K | `one-call` | `beam-100k-gbrain-rag-a77f47084127` | $0.18 | 34 of 40 |
+| BEAM-100K | `cost-matched` | `beam-100k-gbrain-rag-31fb20a0840a` | $0.07 | 35 of 40 |
+| BEAM-500K | `v2` | `beam-500k-gbrain-rag-030c1e27016e` | $3.20 | 16 of 80 |
+| BEAM-500K | `v2-w5` | `beam-500k-gbrain-rag-3952b0ffc5ef` | $1.73 | 8 of 80 |
+| BEAM-500K | `v2-facts-arm` | `beam-500k-gbrain-rag-b8fb2482f62e` | $1.61 | 21 of 80 |
+| BEAM-1M | `v2` | `beam-1m-gbrain-rag-4f0bcbdf6ffa` | $2.68 | 40 of 80; units 22 and 25 not ingested |
+| BEAM-1M | `v2-w5` | `beam-1m-gbrain-rag-78d3fc4cfd94` | $1.74 | stopped by hand, no summary |
+| LoCoMo10 | `v2-facts-arm` | `locomo-locomo10-gbrain-rag-76c3e4da451a` | $4.07 | 0 missing; 1 judge failure |
+| LoCoMo10 | `v1` | `locomo-locomo10-gbrain-rag-ac535fd2f1e0` | $4.02 | 33 of 322 |
+| LoCoMo10 | `one-call` | `locomo-locomo10-gbrain-rag-795502576479` | $0.84 | stopped by hand, no summary |
+
+The BEAM-100K and BEAM-500K stores, and the LoCoMo10 store, are complete. BEAM-1M's store has units 16 and 21. The rerun's first cell ingests 22 and 25 into the same store.
+
+**The new budgets.** These are reservation headroom only; actual spend per arm is expected near the measured costs.
+
+| Group | Cell budgets | Stage cap |
+|---|---|---|
+| BEAM-100K | every arm $4 | $10 → $14 |
+| BEAM-500K | every arm $7 | $19 → $28 |
+| BEAM-1M | `v2` $10, the other arms $7 | $20 → $34 |
+| LoCoMo10 | `v2-facts-arm`, `v1`, `one-call` $9; `v2` and `raw` unchanged | $26 → $39 |
+| LongMemEval-S | unchanged | $12 |
+
+Garry approved the caps on 2026-10-12, taking about $6 from the reserve, which goes from $22 to about $16. Each stage ledger records its cap change and the reason. A larger budget is a new cell, so every rerun arm gets a new cell id. LoCoMo10's `v2` and `raw` keep their passing cells.
+
+**LongMemEval-S finished at $8.64.** `v2`, `raw`, `v2-facts-arm`, `v1` and `filler` pass every gate. `one-call` (`longmemeval-s-gbrain-rag-c193e6a772dd`, W5 off) is complete but fails the delivered-context gate: it delivers a mean of 6,753 tokens (p95 7,217) against the 8,000 target. The facts section is small and accounts for none of the shortfall: 2.8 facts and 97 tokens per question. The loss is in the pages section. gbrain packs pages until its own estimate reaches 7,673 tokens of the 8,100 budget, leaving 357 unused, and those pages measure 6,657 tokens in cl100k. So gbrain's page estimate runs 13% above cl100k, and page granularity leaves the rest of the budget unused. The cell is published as measured and not rerun, because a larger budget would not change it.

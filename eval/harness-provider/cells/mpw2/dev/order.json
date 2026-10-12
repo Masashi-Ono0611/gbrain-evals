@@ -1,10 +1,10 @@
 {
  "caps_usd": {
   "lme": 12,
-  "locomo": 26,
-  "beam-100k": 10,
-  "beam-500k": 19,
-  "beam-1m": 20
+  "locomo": 39,
+  "beam-100k": 14,
+  "beam-500k": 28,
+  "beam-1m": 34
  },
  "order": {
   "lme": [
