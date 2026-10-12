@@ -178,7 +178,15 @@ export function directGitPath(root: string): string | undefined {
   return `${bin}:${path}`;
 }
 
-export interface SlotBuild { slot: string; dir: string; steps: Array<{ step: string; code: number; ms: number; tail: string }>; meter: Meter; ms: number; pages?: unknown; coverage?: SlotCoverage; allowance?: { reserved_usd: number; usd: number; requests: number; charged_reservations: number } }
+export interface SlotBuild {
+  slot: string; dir: string; steps: Array<{ step: string; code: number; ms: number; tail: string }>; meter: Meter; ms: number; pages?: unknown; coverage?: SlotCoverage; allowance?: { reserved_usd: number; usd: number; requests: number; charged_reservations: number };
+  /** `gbrain config set` pairs applied before the import (`--gbrain-build-config`); the snapshot carries them. */
+  build_config?: Record<string, string>;
+  /** gbrain's owner-phrase links and validity windows in the snapshot (null: the build has no such column or table). */
+  owner_phrases?: OwnerPhraseCounts;
+}
+
+export interface OwnerPhraseCounts { links: number | null; windows: number | null }
 
 /**
  * gbrain's mention-index coverage for a built slot (entity-recall plan 2026-10-04, E-T7). gbrain reports it as
@@ -248,6 +256,53 @@ export async function rerankProbe(slots: ProbeSlot[], proxy: ProbeProxy, query: 
   }
 }
 
+/** Keys that take effect only when the mention pass runs, so they belong to the slot build, never to a restore. */
+export const BUILD_TIME_CONFIG_KEYS = ['mentions.owner_phrases'];
+
+/**
+ * A `key=value[,key=value]` config list (`--gbrain-config`, `--gbrain-build-config`). A comma-separated value keeps
+ * its commas (`entity.record_types=contract,amendment`): a piece without `=` continues the value before it.
+ */
+export function parseConfigPairs(flagName: string, value: string | undefined): Array<[string, string]> {
+  const out: Array<[string, string]> = [];
+  for (const piece of (value ?? '').split(',').filter(Boolean)) {
+    const i = piece.indexOf('=');
+    if (i > 0) out.push([piece.slice(0, i), piece.slice(i + 1)]);
+    else if (i < 0 && out.length) out[out.length - 1][1] += `,${piece}`;
+    else throw new Error(`${flagName} expects key=value pairs separated by commas, got "${piece}"`);
+  }
+  return out;
+}
+
+const isOn = (v: string | undefined) => v !== undefined && /^(true|1|on|yes)$/i.test(v.trim());
+
+export interface RestoreProbeRecord { slot: string; config: Record<string, string>; owner_phrases: OwnerPhraseCounts }
+type RestoreProbeSlot = { id: string; config: Array<[string, string]>; buildConfig: Array<[string, string]>; stop(): Promise<void>; start(): Promise<void>; configGet(key: string): Promise<string>; ownerPhraseCounts(): Promise<OwnerPhraseCounts> };
+
+/**
+ * After restore and before any cell: every run and build config key reads back as set, and the slot's owner-phrase
+ * links match its build. A slot built with `mentions.owner_phrases` on must hold at least one owner-phrase link (an
+ * F5 arm on a slot without them would measure nothing); a slot built without it must hold none. Each slot's server
+ * is stopped for the reads (PGLite has one writer) and started again.
+ */
+export async function restoreProbe(slots: RestoreProbeSlot[]): Promise<RestoreProbeRecord[]> {
+  return Promise.all(slots.map(async s => {
+    await s.stop();
+    const expected = new Map([...s.buildConfig, ...s.config]);
+    const config: Record<string, string> = {};
+    for (const [key, want] of expected) {
+      config[key] = await s.configGet(key);
+      if (config[key] !== want) throw new HarnessError(`gbrain ${s.id}: config ${key} reads back "${config[key]}" after restore, the arm set "${want}"`);
+    }
+    const owner_phrases = await s.ownerPhraseCounts();
+    const f5 = isOn(expected.get('mentions.owner_phrases'));
+    if (f5 && !owner_phrases.links) throw new HarnessError(`gbrain ${s.id}: built with mentions.owner_phrases on but holds ${owner_phrases.links ?? 'no'} owner-phrase links, so an F5 arm would measure nothing; check the build's extract step and the gbrain commit (F5 needs the owner-phrase pass)`);
+    if (!f5 && owner_phrases.links) throw new HarnessError(`gbrain ${s.id}: built without mentions.owner_phrases but holds ${owner_phrases.links} owner-phrase links; use the F5-off slot family`);
+    await s.start();
+    return { slot: s.id, config, owner_phrases };
+  }));
+}
+
 export class GbrainSlot {
   client: McpClient | null = null;
   readonly dir: string;
@@ -255,8 +310,11 @@ export class GbrainSlot {
   readonly voyageBase: string;
   /** `gbrain config set` pairs applied after every restore (the snapshot does not carry them). */
   config: Array<[string, string]> = [];
+  /** `gbrain config set` pairs applied once, before the import (`--gbrain-build-config`); the snapshot carries them. */
+  buildConfig: Array<[string, string]> = [];
   /** `advertised`: the brain's mcp.advertised_surface (tools listed; the callable set stays `surface`). Null leaves it unset. */
-  constructor(readonly id: string, root: string, readonly buildDir: string, readonly proxyPort: number, readonly surface: string, readonly advertised: string | null = null) {
+  /** `keyless`: the slot's processes get no provider keys (the $0 scripted smoke on keyword-only slots). */
+  constructor(readonly id: string, root: string, readonly buildDir: string, readonly proxyPort: number, readonly surface: string, readonly advertised: string | null = null, readonly keyless = false) {
     this.dir = join(root, id);
     const base = `http://127.0.0.1:${proxyPort}/${id}`;
     this.voyageBase = `${base}/voyage/v1`;
@@ -268,7 +326,7 @@ export class GbrainSlot {
         // `gbrain serve` exits when its boot has not completed within 60 s (serve.ts). On a 52,000-page PGLite
         // brain it already answers tool calls but its boot runs past that deadline, so it exited mid-session. 0 disables it.
         GBRAIN_SERVE_BOOT_TIMEOUT_SECONDS: String(SERVE_BOOT_TIMEOUT_SECONDS),
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY, ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY, VOYAGE_API_KEY: process.env.VOYAGE_API_KEY,
+        ...(keyless ? {} : { OPENAI_API_KEY: process.env.OPENAI_API_KEY, ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY, VOYAGE_API_KEY: process.env.VOYAGE_API_KEY }),
         ANTHROPIC_BASE_URL: `${base}/anthropic`, OPENAI_BASE_URL: `${base}/openai`,
       },
     };
@@ -318,6 +376,11 @@ export class GbrainSlot {
     const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'));
     cfg.provider_base_urls = { ...(cfg.provider_base_urls ?? {}), voyage: this.voyageBase };
     writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+    for (const [key, value] of this.buildConfig) {
+      const t = Date.now();
+      await this.configSet(key, value);
+      steps.push({ step: `config-set ${key}`, code: 0, ms: Date.now() - t, tail: `${key}=${value}` });
+    }
     const operatorAnalyze = (step: string) => {
       // gbrain does not ANALYZE after a bulk import on PGLite (no autovacuum), so the planner sees empty
       // tables and the graph-signal join in every search runs as a pages x pages nested loop (~50 s at
@@ -362,7 +425,7 @@ export class GbrainSlot {
       if (first.code !== 0 && /failed to embed/.test(first.stdout + first.stderr)) await op('embed-retry', embedArgs);
       else if (first.code !== 0) throw new Error(`gbrain embed failed (exit ${first.code}): ${steps.at(-1)!.tail}`);
     }
-    if (staged) {
+    if (staged && first) {
       await op('embed-verify', ['embed', '--stale', '--dry-run']);
       const left = steps.at(-1)!.tail.match(/Would embed (\d+) stale chunks/);
       if (left && Number(left[1]) > 0) throw new Error(`gbrain ${this.id}: ${left[1]} chunks still unembedded after embed --catch-up`);
@@ -376,7 +439,7 @@ export class GbrainSlot {
     execFileSync('tar', ['-C', this.dir, '-cf', this.snapshot, 'home']);
     const coverage = { ...await this.probeCoverage(), queued_effects: warm.queued_effects };
     writeFileSync(this.coverageFile, JSON.stringify(coverage, null, 2) + '\n');
-    return { slot: this.id, dir: this.dir, steps, meter, ms: Date.now() - t0, coverage };
+    return { slot: this.id, dir: this.dir, steps, meter, ms: Date.now() - t0, coverage, build_config: Object.fromEntries(this.buildConfig), owner_phrases: await this.ownerPhraseCounts() };
   }
 
   /**
@@ -406,6 +469,30 @@ export class GbrainSlot {
     const script = `const { PGlite } = await import(${JSON.stringify(`${pglite}/index.js`)}); const { vector } = await import(${JSON.stringify(`${pglite}/vector/index.js`)}); const { pg_trgm } = await import(${JSON.stringify(`${pglite}/contrib/pg_trgm.js`)}); const db = await PGlite.create({ dataDir: ${JSON.stringify(join(this.dir, 'home', 'brain.pglite'))}, extensions: { vector, pg_trgm } }); const [{ ok }] = (await db.query("SELECT to_regclass('persistence_effects') IS NOT NULL AS ok")).rows; const n = ok ? (await db.query("SELECT count(*)::int AS n FROM persistence_effects WHERE state = 'queued'")).rows[0].n : null; await db.close(); process.stdout.write(JSON.stringify(n));`;
     const { stdout } = await execFileAsync('bun', ['-e', script], { encoding: 'utf8' });
     return JSON.parse(stdout.trim()) as number | null;
+  }
+
+  /** Owner-phrase links and windows in the stopped slot's brain; null where the build has no such column or table. */
+  async ownerPhraseCounts(): Promise<OwnerPhraseCounts> {
+    const pglite = join(this.buildDir, 'node_modules/@electric-sql/pglite/dist');
+    const script = `const { PGlite } = await import(${JSON.stringify(`${pglite}/index.js`)}); const { vector } = await import(${JSON.stringify(`${pglite}/vector/index.js`)}); const { pg_trgm } = await import(${JSON.stringify(`${pglite}/contrib/pg_trgm.js`)}); const db = await PGlite.create({ dataDir: ${JSON.stringify(join(this.dir, 'home', 'brain.pglite'))}, extensions: { vector, pg_trgm } }); const one = async q => (await db.query(q)).rows[0]; const { col } = await one("SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'links' AND column_name = 'link_kind') AS col"); const { tbl } = await one("SELECT to_regclass('owner_phrase_windows') IS NOT NULL AS tbl"); const links = col ? (await one("SELECT count(*)::int AS n FROM links WHERE link_kind = 'owner_phrase'")).n : null; const windows = tbl ? (await one('SELECT count(*)::int AS n FROM owner_phrase_windows')).n : null; await db.close(); process.stdout.write(JSON.stringify({ links, windows }));`;
+    const { stdout } = await execFileAsync('bun', ['-e', script], { encoding: 'utf8' });
+    return JSON.parse(stdout.trim()) as OwnerPhraseCounts;
+  }
+
+  /** `gbrain config set <key> <value>` on the stopped slot; an empty value unsets the key (gbrain's default), since `config set` takes no empty value. */
+  async configSet(key: string, value: string): Promise<void> {
+    const r = await runCli(this.run, value === '' ? ['config', 'unset', key] : ['config', 'set', key, value], 120_000);
+    if (r.code !== 0 && !(value === '' && /Config key not found/.test(r.stdout + r.stderr))) {
+      throw new Error(`gbrain ${this.id}: config ${value === '' ? 'unset' : 'set'} ${key} failed (exit ${r.code}): ${(r.stdout + r.stderr).trim().split('\n').slice(-3).join(' ')}`);
+    }
+  }
+
+  /** `gbrain config get <key>` on the stopped slot, trimmed; an unset key reads back as the empty string. */
+  async configGet(key: string): Promise<string> {
+    const r = await runCli(this.run, ['config', 'get', key], 120_000);
+    if (r.code !== 0 && /Config key not found/.test(r.stdout + r.stderr)) return '';
+    if (r.code !== 0) throw new HarnessError(`gbrain ${this.id}: config get ${key} failed (exit ${r.code}): ${(r.stdout + r.stderr).trim().split('\n').slice(-3).join(' ')}`);
+    return r.stdout.trim();
   }
 
   /** Written beside the snapshot by `build`; the round preflight reads it. */
@@ -442,10 +529,7 @@ export class GbrainSlot {
       const home = join(this.dir, 'home');
       for (const entry of (await readdir(home)).sort()) await rm(join(home, entry), { recursive: true, force: true });
       await execFileAsync('tar', ['-C', this.dir, '-xf', this.snapshot, 'home'], { maxBuffer: 64 << 20 });
-      for (const [key, value] of this.config) {
-        const r = await runCli(this.run, ['config', 'set', key, value], 120_000);
-        if (r.code !== 0) throw new Error(`gbrain ${this.id}: config set ${key} failed (exit ${r.code}): ${(r.stdout + r.stderr).trim().split('\n').slice(-3).join(' ')}`);
-      }
+      for (const [key, value] of this.config) await this.configSet(key, value);
       await this.start();
     } catch (e) {
       throw new HarnessError(`gbrain ${this.id} restore: ${(e as Error).message}`);

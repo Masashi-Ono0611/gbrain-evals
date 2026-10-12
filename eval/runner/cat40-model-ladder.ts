@@ -18,6 +18,13 @@
  *     [--gbrain-instructions-file <file>] [--gbrain-tool-descriptions-file <json>] [--gbrain-drop-tools a,b]
  *       (evaluator-side A/B of the instruction and tool-description text the model sees; gbrain code unchanged)
  *   bun eval/runner/cat40-model-ladder.ts --scripted --arms fs,memory,oracle   (hermetic, $0)
+ *   --gbrain-build-config key=value,... sets config once before a slot build's import (keys that act only when the
+ *     mention pass runs, e.g. mentions.owner_phrases); it selects its own slot family, and the build and cell steps
+ *     must pass the same list. After every restore and before any cell, a restore probe reads back each
+ *     --gbrain-config and --gbrain-build-config key and checks the slot's owner-phrase links against the family.
+ *     An empty value (key=) unsets the key. The development arm table: eval/runner/cat40/dev-arms.ts.
+ *   --scripted --keyless-slots --arms gbrain: the $0 plumbing smoke on keyword-only slots built without embeddings;
+ *     slot processes get no provider keys and the rerank probe is skipped (receipt rerank_probe says so).
  *   --gbrain <checkout>@<ref> is shorthand for --gbrain-repo <checkout> --gbrain-ref <ref>.
  *
  * Worlds: v1 (default), `--world eval/data/model-ladder-wide-dev/world.json` (scale wide: families A-F plus
@@ -55,7 +62,7 @@ import { runAgent, runAgentText, provider, HarnessError, type AgentRun, type Arm
 import { FsArm, MemoryArm, OracleArm, FileStore, isWriteCall } from './cat40/arms.ts';
 import { renderDoc } from '../generators/model-ladder-gen.ts';
 import { PgArm, PgStore, cachedOpenAIEmbedder } from './cat40/pg-arm.ts';
-import { GbrainArm, instructionsOverride, cellLabel, assertNoGbrainFsCollision, GBRAIN_FS_READ_TOOLS, type CellArm, GbrainPool, GbrainSlot, MeteringProxy, rerankProbe, SERVE_BOOT_TIMEOUT_SECONDS, STAGED_SOURCE_ADD_DOCS, STAGED_SYNC_BATCH, coverageProblem, type Meter, type SlotBuild, type SlotCoverage } from './cat40/gbrain-arm.ts';
+import { GbrainArm, instructionsOverride, cellLabel, assertNoGbrainFsCollision, GBRAIN_FS_READ_TOOLS, type CellArm, GbrainPool, GbrainSlot, MeteringProxy, rerankProbe, restoreProbe, parseConfigPairs, BUILD_TIME_CONFIG_KEYS, type RestoreProbeRecord, SERVE_BOOT_TIMEOUT_SECONDS, STAGED_SOURCE_ADD_DOCS, STAGED_SYNC_BATCH, coverageProblem, type Meter, type SlotBuild, type SlotCoverage } from './cat40/gbrain-arm.ts';
 import { scoreTask, judgePrompt, parseClaims, JUDGE_PROMPT_VERSION, type TaskScore, type ClaimVerdicts } from './cat40/score.ts';
 import { budgetOptionsFrom, startPaidRun, receiptCost, type BudgetRun, type PaidRequestGuard } from './budget-ledger.ts';
 import { HARD_FAMILIES, isHardWorld, type HardWorld, type HardTask } from '../generators/hard/schema.ts';
@@ -373,9 +380,13 @@ function insideRepo(p: string): boolean {
 
 // ─── gbrain slots ───────────────────────────────────────────────────
 
-/** Where the slot brains for one build, world and statistics setting live. */
-export function slotRoot(root: string, slotCommit: string, world: LadderWorld, analyze: boolean): string {
-  return join(root, `slots-${slotCommit.slice(0, 12)}-${worldDigest(world).slice(0, 8)}${analyze ? '' : '-noanalyze'}`);
+/**
+ * Where the slot brains for one build, world and statistics setting live. A slot family built with config
+ * (`--gbrain-build-config`, e.g. the F5-on family) or without embeddings (`--keyless-slots`) gets its own directory.
+ */
+export function slotRoot(root: string, slotCommit: string, world: LadderWorld, analyze: boolean, family: { buildConfig?: Array<[string, string]>; keyless?: boolean } = {}): string {
+  const bc = family.buildConfig?.length ? `-bc${createHash('sha256').update(JSON.stringify([...family.buildConfig].sort())).digest('hex').slice(0, 8)}` : '';
+  return join(root, `slots-${slotCommit.slice(0, 12)}-${worldDigest(world).slice(0, 8)}${analyze ? '' : '-noanalyze'}${bc}${family.keyless ? '-keyless' : ''}`);
 }
 
 /** Snapshot files the agent steps need; the preflight refuses when any is missing. */
@@ -404,10 +415,10 @@ export function incompleteSlotCoverage(dir: string, n: number): { problems: stri
 
 /** Flags the runner accepts; anything else is refused before anything is written (DX-F3). */
 export const VALUE_FLAGS = ['--arms', '--models', '--families', '--tasks', '--repeat', '--concurrency', '--slots', '--gbrain-repo', '--gbrain-ref', '--gbrain-root', '--gbrain-label', '--judge', '--world', '--out',
-  '--max-tool-chars', '--order', '--slot-ref', '--surface', '--gbrain-instructions-file', '--gbrain-tool-descriptions-file', '--gbrain-drop-tools', '--gbrain-config', '--slot-build-allowance-usd',
+  '--max-tool-chars', '--order', '--slot-ref', '--surface', '--gbrain-instructions-file', '--gbrain-tool-descriptions-file', '--gbrain-drop-tools', '--gbrain-config', '--gbrain-build-config', '--slot-build-allowance-usd',
   '--budget-usd', '--estimate-usd', '--budget-run-id', '--budget-ledger', '--program-cap-usd', '--max-turns', '--per-family', '--hard-tool-limits', '--accept-freeze-drift', '--step',
   '--gbrain', '--advertised', '--world-templates-file', '--decision-id', '--purpose', '--retire-models'];
-export const BOOLEAN_FLAGS = ['--scripted', '--build-slots', '--rebuild', '--no-pglite-analyze', '--transcripts', '--preflight', '--help', '--new-budget-run'];
+export const BOOLEAN_FLAGS = ['--scripted', '--keyless-slots', '--build-slots', '--rebuild', '--no-pglite-analyze', '--transcripts', '--preflight', '--help', '--new-budget-run'];
 const NUMERIC_FLAGS = new Set(['--repeat', '--concurrency', '--slots', '--slot-build-allowance-usd', '--budget-usd', '--estimate-usd', '--program-cap-usd', '--max-turns', '--per-family']);
 
 export const RUNNER_USAGE = `Usage: bun eval/runner/cat40-model-ladder.ts [flags]
@@ -415,8 +426,8 @@ export const RUNNER_USAGE = `Usage: bun eval/runner/cat40-model-ladder.ts [flags
   Hard:  --world <hard world.json> --models <list> --judge gpt-6.1-sol [--arms oracle,fs,pg,memory,gbrain] [--per-family N] [--max-turns N]
          [--hard-tool-limits hard|v1] [--preflight] [--step <step>] --budget-usd <n> --budget-ledger .budget/cat40-hard.sqlite --out <dir>
          exploratory: --arms gbrain-fs (gbrain plus read-only files) on the calibration-seed world only, no --step
-  $0:    --scripted [--arms fs,memory,oracle] [--world <world.json>] --out <dir>
-  Slots: --build-slots --gbrain-ref <sha> --slots N --world <world.json> --budget-usd <n> --slot-build-allowance-usd 2
+  $0:    --scripted [--arms fs,memory,oracle] [--world <world.json>] --out <dir>   (gbrain: add --keyless-slots)
+  Slots: --build-slots --gbrain-ref <sha> --slots N --world <world.json> --budget-usd <n> --slot-build-allowance-usd 2 [--gbrain-build-config key=value,...]
 Value flags: ${VALUE_FLAGS.join(' ')}
 Switches: ${BOOLEAN_FLAGS.join(' ')}
 Hard refusals and stops exit 3 with a stable code (docs/benchmarks/cat40-hard/RUNBOOK.md); usage errors exit 2.`;
@@ -548,29 +559,40 @@ export async function main(argv = process.argv.slice(2)) {
   const gbrainRef = parsedSpec?.ref ?? flag(argv, '--gbrain-ref') ?? 'HEAD';
   const root = resolve(flag(argv, '--gbrain-root') ?? join(process.env.HOME ?? '.', '.capy/work/cat40/gbrain'));
   const nSlots = Number(flag(argv, '--slots') ?? 3);
+  // --gbrain-config: brain config applied after every restore (a variant of the same build). --gbrain-build-config:
+  // config set once before the import, for keys that act only when the mention pass runs; it selects the slot family.
+  const gbrainConfig = parseConfigPairs('--gbrain-config', flag(argv, '--gbrain-config'));
+  const buildConfig = parseConfigPairs('--gbrain-build-config', flag(argv, '--gbrain-build-config'));
+  const lateBuildKeys = gbrainConfig.filter(([k]) => BUILD_TIME_CONFIG_KEYS.includes(k)).map(([k]) => k);
+  if (lateBuildKeys.length) throw new UsageError(`${lateBuildKeys.join(', ')} takes effect only when the mention pass runs, so a restore cannot apply it; pass it in --gbrain-build-config (its own slot family)`);
+  const keyless = argv.includes('--keyless-slots');
   let gbrainCommit: string | null = null, slotCommit: string | null = null, slotDir: string | null = null;
   if (needsGbrain) {
-    if (scripted) throw new Error('the gbrain arm needs real embeddings; run it without --scripted');
+    if (scripted && !keyless) throw new Error('the gbrain arm needs real embeddings; run it without --scripted, or add --keyless-slots for a $0 plumbing smoke on keyword-only slots');
+    if (keyless && !scripted) throw new Error('--keyless-slots builds keyword-only slots with no provider keys for the $0 scripted smoke; a model run needs embedded slots');
     const rev = (ref: string) => execFileSync('git', ['-C', repo, 'rev-parse', `${ref}^{commit}`], { encoding: 'utf8' }).trim();
     gbrainCommit = rev(gbrainRef);
     // --slot-ref reuses brains built by another commit (read-path changes only; the commits must share a schema).
     if (buildSlots && flag(argv, '--slot-ref')) throw new Error('--build-slots builds with --gbrain-ref itself; build the --slot-ref commit by passing it as --gbrain-ref');
     slotCommit = flag(argv, '--slot-ref') ? rev(flag(argv, '--slot-ref')!) : gbrainCommit;
-    slotDir = slotRoot(root, slotCommit, world, analyze);
+    slotDir = slotRoot(root, slotCommit, world, analyze, { buildConfig, keyless });
+    const familyFlags = `${buildConfig.length ? ` --gbrain-build-config ${buildConfig.map(([k, v]) => `${k}=${v}`).join(',')}` : ''}${keyless ? ' --keyless-slots --scripted' : ''}`;
     const missing = missingSlotSnapshots(slotDir, nSlots);
     if (buildSlots && !missing.length && !argv.includes('--rebuild')) { log(`all ${nSlots} slot snapshots exist in ${slotDir}; nothing to build`); return; }
     if (!buildSlots && missing.length) {
       throw new Error(`gbrain slot snapshots are missing for build ${slotCommit.slice(0, 12)} on world ${worldDigest(world).slice(0, 12)} (${missing.length} of ${nSlots}: ${missing.join(', ')}). `
-        + `Build them first as their own step, one at a time: bun eval/runner/cat40-model-ladder.ts --build-slots --gbrain-repo ${repo} --gbrain-ref ${slotCommit} --slots ${nSlots} --world ${relative(process.cwd(), worldPath)}${analyze ? '' : ' --no-pglite-analyze'} --slot-build-allowance-usd 2 --budget-usd <dollars> --budget-ledger <ledger>`);
+        + `Build them first as their own step, one at a time: bun eval/runner/cat40-model-ladder.ts --build-slots --gbrain-repo ${repo} --gbrain-ref ${slotCommit} --slots ${nSlots} --world ${relative(process.cwd(), worldPath)}${analyze ? '' : ' --no-pglite-analyze'}${familyFlags} --slot-build-allowance-usd 2 --budget-usd <dollars> --budget-ledger <ledger>`);
     }
     if (!buildSlots) {
       const coverage = incompleteSlotCoverage(slotDir, nSlots);
-      const queued = coverage.problems.filter(p => p.includes('persistence effects'));
+      // A keyless slot's queued effects are embeddings it has no key to run; they never drain and never stall a call.
+      const queued = keyless ? [] : coverage.problems.filter(p => p.includes('persistence effects'));
+      if (keyless) coverage.problems = coverage.problems.filter(p => !p.includes('persistence effects'));
       if (queued.length) throw new HardStop('HARD_SLOT_EFFECTS_QUEUED', `gbrain slots in ${slotDir}: ${queued.join('; ')}`,
         `rebuild them: bun eval/runner/cat40-model-ladder.ts --build-slots --rebuild --gbrain-repo ${repo} --gbrain-ref ${slotCommit} --slots ${nSlots} --world ${relative(process.cwd(), worldPath)}`);
       if (coverage.problems.length) {
         throw new Error(`gbrain slots in ${slotDir} have an unfinished mention pass (${coverage.problems.join('; ')}), so entity recall would be measured on a partial index. `
-          + `Rebuild them: bun eval/runner/cat40-model-ladder.ts --build-slots --rebuild --gbrain-repo ${repo} --gbrain-ref ${slotCommit} --slots ${nSlots} --world ${relative(process.cwd(), worldPath)}${analyze ? '' : ' --no-pglite-analyze'} --slot-build-allowance-usd 2 --budget-usd <dollars> --budget-ledger <ledger>`);
+          + `Rebuild them: bun eval/runner/cat40-model-ladder.ts --build-slots --rebuild --gbrain-repo ${repo} --gbrain-ref ${slotCommit} --slots ${nSlots} --world ${relative(process.cwd(), worldPath)}${analyze ? '' : ' --no-pglite-analyze'}${familyFlags} --slot-build-allowance-usd 2 --budget-usd <dollars> --budget-ledger <ledger>`);
       }
       if (coverage.unchecked) log(`mention coverage not checked on ${coverage.unchecked} of ${nSlots} slots: no coverage record, or the build has no coverage field`);
     }
@@ -607,6 +629,8 @@ export async function main(argv = process.argv.slice(2)) {
   let gbrainBuild: ReturnType<typeof prepareBuild> | null = null;
   let complete = false;
   let proxyUnattributed: Record<string, Meter> = {};
+  let restoreProbes: RestoreProbeRecord[] = [];
+  let rerankProbeState: string | null = null;
   try {
     if (!scripted && cells.some(c => c.arm === 'pg')) {
       ctx.pg = await PgStore.build(world, cachedOpenAIEmbedder(resolve('eval/reports/cat40/embed-cache.json')), hard ? { chunking: 'hard' } : {});
@@ -618,29 +642,25 @@ export async function main(argv = process.argv.slice(2)) {
       ctx.proxy = new MeteringProxy();
       ctx.proxy.start();
       const surface = flag(argv, '--surface') ?? 'starter';
-      const slots = Array.from({ length: nSlots }, (_, i) => new GbrainSlot(`slot${i}`, slotDir!, gbrainBuild!.dir, ctx.proxy!.port, surface, flag(argv, '--advertised') ?? null));
-      // --gbrain-config key=value[,key=value]: brain config applied after every restore (a variant of the same build).
-      const gbrainConfig = (flag(argv, '--gbrain-config') ?? '').split(',').filter(Boolean).map(kv => {
-        const i = kv.indexOf('=');
-        if (i <= 0) throw new Error(`--gbrain-config expects key=value pairs separated by commas, got "${kv}"`);
-        return [kv.slice(0, i), kv.slice(i + 1)] as [string, string];
-      });
-      for (const s of slots) s.config = gbrainConfig;
+      const slots = Array.from({ length: nSlots }, (_, i) => new GbrainSlot(`slot${i}`, slotDir!, gbrainBuild!.dir, ctx.proxy!.port, surface, flag(argv, '--advertised') ?? null, keyless));
+      for (const s of slots) { s.config = gbrainConfig; s.buildConfig = buildConfig; }
       if (buildSlots) {
         // One build at a time: each holds a small ledger allowance (a build sends one provider request per page).
         for (const s of slots) {
           if (s.hasSnapshot() && !argv.includes('--rebuild')) continue;
-          const allowance = budget!.run.allowance(Number(flag(argv, '--slot-build-allowance-usd') ?? 5), `gbrain ${s.id} build`);
-          ctx.proxy.allowances.set(s.id, allowance);
-          let b: SlotBuild, charged: ReturnType<typeof allowance.close>;
-          try { b = await s.build(world, ctx.proxy, analyze); }
-          finally { ctx.proxy.allowances.delete(s.id); charged = allowance.close(); }
-          builds.push({ ...b, allowance: { reserved_usd: allowance.usd, ...charged } });
-          log(`built ${s.id} in ${(b.ms / 1000).toFixed(0)}s, $${b.meter.usd.toFixed(4)} (${b.meter.requests} provider requests; ledger allowance charged $${charged.usd.toFixed(4)}); `
+          // A keyless build (scripted smoke) has no budget run and sends no provider request.
+          const allowance = budget ? budget.run.allowance(Number(flag(argv, '--slot-build-allowance-usd') ?? 5), `gbrain ${s.id} build`) : null;
+          if (allowance) ctx.proxy.allowances.set(s.id, allowance);
+          let b: SlotBuild, charged: ReturnType<NonNullable<typeof allowance>['close']> | null = null;
+          try { b = await s.build(world, ctx.proxy, analyze, { embed: !keyless }); }
+          finally { ctx.proxy.allowances.delete(s.id); charged = allowance?.close() ?? null; }
+          builds.push({ ...b, ...(allowance && charged ? { allowance: { reserved_usd: allowance.usd, ...charged } } : {}) });
+          log(`built ${s.id} in ${(b.ms / 1000).toFixed(0)}s, $${b.meter.usd.toFixed(4)} (${b.meter.requests} provider requests; ledger allowance charged $${(charged?.usd ?? 0).toFixed(4)}); `
+            + `build config ${JSON.stringify(b.build_config ?? {})}, owner-phrase links ${b.owner_phrases?.links ?? 'n/a'}; `
             + (b.coverage?.supported ? `mention coverage ${b.coverage.state}, ${b.coverage.pending} pending${coverageProblem(b.coverage) ? ' (a round will refuse this slot)' : ''}` : 'no mention coverage field in this build')
             + `; queued persistence effects at snapshot: ${b.coverage?.queued_effects ?? 'not recorded'}`);
         }
-        const queued = builds.filter(b => (b.coverage?.queued_effects ?? 0) > 0);
+        const queued = keyless ? [] : builds.filter(b => (b.coverage?.queued_effects ?? 0) > 0);
         if (hard && queued.length) throw new HardStop('HARD_SLOT_EFFECTS_QUEUED', `${queued.map(b => `${b.slot}: ${b.coverage!.queued_effects}`).join(', ')} queued persistence effects at snapshot`,
           `read the warm-boot steps in ${relative(process.cwd(), out)}'s receipt, then rebuild those slots (--build-slots --rebuild)`, 'Garry decides whether cells may run on slots that stall their first tool call');
       }
@@ -654,17 +674,22 @@ export async function main(argv = process.argv.slice(2)) {
         await s.restore();
       }
       log('write probe passed on every slot');
+      restoreProbes = await restoreProbe(slots);
+      log(`restore probe passed on every slot: config reads back ${JSON.stringify(restoreProbes[0]?.config ?? {})}; owner-phrase links ${restoreProbes.map(r => `${r.slot}=${r.owner_phrases.links ?? 'n/a'}`).join(' ')}`);
       if (exploratory) {
         for (const s of slots) assertNoGbrainFsCollision(s.client!.tools.map(t => t.name).filter(n => !instructionsOverride.dropTools.includes(n)));
         log(`gbrain-fs: no gbrain tool collides with ${GBRAIN_FS_READ_TOOLS.join(', ')}`);
       }
       // A rerank probe (Cat 40 Hard R0): one search per slot must reach the reranker through this process's proxy,
       // unless the run turned reranking off. A slot whose reranker is unreachable fails closed before any cell.
+      // Keyless smoke slots have no provider keys, so they cannot rerank; the receipt says the probe was skipped.
       const rerankOff = gbrainConfig.some(([k, v]) => k === 'search.reranker.enabled' && /^(false|0|off)$/i.test(v));
-      if (!rerankOff && ctx.proxy) {
+      if (keyless) { rerankProbeState = 'skipped: keyless scripted smoke'; log('rerank probe skipped: keyless slots have no provider keys'); }
+      else if (!rerankOff && ctx.proxy) {
         await rerankProbe(slots, ctx.proxy, world.docs?.[0]?.title ?? 'account');
+        rerankProbeState = 'passed';
         log('rerank probe passed on every slot');
-      }
+      } else rerankProbeState = 'skipped: search.reranker.enabled=false';
       ctx.pool = new GbrainPool(slots, hard ? { minHealthy: nSlots } : {});
       log(`gbrain ${gbrainBuild.version} (${gbrainBuild.commit.slice(0, 12)}) ready on ${nSlots} slots, surface ${surface}`);
     }
@@ -742,7 +767,7 @@ export async function main(argv = process.argv.slice(2)) {
           strata: Object.fromEntries((['memory-only', 'page-authoring', 'hidden-tool'] as const).map(k => [k, tasks.filter(t => stratumOf(t.family) === k).length])) }) },
       evals_commit: (() => { try { return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(); } catch { return null; } })(),
       evals_dirty: (() => { try { return execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).trim().length > 0; } catch { return null; } })(),
-      gbrain: gbrainBuild ? { slot_ref: flag(argv, '--slot-ref') ?? null, slot_commit: slotCommit, label: ctx.gbrainLabel, commit: gbrainBuild.commit, version: gbrainBuild.version, tree: gbrainBuild.tree, verified: gbrainBuild.verified, surface: flag(argv, '--surface') ?? 'starter', advertised_surface: flag(argv, '--advertised') ?? null, tool_overrides: { descriptions_file: descriptionsFile ?? null, descriptions_sha256: instructionsOverride.descriptions ? createHash('sha256').update(JSON.stringify(instructionsOverride.descriptions)).digest('hex') : null, dropped: instructionsOverride.dropTools }, instructions_override: instructionsOverride.text === null ? null : { file: relative(process.cwd(), resolve(instructionsFile!)), sha256: createHash('sha256').update(instructionsOverride.text).digest('hex') }, served_instructions_sha256: instructionsOverride.served === null ? null : createHash('sha256').update(instructionsOverride.served).digest('hex'), operator_analyze: analyze, serve_boot_timeout_s: SERVE_BOOT_TIMEOUT_SECONDS, staged_build: world.docs.length > STAGED_SOURCE_ADD_DOCS ? { sync_batch_docs: STAGED_SYNC_BATCH } : null } : null,
+      gbrain: gbrainBuild ? { slot_ref: flag(argv, '--slot-ref') ?? null, slot_commit: slotCommit, label: ctx.gbrainLabel, commit: gbrainBuild.commit, version: gbrainBuild.version, tree: gbrainBuild.tree, verified: gbrainBuild.verified, surface: flag(argv, '--surface') ?? 'starter', advertised_surface: flag(argv, '--advertised') ?? null, tool_overrides: { descriptions_file: descriptionsFile ?? null, descriptions_sha256: instructionsOverride.descriptions ? createHash('sha256').update(JSON.stringify(instructionsOverride.descriptions)).digest('hex') : null, dropped: instructionsOverride.dropTools }, instructions_override: instructionsOverride.text === null ? null : { file: relative(process.cwd(), resolve(instructionsFile!)), sha256: createHash('sha256').update(instructionsOverride.text).digest('hex') }, served_instructions_sha256: instructionsOverride.served === null ? null : createHash('sha256').update(instructionsOverride.served).digest('hex'), config: Object.fromEntries(gbrainConfig), build_config: Object.fromEntries(buildConfig), keyless_slots: keyless, slot_dir: slotDir, restore_probe: restoreProbes, rerank_probe: rerankProbeState, operator_analyze: analyze, serve_boot_timeout_s: SERVE_BOOT_TIMEOUT_SECONDS, staged_build: world.docs.length > STAGED_SOURCE_ADD_DOCS ? { sync_batch_docs: STAGED_SYNC_BATCH } : null } : null,
       mode: buildSlots ? 'build-slots' : 'cells', order, complete, cells_planned: cells.length,
       slot_builds: builds, models, arms, families, repeats, max_tool_chars: ctx.maxToolChars, argv,
       budget_run_id: ctx.budgetRunId, resumed: Boolean(budget?.run.participant),

@@ -124,6 +124,18 @@ describe('slot builds and preflight (E-4)', () => {
     expect(missingSlotSnapshots(dir, 2)).toEqual([]);
     expect(slotRoot(root, commit, world, false)).toEndWith('-noanalyze');
   });
+  test('a build-config or keyless slot family gets its own directory, and a build-time key is refused at restore time', async () => {
+    const root = tmp(), commit = 'a'.repeat(40);
+    const plain = slotRoot(root, commit, world, true);
+    const f5 = slotRoot(root, commit, world, true, { buildConfig: [['mentions.owner_phrases', 'true']] });
+    expect(f5).not.toBe(plain);
+    expect(f5).toMatch(/-bc[0-9a-f]{8}$/);
+    expect(slotRoot(root, commit, world, true, { buildConfig: [] })).toBe(plain);
+    expect(slotRoot(root, commit, world, true, { buildConfig: [['mentions.owner_phrases', 'true']], keyless: true })).toBe(`${f5}-keyless`);
+    const base = ['--arms', 'gbrain', '--tasks', 'A01', '--out', tmp(), '--gbrain-repo', tmp()];
+    await expect(main(['--models', 'gpt-5.4', ...base, '--gbrain-config', 'mentions.owner_phrases=true', '--budget-usd', '1'])).rejects.toThrow('pass it in --gbrain-build-config');
+    await expect(main(['--models', 'gpt-5.4', ...base, '--keyless-slots', '--budget-usd', '1'])).rejects.toThrow('--keyless-slots builds keyword-only slots');
+  });
 });
 
 describe('gbrain provider-call attribution (E-6)', () => {
