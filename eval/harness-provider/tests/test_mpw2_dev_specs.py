@@ -1,11 +1,11 @@
-"""Memory proof wave 2: every dev and confirmation spec sets its knobs explicitly (2026-10-11 addendum)."""
+"""Memory proof wave 2: every dev, re-tune and confirmation spec sets its knobs explicitly (2026-10-11 addendum)."""
 import json
 from pathlib import Path
 
 import pytest
 
 CELLS = Path(__file__).resolve().parents[1] / "cells/mpw2"
-SPECS = sorted(p for stage in ("dev", "confirm") for p in (CELLS / stage).glob("*.json") if p.name != "order.json")
+SPECS = sorted(p for p in (CELLS / "dev").glob("*.json") if p.name != "order.json")
 W5_SPECS = sorted(p for p in (CELLS / "w5").glob("*.json") if p.name != "order.json")
 READ_KEYS = {"search.mode", "search.reranker.enabled", "search.reranker.model", "search.reranker.gate", "search.reranker.gate_min_gap",
              "search.query_facts_arm", "search.temporal_fact_reserve", "search.evidence_date_header", "search.entity_anchoring",
@@ -49,3 +49,30 @@ def test_w5_tuning_arms():
         GbrainMemoryProvider({"gbrain_cli": "unused", "child_env": {}, "lane": spec["lane"], **spec["provider_config"]})
     assert ratios == {"b": ("tokenmax", "0"), "d": ("conservative", "0"), "w5-0.40": ("tokenmax", "0.4"), "w5-0.50": ("tokenmax", "0.5"),
                       "w5-0.75": ("tokenmax", "0.75"), "w5-1.00": ("tokenmax", "1")}
+
+
+RETUNE = sorted(p for p in (CELLS / "retune").glob("*.json") if p.name != "order.json")
+W5A_KEYS = (READ_KEYS - {"search.page_rank_budget_ratio"}) | {"search.page_rank_cut"}
+STORES = {"lme": "gbrain-longmemeval-s-165df707838f", "beam-100k": "gbrain-beam-100k-6824b3680877",
+          "beam-500k": "gbrain-beam-500k-8222a93c39c3", "beam-1m": "gbrain-beam-1m-5f98c3307942"}
+
+
+def test_retune_arms_are_dev_v2_with_the_adaptive_w5_keys():
+    from mpw.gbrain_provider import GbrainMemoryProvider
+
+    arms = {}
+    for path in RETUNE:
+        group, arm = path.stem.rsplit("-", 1)
+        spec = json.loads(path.read_text())
+        dev = json.loads((CELLS / "dev" / f"{group}-v2.json").read_text())
+        sc = spec["provider_config"].pop("search_config")
+        dev_sc = dev["provider_config"].pop("search_config")
+        assert spec["provider_config"] == dev["provider_config"] and spec["lane"] == "combined-v2" and spec["questions"] == dev["questions"]
+        assert {k: v for k, v in sc.items() if not k.startswith("search.page_rank_cut")} == {k: v for k, v in dev_sc.items() if k != "search.page_rank_budget_ratio"}
+        assert set(sc) == (W5A_KEYS if arm == "ref" else W5A_KEYS | {"search.page_rank_cut_factor"})
+        assert spec["reuse_store"]["store_id"] == STORES[group] and spec["reuse_store"]["reason"]
+        arms.setdefault(arm, set()).add(group)
+        expect = None if arm == "ref" else float(arm[1:])
+        assert GbrainMemoryProvider({"gbrain_cli": "unused", "child_env": {}, "lane": spec["lane"], **spec["provider_config"],
+                                     "search_config": sc})._arm_page_rank_cut() == expect
+    assert arms == {a: set(STORES) for a in ("ref", "f1.00", "f1.25", "f1.50")}

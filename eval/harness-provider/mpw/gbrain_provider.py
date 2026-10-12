@@ -743,6 +743,8 @@ class GbrainMemoryProvider(MemoryProvider):
         for key in ("facts_degraded", "search_degraded"):
             if recalled.get(key):
                 raise GbrainRetrieveError(f"recall reported {key} {json.dumps(recalled[key])[:300]}; a degraded read is not packed")
+        delivery = recalled.get("delivery")
+        cut = self._check_page_rank_cut(delivery.get("page_rank_cut"), True, args["budget_tokens"], False) if isinstance(delivery, dict) else None
         block, fact_meta = self._pack_facts(u, [], recalled["facts"], 10 ** 9, user_id)
         pages = []
         for r in recalled["results"]:
@@ -756,7 +758,7 @@ class GbrainMemoryProvider(MemoryProvider):
         return docs, None, {"lane": "recall-one-call", "requested": args, "facts": fact_meta, "results": len(pages),
                             "facts_order": recalled["facts_order"], "budget_tokens": recalled.get("budget_tokens"),
                             "budget_used": recalled.get("budget_used"), "dropped_count": recalled.get("dropped_count"),
-                            "budget_packing": recalled.get("budget_packing"), "page_rank_cut": recalled.get("page_rank_cut"), "tokenizer": "cl100k",
+                            "budget_packing": recalled.get("budget_packing"), "page_rank_cut": cut, "tokenizer": "cl100k",
                             "tokens_delivered": count_tokens(render_rag_context(docs)), "rendered_tokens": count_tokens(render_rag_context(docs)),
                             "budget_clamped": False, "entity_anchored": 0,
                             "timing": {"lock_wait_ms": round(wait_ms, 1), "unit_open_ms": round((t1 - t0) * 1000 - wait_ms, 1),
@@ -885,32 +887,48 @@ class GbrainMemoryProvider(MemoryProvider):
         }
         if delivery.get("tokenizer") not in (None, "cl100k"):
             raise GbrainRetrieveError(f"gbrain packed evidence with tokenizer {delivery.get('tokenizer')!r}, not cl100k")
-        cut = self._check_page_rank_cut(args, retrieval.get("page_rank_cut"))
+        clamped = "budget_clamped" in (delivery.get("fallbacks") or [])
+        cut = self._check_page_rank_cut(delivery.get("page_rank_cut"), args.get("return_unit") == "page", args.get("token_budget"), not clamped)
         if cut:
             meta_out["page_rank_cut"] = cut
         return u, docs, meta_out, retrieval.get("saved_facts") or []
 
-    def _check_page_rank_cut(self, args: dict, cut: dict | None) -> dict | None:
-        """W5's `page_rank_cut` must match the cell's `search.page_rank_budget_ratio`: with a positive ratio, a page-unit
-        call with a caller budget reports applied_cut = min(mode `search.tokenBudget`, floor(ratio x budget)); with the
-        ratio off, no cut is reported. A mismatch fails the row, so a receipt never carries an arm that ran another cut."""
+    def _arm_page_rank_cut(self) -> float | None:
+        """The arm's W5 factor, resolved as gbrain resolves it: None unless `search.page_rank_cut` is `whole_pages`, and a
+        factor that is not a positive finite number reads as 1.0. The fixed-ratio key of the earlier pin is refused, since
+        this gbrain ignores it and the arm would run with no cut."""
         sc = self.cfg.get("search_config") or {}
-        try:
-            ratio = float(sc.get("search.page_rank_budget_ratio", "0"))
-        except ValueError:
-            ratio = 0.0
-        engaged = math.isfinite(ratio) and ratio > 0 and args.get("return_unit") == "page" and "token_budget" in args
-        if not engaged:
-            if cut:
-                raise GbrainRetrieveError(f"gbrain applied a page rank cut {json.dumps(cut)} with search.page_rank_budget_ratio off")
+        if "search.page_rank_budget_ratio" in sc:
+            raise GbrainRetrieveError("search.page_rank_budget_ratio is the fixed-ratio W5 key; this gbrain reads search.page_rank_cut")
+        mode = str(sc.get("search.page_rank_cut", "off")).strip().lower()
+        if mode in ("", "off"):
             return None
-        budget = int(args["token_budget"])
-        mode_cut = int(sc["search.tokenBudget"]) if sc.get("search.tokenBudget") else None
-        ratio_cut = max(1, math.floor(ratio * budget))
-        expected = ratio_cut if mode_cut is None else min(mode_cut, ratio_cut)
-        if not isinstance(cut, dict) or cut.get("ratio") != ratio or cut.get("caller_budget") != budget or cut.get("applied_cut") != expected:
-            raise GbrainRetrieveError(f"page_rank_cut {json.dumps(cut)} does not match ratio {ratio} x budget {budget} "
-                                      f"(mode cut {mode_cut}): expected applied_cut {expected}")
+        if mode != "whole_pages":
+            raise GbrainRetrieveError(f"search.page_rank_cut {mode!r} is neither off nor whole_pages")
+        try:
+            factor = float(sc.get("search.page_rank_cut_factor", "1"))
+        except ValueError:
+            factor = 1.0
+        return factor if math.isfinite(factor) and factor > 0 else 1.0
+
+    def _check_page_rank_cut(self, cut: dict | None, page_call: bool, budget: int | None, exact: bool) -> dict | None:
+        """W5's `delivery.page_rank_cut` must match the arm: with `whole_pages`, a page-unit call with a caller budget
+        reports mode `whole_pages`, the arm's factor, a caller budget of `budget` (`exact`) or at most it (recall packs
+        its facts first; a clamped budget), a target of at most factor x that budget, and kept <= candidates. With the cut
+        off, no cut is reported. A mismatch fails the row, so a receipt never carries an arm that ran another cut."""
+        factor = self._arm_page_rank_cut()
+        if factor is None or not page_call or budget is None:
+            if cut:
+                raise GbrainRetrieveError(f"gbrain applied a page rank cut {json.dumps(cut)} with search.page_rank_cut off for this call")
+            return None
+        ok = (isinstance(cut, dict) and cut.get("mode") == "whole_pages" and isinstance(cut.get("factor"), (int, float))
+              and math.isclose(cut["factor"], factor) and isinstance(cut.get("caller_budget"), int)
+              and (cut["caller_budget"] == budget if exact else 0 < cut["caller_budget"] <= budget)
+              and isinstance(cut.get("target"), int) and 1 <= cut["target"] <= max(1, math.floor(factor * cut["caller_budget"]))
+              and isinstance(cut.get("applied_cost"), int) and isinstance(cut.get("candidates"), int)
+              and isinstance(cut.get("kept"), int) and 0 <= cut["kept"] <= cut["candidates"])
+        if not ok:
+            raise GbrainRetrieveError(f"page_rank_cut {json.dumps(cut)} does not match whole_pages x {factor} on budget {budget}")
         return cut
 
     def direct_answer(self, query: str, user_id: str | None = None, query_timestamp: str | None = None):

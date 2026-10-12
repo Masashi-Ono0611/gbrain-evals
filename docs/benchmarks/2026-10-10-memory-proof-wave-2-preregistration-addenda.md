@@ -673,3 +673,62 @@ Every counted cell must pass the delivered-context gate, and a failing cell is r
 | Reserve | 42 |
 
 `recall-one-call` on BEAM would cost about $62 more with its re-judge share. That doesn't fit with a reserve, so it runs on LongMemEval-S only. Confirmation cells carry reservation headroom like dev's: each stage cap is its expected spend plus the largest cell budget. A stage that would need more than its line stops and reports. Ledgers are mirrored to the integrator's primary machine after each cell.
+
+## Adaptive W5 pin, keys, receipt check and store reuse (October 12, 2026)
+
+This addendum is written before any re-tune cell runs.
+
+**Pin.** The re-tune and confirmation run at gbrain `71b6d85bce8bf80aacec2dffe96e29cf0202c8d2` on PR-B (#6445). It descends from the dev pin `fe9e0397b`, and the five commits between them are:
+
+- `3acce16c4`: a test entry for the fixed-ratio key;
+- `8a1810008` and `8ab065eee`: the one-call recall fill fix and its behavior note;
+- `7c206f0ca` and `1f0223694`: reverts of the W3 gate-4 latency runner and of W3 stage 2;
+- `71b6d85bc`: adaptive W5.
+
+Cells pin this SHA, not the branch head. Every cell runs with `GBRAIN_SHA` set to it, and the pin does not change mid-run.
+
+**Keys.** `search.page_rank_cut` is `off` or `whole_pages`. Unset, empty and every other value read as off; the specs write `off`. `search.page_rank_cut_factor` sets the overfill factor. It is read only under `whole_pages`, and a value that is unset or not a positive finite number reads as `1.0`. Both keys are registered in `KNOWN_CONFIG_KEYS` and read in `src/core/search/page-rank-cut.ts`. The fixed-ratio key `search.page_rank_budget_ratio` is gone from this build.
+
+**Behavior.** The cut engages only on page-unit calls that carry a caller budget: `query`, `search` and recall's page arm. On those calls ranking lifts the mode's chunk-token cut (`search.tokenBudget`) and returns its full limit. Delivery then makes the cut with its own page sizes. It keeps rank-order pages while their whole delivered cost (text, title, date header) fits `target = max(1, floor(factor × budget))`, where the budget is the caller budget after any remote clamp and less any saved-fact rows. The page that crosses the target stays only if its allocation floor still fits what the earlier pages leave of the budget. Rank one always stays.
+
+**Report.** `page_rank_cut {mode, factor, caller_budget, target, applied_cost, candidates, kept}`. It sits in `_meta.retrieval.delivery` on `query` and `search` and in `delivery` on `recall`, and it is absent when the cut is off.
+
+**Receipt check.** The provider (`_check_page_rank_cut`, `eval/harness-provider/mpw/gbrain_provider.py`) checks every row before keeping it:
+
+- With the cut off, any reported `page_rank_cut` fails the row.
+- With `whole_pages` on a page-unit call that has a budget, a missing cut fails the row. So do any of these:
+  - `mode` is not `whole_pages`;
+  - `factor` is not the arm's factor, resolved as gbrain resolves it;
+  - `caller_budget` differs from the call's `token_budget`, or is above recall's `budget_tokens` (recall packs its facts first, and a remote clamp also lowers the budget);
+  - `target` is above `floor(factor × caller_budget)`;
+  - `kept` is above `candidates`.
+- A spec that still carries `search.page_rank_budget_ratio` fails every row, because this build ignores that key and the arm would run with no cut.
+
+The one-call recall path is now checked as well. The checked object is kept in each row's metadata as `page_rank_cut`.
+
+**Smoke at the pin.** A local run through the wave-2 provider used the stub upstream with a budget of 1,500. It covered the `filler-removed`, `combined-v2` and `recall-one-call` lanes. With the cut off, each lane reported no cut. With `whole_pages`, each lane reported `{mode whole_pages, factor 1, caller_budget 1500, target 1500}` at the default factor and `{factor 1.25, target 1875}` at 1.25. All 9 lane-and-arm pairs passed the check. gbrain's own `test/config-search-registry.test.ts` and `test/search/page-rank-cut.test.ts` pass at the pin: 16 tests. The provider suites pass against the pin: `test_gbrain_facts`, `test_gbrain_provider`, `test_page_rank_cut` and `test_mpw2_dev_specs`.
+
+`test_facts_extraction_and_lanes` is flaky under the stub, at the dev pin and at this pin alike. The stub returns the same fact for every extraction window, so the window that inserts first owns the fact and the others count as duplicates. The fact's source page then varies from run to run (d-a0, d-a1 and d-a2 were all seen at both pins), and the test's `d-a1` lookup fails when it lands elsewhere. This is a test-fixture race. It does not affect what the receipt check measures.
+
+**Ingest diff.** `git diff fe9e0397b 71b6d85b` changes 25 files outside tests and docs.
+
+- `src/core/search/*`: delivery, ranking, the cut, the rerank gate, the mode and the telemetry.
+- `src/core/ops/search.ts` and `src/commands/search.ts`.
+- `src/core/ops/facts.ts`: only the `recall` op and its packing.
+- `src/core/config.ts`: the key registry.
+- `src/core/types.ts`: a removed meta field.
+- `src/core/behavior-change-notice.ts`.
+- `src/eval/rerank-gate-latency.ts` and `scripts/`: the removed runner and size baselines.
+
+No file under import, extraction, embedding, chunking, sync, schema or migration code changes, and no migration is added. The diff is read-time only, so **the dev stores are reused**.
+
+**Store reuse.** Each re-tune cell sets `reuse_store` to its group's dev store:
+
+- `gbrain-longmemeval-s-165df707838f`;
+- `gbrain-beam-100k-6824b3680877`;
+- `gbrain-beam-500k-8222a93c39c3`;
+- `gbrain-beam-1m-5f98c3307942`.
+
+The cell reads the store's mirrored snapshot, which is restored onto its VM. The store ids built at this pin would be `401ed80f84ff`, `8cb8837fc59e`, `6f436863f40b` and `8e8247cbea63`. Against each snapshot's `store.json`, all 16 specs resolve through `reusedStoreIdentity`: the identities differ in `pins.gbrain` alone. The harness pins, ingest revision `gbrain-ingest-2`, ingest config and credentials are all unchanged. A cell whose store did not resolve would fail before ingesting, rather than re-ingest.
+
+**Specs.** The 16 re-tune specs are in `eval/harness-provider/cells/mpw2/retune/`, written by `mpw2-retune-specs.py`. Each one is dev's `v2` spec for its group with two changes. First, W5's keys replace the fixed-ratio key: `ref` sets `search.page_rank_cut: off`, and `f1.00`, `f1.25` and `f1.50` set `whole_pages` with factor `1`, `1.25` and `1.5`. Second, each spec sets `reuse_store` and the go addendum's cell budget. `tests/test_mpw2_dev_specs.py` checks that every re-tune spec is otherwise identical to its dev `v2` spec. The dev and W5 tuning specs stay as they ran at `fe9e0397b`.
