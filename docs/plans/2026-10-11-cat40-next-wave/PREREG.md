@@ -283,6 +283,11 @@ ledger rate of 1.108:
 - **F5's links reached agents in development only through F1's record rows** (d1b record). Without F5, documents
   that name an account only by an owner phrase can't appear among that account's records.
 - **Intervals are conditional on the two worlds per generator.** Seeds are not resampled.
+- **The wave config is clearly worse than all-on with F5 in development** (round 3 diagnostic, recorded below, as
+  the first bullet of this section provides). On World M, all-on without F5 on `a3384b989` is level with the pooled
+  control (success −0.5 pp [−3.8, +2.8]) and below pooled all-on (success −5.3 pp [−9.5, −1.3], wrong values +4.8 pp
+  [+1.5, +8.5]), with the loss concentrated in H4 (−20.0 pp) and in Sonnet (−10.5 pp). So the confirmation tests a
+  wave that development measured at about the control's level, not all-on's +4.8 pp. The arm does not change.
 
 ## Recorded before cells
 
@@ -357,3 +362,21 @@ ledger rate of 1.108:
   - **Freeze check:** it now also lists `arms.ts`.
   - **Drift note:** counted steps use the note `next-confirm.ts` builds at this SHA:
     `PREREG.md (cat40-next-wave): harness e805203fd60f87d1bc7249925dbfef7e01773fed preregistered; drift is the confirmation seed registration (schema.ts, hard.ts), the scripted gbrain agent and whole-result transcripts (hard.ts), the write-tool list taken while the gbrain slot is live (hard.ts, arms.ts), and unused loop hooks (loop.ts) and an embedder base URL (pg-arm.ts) merged from main; none changes a model cell (<date>)`.
+- **Round 3 diagnostic** (2026-10-13, before any confirmation cell). Record: `docs/benchmarks/2026-10-13-cat40-dev-round-3/`
+  (gbrain-evals `capy/cat40-dev-harness` @ `b70e0536`, merged here). Arm `all-on-no-f5`: the all-on keys with F5 off on
+  wave build `a3384b989`, World M, full family, three models, 300 canonical cells, 0 harness errors, two budget runs
+  (`cat40-model-ladder-2026-10-13T17-27-42-075Z-e349245f`, 194 cells, and `…T18-06-13-246Z-f41f415a`, 106 cells, after
+  the crash described under "Harness re-frozen"). Comparisons as declared in that directory's `DECLARATION.md`
+  (task bootstrap, 4,000 resamples, seed 11; references are the per-pair mean of rounds 1 and 2):
+
+  | Δ pp, 95% interval | vs pooled control | vs pooled all-on |
+  |---|---:|---:|
+  | success | −0.5 [−3.8, +2.8] | −5.3 [−9.5, −1.3] |
+  | wrong values | +0.3 [−2.5, +3.2] | +4.8 [+1.5, +8.5] |
+  | H4 success | −4.2 [−15.8, +7.5] | −20.0 [−33.3, −8.3] |
+  | claude-sonnet-5-5 success | +2.0 [−5.0, +8.5] | −10.5 [−18.0, −4.0] |
+
+  **Clearly worse than all-on: yes** (both overall intervals exclude 0 in the harmful direction), so it is added under
+  "Known limitations". The wave arm stays all-on without F5. Firing: served instructions are identical to all-on's;
+  known_as and owner-phrase rows are 0, and the share of names rows carrying records falls from about 82% to 60%.
+  Spend: round 3 $187.20 of its $228.19 cap; development program $1,518.50 of $1,777.15.
