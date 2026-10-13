@@ -5,6 +5,29 @@ gbrain v0.60.169.0). Inputs: three read-only audits run on 2026-10-11 (cost, lat
 against code before use, plus the committed Cat 40 Hard confirmation receipts
 (`docs/benchmarks/2026-10-10-model-ladder-hard-confirmation/main-cells`). Status: approved by Garry on 2026-10-12 ("Approve all": items 0 to 5, item 1b and the item 1 default flip under their gates, $30 cap; relayed by GBRA-40). Item 0 ships alone first (gbrain #6528); the wave starts after gbrain #6445 merges.
 
+## Outcome (2026-10-13)
+
+Every item is closed. Measured verdicts are in
+[the wave report](../../benchmarks/2026-10-12-lhf-wave.md) (gbrain-evals v0.10.81, item 5 added in v0.10.87).
+
+| Item | Result | Shipped in |
+|---|---|---|
+| 0. Batch `entity names[]` respects quarantine for remote callers | shipped alone | gbrain #6528, v0.60.178.0 |
+| 1. `balanced` as the new-install default | **not shipped**: the Cat 40 Hard rerank-pool replay was inconclusive (-0.93 points, lower bound -1.55, margin -1.0), so `tokenmax` stays the default. The rest of item 1 shipped: init reads config-file keys, the Voyage-key branch, `--search-mode` and doc fixes | gbrain #6564, v0.60.188.0 |
+| 1b. `query` expansion follows the mode | shipped: on `balanced`, `query` without expansion kept 451 vs 448 of 470 LongMemEval-S questions at about a sixth of the latency | gbrain #6564, v0.60.188.0 |
+| 2. Leaner lean `search` rows | shipped on parity tests | gbrain #6564, v0.60.188.0 |
+| 3. `degraded_recall` stops hiding a new transient failure | shipped | gbrain #6564, v0.60.188.0 |
+| 4. `entity names[]` stops building cards it throws away | shipped on parity with item 0's output | gbrain #6564, v0.60.188.0 |
+| 5. Per-stage search timings | shipped; 40 of 40 bench result digests identical, unclaimed time 0 | gbrain #6601, v0.60.205.0 |
+
+Paid spend was $13.64 of the $30 cap. One validity note stands, disclosed in the report and approved by Garry on
+2026-10-13: the Cat 40 world M slot's queued persistence effects were drained by a one-off keyless script before the
+replay.
+
+Follow-ups taken from "NOT in scope" (2026-10-13): measuring the query-embed share with item 5's timings before
+deciding on starting the embed before the lexical arms, then the bounded keyword candidate set for broad terms on
+large Postgres brains (gbrain #6495).
+
 ## URGENT, outside this plan
 
 - Batch `entity names[]` returns quarantined pages' leads to remote callers (`src/core/verbs/entity-names.ts:51` omits
