@@ -1,77 +1,77 @@
-# Cat 40 next wave: confirmation preregistration (DRAFT)
+# Cat 40 next wave: confirmation preregistration
 
-Status: **draft, not final.** Written 2026-10-13, after development closed and before any confirmation world is
-generated and before any confirmation cell runs. Three decisions below (D1-D3) are open. The document becomes final
-when a commit records the answers, with the date and who decided, under "Decisions" and removes this status line.
-After that the executor only appends values that don't exist yet (world digests, VM names, ledger run ids, the
-harness SHA) under "Recorded before cells". Any other change after the first counted cell needs a dated amendment
-that gives its reason.
+Written 2026-10-13, after development closed and before any confirmation cell runs. The draft (`fb04c5d0`) set out
+decisions D1-D3, and this version records the answers. Once this document is committed, the executor only appends
+values that don't exist yet under "Recorded before cells": the wave build SHA, the harness SHA, sealed world digests,
+VM names, ledger run ids and the round 3 diagnostic. Any other change after the first counted cell needs a dated
+amendment that gives its reason.
 
 Plan: `docs/plans/2026-10-11-cat40-next-wave/PLAN.md` on `plan/cat40-next-wave` (`f0b8418b`), section "Development
-and confirmation". Development records, all on `capy/cat40-dev-harness` and merged into this branch:
-`docs/benchmarks/2026-10-13-cat40-dev-gate/` (d4b), `2026-10-13-cat40-dev-round-1/`, `2026-10-13-cat40-dev-round-2/`
-and `2026-10-13-cat40-dev-d1b/`.
+and confirmation". Development records, merged into this branch from `capy/cat40-dev-harness`:
+
+- `docs/benchmarks/2026-10-13-cat40-dev-gate/` (d4b)
+- `2026-10-13-cat40-dev-round-1/`
+- `2026-10-13-cat40-dev-round-2/`
+- `2026-10-13-cat40-dev-d1b/`
+- `2026-10-13-cat40-dev-round-3/` (declared; it runs before cells)
 
 ## Authorization
 
 - Confirmation budget about **$3,400** including the baseline arm (Garry, gate rev 2, relayed through GBRA-40,
   2026-10-12).
-- **Worlds.** Plan Option B: 40 tasks per family on a fresh seed and on a new sealed seed generated on Garry's Mac
-  (gate rev 2, accepted). That option can't be built as written; see D1.
+- D1-D3 (below) were auto-approved under Garry's standing rule (2026-10-12) and relayed by GBRA-39's parent on
+  2026-10-13.
 - **Models.** The newest model per family; no Fable in counted cells (project rule, 2026-10-07).
+
+## Decisions
+
+- **D1, worlds: two fresh seeds per generator, 100 tasks each.** Plan Option B (40 tasks per family) can't be built:
+  the public generator runs out of person names and unique values above about 23 tasks per family with the frozen
+  knobs (feasibility table below). Two seeds per generator keep B's 200 tasks per generator and its cell cost, with no
+  generator change. The `tasks_per_family` custody precondition is dropped.
+- **D2, F5: off. d1b is not overridden.** F5 failed d1b. Overriding a preregistered gate after seeing its result is a
+  one-way door, so the verdict stands. The plan never put numbers on d1b's minimum effect or per-family margin, and
+  the verdict doesn't depend on them: the seen share is +0.2 pp [−3.3, +3.6], which fails every reading of "rises".
+  The plan's packaging fallback applies, so the wave build is the Part 1 head with F5's commits removed.
+- **D3, wrong-value minimum effect:** wave − baseline ≤ −2.0 pp, pooled over both generators, with the 95% upper
+  bound below 0.
 
 ## What runs
 
 | | Value |
 |---|---|
-| Wave build | gbrain `capy/cat40-next-part1` @ `e67dcc9f88c07234710e30ef69d2d8bf5071fe3e` (v0.60.189.0). Its `src/` tree is identical to the development build `a798de1f966d`: the two commits since then touch only `scripts/`, tests and goldens. Measured path set: the 53 `src/` files that differ from the merge base (`git diff --name-only 09d21554d e67dcc9f8 -- src`, list SHA-256 `0763e92df94a…`). |
-| Baseline build | gbrain `09d21554d7ab75cc5643a7f5a0e7f163aa4dae5b`. This is the wave's merge base with master (master PR #6566, 2026-10-13), and `0460af28` is its ancestor, as the plan requires. It gets no wave keys. |
-| Harness | gbrain-evals `capy/cat40-next-prereg`: `main` (`1ad2370c`) with `capy/cat40-dev-harness` (`5f4d1cea`) merged in, plus the executor commits listed under "Freeze rules". The SHA is recorded before cells. |
+| Wave build | gbrain `capy/cat40-next-part1` at the head with F5's commits removed (the plan's fallback, made by the Part 1 implementer). The SHA, its version and its `src/` difference from `e67dcc9f88c07234710e30ef69d2d8bf5071fe3e` are recorded below before any cell. That difference must be F5's removal plus at most master merges. Any other `src/` change needs a dated note here first. Reference: `e67dcc9f8` (v0.60.189.0), whose `src/` is identical to the development build `a798de1f966d`. |
+| Baseline build | gbrain `09d21554d7ab75cc5643a7f5a0e7f163aa4dae5b`. This is the wave's merge base with master (PR #6566, 2026-10-13), and `0460af28` is its ancestor, as the plan requires. It gets no wave keys. If the F5-removed head has a different merge base with master, the baseline stays `09d21554d`, and the wave's added master changes are listed with the wave SHA. |
+| Harness | gbrain-evals `capy/cat40-next-prereg`: `main` (`1ad2370c`) with `capy/cat40-dev-harness` merged in, plus the executor commits listed under "Freeze rules". The SHA is recorded below before cells. |
 | Arms | `gbrain-wave`, `gbrain-baseline`, `fs` (counted); `oracle` (world check only). |
 | Models | `claude-opus-5-5`, `claude-sonnet-5-5`, `gpt-6.1-sol`. |
 | Judge | `gpt-6.1-sol`. |
-| Fixed settings | Hard tool limits, 16-turn cap, repeat 1, concurrency 10, 5 gbrain slots per world and build, `--no-pglite-analyze`, `--transcripts` (whole results). Every setting not named here is the same for every arm and equal to development rounds 1-2. |
+| Tasks | Every task in each world: 100 (H1-H5, 20 per family), repeat 1. |
+| Fixed settings | Hard tool limits, 16-turn cap, concurrency 10, 5 gbrain slots per world and build, `--no-pglite-analyze`, `--transcripts` (whole results). Every setting not named here is the same for every arm and equal to development rounds 1-2. |
 
 ### Arm configs
 
 - **gbrain-wave.** `--gbrain-config` is exactly the development all-on list:
   `entity.names_references=true,entity.record_types=contract,amendment,entity.row_page_status=true,search.long_page_unit=section,search.long_page_min_chars=20000,mcp.instructions_governing_rule=in_effect`.
-  F5's build key is set by the inclusion rule below. Slots are built from the wave build.
-- **gbrain-baseline.** No `--gbrain-config` and no build config. Slots are built from the baseline build. The
-  baseline lacks every wave key, F3's `entity.row_page_status` included, so it gets none.
+  There is no build config. **F5 (`mentions.owner_phrases`) is off** (D2), and the F5-removed build doesn't have the
+  key. Slots are built from the wave build.
+- **gbrain-baseline.** No `--gbrain-config` and no build config. Slots are built from the baseline build.
 - **fs** and **oracle** are as in #93 (`2026-10-10-model-ladder-hard-confirmation`).
-- **Checks before paid cells.** Each recipe is verified by slot restore, pack resolution and config readback; the
-  readback and the served-instructions hash are recorded per arm. Development's all-on hash was `3bb1d6aafd23`; the
-  wave arm's hash is recorded before cells, since it can differ only if F5's state changes the served text.
-
-### F5 inclusion (`mentions.owner_phrases`)
-
-The plan decides it two ways: the d1b gate on development data, and precision of 0.85 or more (Wilson 95% lower
-bound) on a labeled sample from Garry's own brain, run on his Mac through GBRA-40. If either fails, the wave arm runs
-with `mentions.owner_phrases` off. That is decided and recorded before any cell, and the plan's packaging fallback
-applies at merge.
-
-- **d1b (2026-10-13): fails.** The seen share of needed owner-phrase documents is +0.2 pp [-3.3, +3.6] for F5 alone
-  against the all-off control, with cells 24 better and 23 worse. See `2026-10-13-cat40-dev-d1b/`.
-- **Precision check:** not run. It is pending Garry's yes.
-- **Default under the plan:** the wave arm runs F5 off. Slots are built without `--gbrain-build-config`, so no F5-on
-  family is needed. Because d1b already fails, the precision result can't turn F5 on.
-- **Open:** D2 asks whether that default stands. If Garry overrides d1b, F5 is on only when the Mac precision check
-  has run and passed before the wave slots are built. If it hasn't run by then, F5 stays off and the wave arm runs
-  without it. Nothing waits on it.
+- **Checks before paid cells.** Each recipe is verified by slot restore, pack resolution and config readback. The
+  readback and the served-instructions hash are recorded per arm.
 
 ## Models
 
 `bun scripts/model-freshness.ts --models anthropic:claude-opus-5-5,anthropic:claude-sonnet-5-5,openai:gpt-6.1-sol`
 was run on 2026-10-13. It read both providers' live model lists and exited 0 with no warnings: the newest Opus is
 `claude-opus-5-5`, the newest Sonnet `claude-sonnet-5-5` and the newest GPT `gpt-6.1-sol`. No newer frontier model
-exists. Fable 5.1 is listed as smoke-only and is not used. The run is repeated on the day the first counted cell
-runs. If a newer counted-family model exists then, the run stops and the change goes into this document before any
-cell runs (project rule).
+exists. Fable 5.1 is smoke-only and is not used. The check is rerun on the day the first counted cell runs. If a newer
+counted-family model exists then, the run stops and the change goes into this document before any cell (project
+rule).
 
 ## Worlds
 
-### Feasibility finding: the public generator can't produce 40 tasks per family
+### Feasibility of Option B (why D1 changed it)
 
 Generating 4k worlds with the frozen knobs (`docs/benchmarks/cat40-hard/knobs.frozen.json`, SHA-256 `53c5be3c…`) and
 only `tasks_per_family` raised, on scratch seeds 20261099 (smoke) and 20261005 (calibration, already public), gave:
@@ -83,94 +83,130 @@ only `tasks_per_family` raised, on scratch seeds 20261099 (smoke) and 20261005 (
 | 25 and 30 | "ran out of person names" |
 | 35 and 40 | "ran out of unique values" |
 
-The knob is valid (1-99 in `schema.ts`), but at this world size the generator's name and value pools run out
-before 24-25 tasks per family. So Option B needs a world-shaping generator change: a new generator version, new pools
-and an equivalent change in the sealed generator, which no agent may read. `knobs.confirm-40.json` on this branch is
-the frozen file with only `tasks_per_family: 40`. It records what B would use, and it fails to generate. No
-confirmation seed was generated for this check.
+### Public generator: generated 2026-10-13
 
-### Proposed design (D1): two fresh seeds per generator, 100 tasks each
+- **Settings.** Generator `model-ladder-hard-v2`, `--scale large`, frozen knobs (knob digest `37a16085…`), harness
+  `fb04c5d0`. The world-shaping code (`eval/generators/hard/`, `model-ladder-hard.ts`, `model-ladder-gen.ts`, the
+  sealed generator) is unchanged since #93's harness `d0057206`. The same commands reproduce #93's M base digest
+  `84f0614a…` exactly.
+- **Seeds.** D1 named seeds 20261041 and 20261051. Both failed the generator's own invariants at the 4k base (H3
+  look-alike rules: 2 failures on 20261041, 1 on 20261051), and no file was written. The draft's fallback rule
+  (pushed in `fb04c5d0` before any generation: "that seed plus 1,000") gave **20262041** and **20262051**. Both
+  generate and validate.
+- **Commands per seed** (no world content was opened; only counts, variants and hashes were read):
+  1. `bun eval/generators/model-ladder-gen.ts --mode hard --seed <s> --knobs docs/benchmarks/cat40-hard/knobs.frozen.json --out <dir>/base-4k`
+  2. The same command with `--scale large --base-world <dir>/base-4k/world.json --out <dir>/world`
+  3. The validation from `scripts/cat40-hard.sh` (`checkHardWorld` plus `hardWorldDigest`).
 
-This gives the same number of tasks per generator as Option B (200) and the same cell cost, with no generator change:
+| World | Seed | 4k base digest | 50k world digest | `world.json` file SHA-256 | Docs | Tasks | H4 tasks with `+long` | H4 items (`+long`) |
+|---|---|---|---|---|---|---|---|---|
+| P1 | 20262041 | `e5cbde0bf94050b497c6fce4321231d867172c455c7974a4b8f63e7ff4199c47` | `7485a765f4b1981ba9d2541b06cd17e05a78e0bd1399fb4044ee9aed2e2b516e` | `d30ea091734e645336044ee516f7b376cb89db2714ec0558aab87731baf70922` | 55,916 | 100 | 19/20 | 68 (30) |
+| P2 | 20262051 | `06e226296c5209b195228a7d09179bfebb81293d09b1e0bf0108006f5a3abd63` | `885b294f9cf6dcdfd3a21daf9b8f3ae46ab6ddcf949d7c0e3d0f3fcf86b50281` | `6a57f0ff6b04b6ca7bf1541ea09a2a06561c35c0d4023a07ce6bc711323b8601` | 55,213 | 100 | 14/20 | 66 (17) |
+| #93 M (reference) | 20261021 | `84f0614a…` | `6f08629e…` | `99c53db0…` | 55,838 | 100 | 16/20 | 70 (27) |
 
-- **Public generator** (`model-ladder-hard-v2`, `--scale large`, frozen knobs, 20 tasks per family): fresh seeds
-  **20261041** and **20261051**. Neither was ever generated; they continue the 10-step sequence after 20261021
-  (#93's M) and 20261031 (the d4b dev seed). The 4k base and the 50k world are generated only after this document is
-  final.
-- **Sealed generator** (`hard-sealed-v2`, frozen knobs): two new private seeds, generated on Garry's Mac through
-  GBRA-40 with the same custody as #93's S. The seeds never leave the Mac and are never printed; world files reach one
-  owner-custody VM only. With D1 as proposed, the custody check below isn't needed.
-- **Fallback seed.** If a seed fails generation or validation, that seed plus 1,000 is used (for example 20262041)
-  and recorded. Nothing else changes.
+The H4 variant mix spans M's on both sides. The worlds live outside the repository; the executor copies them to the
+public-world VM and checks the file SHA-256 there before slots are built.
 
-**Alternatives for D1:**
+### Sealed generator: two new private seeds on Garry's Mac (GBRA-40)
 
-- **(b) Option A,** repeat 2 at 20 tasks, one world per generator. It forecasts ±4.2 pp and costs about $2,778 plus
-  $55 for slots.
-- **(c) Option B as planned.** This first needs a generator change to the public pools (a new version, run through
-  `validate.ts`) and a precondition on the custody side.
+- **Settings.** `hard-sealed-v2`, `--scale large`, frozen knobs, at the recorded harness SHA. Neither seed has been
+  used before.
+- **Custody.** As #93's S: seeds stay on the Mac (mode 600, never printed, never committed, never on Capy Drive),
+  and only digests and counts are reported.
+- **Mint commands** (run on the Mac in a gbrain-evals checkout at the recorded harness SHA, after `bun install`):
 
-**Option B precondition (applies only if (c) is chosen).** Before the sealed seed is generated, the custody owner
-confirms on the Mac that the sealed generator accepts `tasks_per_family: 40` with the frozen knobs and generates and
-validates at that size. Otherwise confirmation does not start.
+```bash
+umask 077
+mkdir -p ~/Private/gbrain-sealed
+od -An -N4 -tu4 /dev/urandom | tr -d ' ' > ~/Private/gbrain-sealed/cat40-next-sealed-seed-1.txt
+od -An -N4 -tu4 /dev/urandom | tr -d ' ' > ~/Private/gbrain-sealed/cat40-next-sealed-seed-2.txt
+chmod 600 ~/Private/gbrain-sealed/cat40-next-sealed-seed-*.txt
+git rev-parse HEAD
+for i in 1 2; do
+  bun eval/generators/hard-sealed/cli.ts --seed "$(cat ~/Private/gbrain-sealed/cat40-next-sealed-seed-$i.txt)" \
+    --scale large --knobs docs/benchmarks/cat40-hard/knobs.frozen.json \
+    --out ~/Private/gbrain-sealed/cat40-next-s$i --digest-only
+done
+```
 
-Each world is reported with its H4 variant and `+long` mix next to #93's M and S. The README states that these are
-new worlds.
+- **What gets reported.** `git rev-parse HEAD` and, for each seed, the printed digest, knob digest and counts.
+  `--digest-only` writes no document and prints no seed.
+- **Seed rules.** Neither seed may be one of the plan's fixed seeds (20261005, 20261006, 20261021, 20261031, 20261041,
+  20261051, 20261099, 20262041, 20262051) or a test seed (101, 202, 303). If a printed run reports an invariant failure, that seed is
+  redrawn with the same `od` line, and the failure is reported as a count.
+- **Generation.** The worlds are generated later, for the run, with the same command without `--digest-only`. They
+  travel Mac → one Capy cloud machine → the custody VM. The transit copy is deleted once the custody VM's SHA-256
+  matches, and `confirm-world` (sealed) confirms each digest against the one recorded below.
 
 ## Gates before counted cells (per world)
 
-1. The world validates against its generator (`validate.ts` for public worlds; the sealed validator on the custody VM).
-2. Oracle on all tasks with the three models: pooled success ≥ 95%. Below that, stop and report, and run no counted
+1. The world validates against its generator, and its digest equals the one recorded here.
+2. Oracle on all 100 tasks with the three models: pooled success ≥ 95%. Below that, stop and report, and run no counted
    cell on that world.
 3. Every gbrain slot, for both builds, passes the write probe, the restore probe and the fail-closed rerank probe,
-   with 0 queued effects at snapshot. Config readback for both recipes matches the lists above, and an F5-off wave
-   slot reports 0 owner-phrase links.
+   with 0 queued effects at snapshot. Config readback for both recipes matches the lists above, and wave slots report
+   0 owner-phrase links.
 4. Model freshness is rerun (see Models).
-5. The projected spend plus 15% fits the world's ledger.
+5. The projected spend plus 15% fits the machine's ledger.
 
 ## Endpoints
 
-All intervals are percentile bootstraps over tasks with 10,000 resamples and seed 1. Every cell of a task (all three
-models, and both seeds' tasks kept separate) moves together, which is #93's convention. Development results are never
-pooled with confirmation results.
+Development results are never pooled with confirmation results. Arm, model and task identify a cell; worlds are P1,
+P2 (public) and S1, S2 (sealed).
 
 ### Primary: Δ wave − fs, per generator
 
-Δ_G is the pooled gbrain-wave − fs success rate: the mean over the three models of each model's wave rate minus its
-fs rate, on the same tasks. It is computed over all of generator G's tasks (both seeds under D1) and also reported per
-world. The wording rules are #93's:
+For generator G with worlds G1 and G2:
+
+1. For each model m, r_arm,m is the arm's success rate over all 200 tasks of G1 and G2 (canonical cells: the last
+   harness-clean attempt per arm, model and task).
+2. Δ_G = (1/3) Σ_m (r_wave,m − r_fs,m).
+3. **Interval:** a task-clustered percentile bootstrap with tasks nested in seeds. Seeds are fixed, not resampled
+   (two seeds can't estimate between-world variance), so the interval is conditional on these worlds.
+   - 10,000 resamples, using one `random.Random(1)` stream (seed 1, #93's convention).
+   - Each resample visits G1, then G2 (in seed order). For each world it draws 100 task ids with replacement
+     (`rng.choice` over that world's task ids sorted as strings), so every resample keeps 100 tasks per world.
+   - A drawn task brings all three models' wave and fs cells, and Δ_G is recomputed on the resample.
+   - The interval is the 2.5th and 97.5th percentiles.
+4. Δ is also reported per world, with the same procedure on that world alone.
+
+Wording, as in #93:
 
 - **Parity** only when the lower bound is above −3 pp; otherwise "not distinguishable", with the point estimate.
 - **Ahead** only when the lower bound is above 0.
-- **The wave holds gbrain's place against files** only if Δ_public ≥ 0 and Δ_sealed ≥ 0 (point estimates).
-- **If either is below 0,** the result is published as it is, and #93's statement applies: stop claiming that gbrain
-  beats files on hard company questions.
+- **General claim:** the wave holds gbrain's place against files only if Δ_public ≥ 0 and Δ_sealed ≥ 0 (point
+  estimates), as last wave. If either is below 0, the result is published as it is, and #93's statement applies:
+  stop claiming that gbrain beats files on hard company questions. If only the public generator passes, the result
+  is reported as "the main generator's wording only", and it still counts as failing the general claim.
 
-### Secondary (reported for every world and pooled per generator)
+### Secondary
 
-1. **Wave − baseline success,** same paired bootstrap.
-2. **Wrong values, wave − baseline.** The wrong-value rate is cells with `score.said_wrong`, which names a listed wrong
-   value, over all cells. Wrong submitted cells (submitted and not successful) are reported separately, with the same
-   denominator and also over submitted cells. Non-submission and turn-cap stops are reported beside both, so fewer
-   wrong answers can't come from more non-answers.
-   - **Test:** paired by task and model.
-   - **Minimum effect (D3):** pooled over both generators, wave − baseline ≤ −2.0 pp with the 95% upper bound below 0.
-     Development showed −4.5 pp [−7.3, −1.7] for all-on against the all-off control on M.
+All secondaries use the same nested bootstrap. Each is reported per world and per generator, and is pooled over all
+four worlds where stated.
+
+1. **Wave − baseline success.**
+2. **Wrong values, wave − baseline (D3).** The wrong-value rate is cells with `score.said_wrong` (naming a listed wrong
+   value) over all cells, paired by world, task and model.
+   - **Test:** pooled over all four worlds, the effect counts only if wave − baseline ≤ −2.0 pp and the 95% upper
+     bound is below 0.
+   - **Reported separately:** wrong submitted cells (submitted and not successful) over all cells and over submitted
+     cells, plus non-submission and turn-cap stops. Fewer wrong answers can't come from more non-answers.
+   - **Development reference:** −4.5 pp [−7.3, −1.7], all-on against the all-off control on M.
 3. **Per family,** wave vs baseline and wave vs fs. H4 is called out and stratified by the `+long` variants.
-4. **Per model,** with the people-facing models first. Sol is a ceiling for wrong values: it had 1 such cell in 200
-   for control on M in development.
+4. **Per model,** with the people-facing models first and ceilings called out. Sol had 1 wrong-value cell in 200 for
+   control on M.
 5. **Sol wrong values (round 2 watch item).** Sol's wrong-value cells under wave vs baseline per world, with the
    paired test. Development had 4 under all-on vs 1 under control, pooled. This is reported, not a gate, and it is
-   flagged if the wave exceeds the baseline by 3 or more cells pooled over the worlds.
-6. **Draft-first firing and harm,** using `draft_first.py`'s settled definition. An H4 item is draft-led when the
+   flagged if the wave exceeds the baseline by 3 or more cells pooled over the four worlds.
+6. **Draft-first firing and harm,** with `draft_first.py`'s settled definition. An H4 item is draft-led when the
    account's contract and amendment documents that reference it by name, code or nickname, ordered newest document
    date first with ties by id, lead with a `DRAFT` amendment.
    - **Firing:** `entity` names rows whose records list a draft ahead of every executed record, per model and `+long`
      stratum.
    - **Harm:** wave vs baseline wrong-value cells and successes on draft-led tasks, and on the cells served a
      draft-first row.
-   - **Expected sign:** firing is positive, since config-only worlds give drafts no `page_status`. Harm is expected to
-     be ≤ 0 (development: 0 vs 12 wrong values over 69 served cells).
+   - **Expected sign:** firing is positive. Harm is expected to be ≤ 0 (development: 0 vs 12 wrong values over 69
+     served cells).
 7. **Firing counters** per arm (`firing.ts`), names-call p50/p99, cost per successful task, median seconds per cell,
    and the rerank check.
 
@@ -179,7 +215,7 @@ world. The wording rules are #93's:
 Priced from the plan's per-arm costs at 100 tasks (gbrain about $198, fs about $286, oracle about $25) times #93's
 ledger rate of 1.108:
 
-| Item | Per world | 4 worlds (D1) |
+| Item | Per world | 4 worlds |
 |---|---|---|
 | gbrain-wave | $219 | $877 |
 | gbrain-baseline | $219 | $877 |
@@ -188,12 +224,11 @@ ledger rate of 1.108:
 | Slot builds, 5 slots: wave and baseline per world (public about $13.68 each, sealed about $17) | | about $123 |
 | **Total** | | **about $3,256** |
 
-- **Approved:** $3,400, which leaves about $144 for ordinary retries. The plan priced Option B at about $3,190; D1
-  costs the same per cell plus four more slot builds.
-- **Ledgers:** one per machine. `.budget/cat40-next-confirm-public.sqlite` (the two public worlds) and
-  `.budget/cat40-next-confirm-sealed.sqlite` (the custody VM), each with a $1,700 program cap.
-- **Per-arm caps** (`--budget-usd`, 1.15 × price): gbrain arms $252, fs $364 (#93's M fs cost $334 priced, so the cap
-  holds it), oracle $32.
+- **Approved:** $3,400, which leaves about $144 for ordinary retries.
+- **Ledgers:** one per machine. `.budget/cat40-next-confirm-public.sqlite` (P1 and P2) and
+  `.budget/cat40-next-confirm-sealed.sqlite` (the custody VM, S1 and S2), each with a $1,700 program cap.
+- **Per-arm caps** (`--budget-usd`, 1.15 × price): gbrain arms $252, fs $364 (#93's M fs cost $334 priced), oracle
+  $32. Sealed slot builds use `--slot-build-allowance-usd 6` (#93's S corpus needed more than $4 per slot).
 - **Stop rule:**
   - An arm that reaches its cap stops. Its world's endpoints are not computed, and the shortfall is escalated to
     Garry through GBRA-40 before any more money is spent.
@@ -205,25 +240,28 @@ ledger rate of 1.108:
 
 ## Freeze rules
 
-- **Seeds.** Public: 20261041 and 20261051 under D1, with the +1,000 fallback rule. Sealed: private, on the Mac.
-  Bootstrap seed: 1.
-- **Knobs.** `knobs.frozen.json` (SHA-256 `53c5be3c…`) for every world under D1.
-- **Scorer.** `eval/runner/cat40/score-hard.ts` and `judge-hard.ts` at the recorded harness SHA, judge `gpt-6.1-sol`.
-  The analysis scripts are frozen at that SHA too: `summarize_round.py`'s bootstrap, `draft_first.py` and `firing.ts`.
+- **Seeds.** Public 20262041 and 20262051, digests above. Sealed: private, digests recorded below before generation.
+  Bootstrap seed 1.
+- **Knobs.** `knobs.frozen.json` (SHA-256 `53c5be3c…`, knob digest `37a16085…`) for every world.
+- **Scorer and analysis.** `eval/runner/cat40/score-hard.ts` and `judge-hard.ts` at the recorded harness SHA, judge
+  `gpt-6.1-sol`. The analysis scripts are frozen at that SHA: `draft_first.py`, `firing.ts`, and the confirmation
+  analysis script that implements the primary procedure above. The executor adds that script and tests it on #93's
+  M and S cells before any confirmation cell.
 - **Harness.** The executor may add only these commits before cells:
-  - registering the confirmation seeds in `HARD_SEEDS`, as #93 did;
-  - registering the confirmation program steps (baseline and wave arms, one ledger per machine, the oracle gate,
-    per-arm caps);
-  - the confirmation ledger caps.
+  - registering the four confirmation seeds and digests (public seeds in `HARD_SEEDS`; sealed digests only);
+  - registering the confirmation program steps (baseline and wave arms, two worlds per machine, one ledger per
+    machine, the oracle gate, per-arm caps);
+  - the confirmation analysis script.
 
   None of them may change a world, a score or an arm setting. The SHA and a freeze check of the frozen files are
   recorded below.
 - **Drift note.** Counted steps run with
   `--accept-freeze-drift "PREREG.md (cat40-next-wave): harness <sha> preregistered; drift is confirmation seed and program-step registration on the dev harness (scripted gbrain agent, whole-result transcripts), neither of which changes a model cell (<date>)"`.
   The SHA and date are filled in at the executor's freeze check, and nothing else in the note changes.
-- **Builds.** Wave `e67dcc9f8` and baseline `09d21554d`. Component retention is frozen on development data, and no
-  component is selected using a confirmation world. If master is merged into the wave after confirmation and touches
-  the measured path set, the decision record needs a written no-effect argument or a re-confirmation (plan).
+- **Builds.** Wave (the F5-removed head, recorded below) and baseline `09d21554d`. Component retention is frozen on
+  development data, and no component is selected using a confirmation world. If master is merged into the wave after
+  confirmation and touches the measured path set, the decision record needs a written no-effect argument or a
+  re-confirmation (plan).
 - After confirmation, no gbrain change is tuned on these worlds' tasks.
 
 ## Hygiene
@@ -235,25 +273,17 @@ ledger rate of 1.108:
   copied.
 - Reports name counts, ids, models, tools and document types only. No entity names or values appear.
 
-## Decisions (open)
+## Known limitations
 
-- **D1, worlds.** Option B can't be generated (see the feasibility finding). Choose one:
-  - **(a)** Two fresh seeds per generator at 100 tasks each. Same cell count and interval as B, no generator change,
-    about $3,256. This is the proposal.
-  - **(b)** Option A: repeat 2, one world per generator, ±4.2 pp, about $2,833.
-  - **(c)** Change the generator's pools so B builds. That makes a new generator version, needs the equivalent sealed
-    change and adds the custody precondition.
-- **D2, F5.** The plan default is that F5 is off, because d1b fails. The d1b record also shows that F5's links reach
-  agents only through F1's record rows (79 needed-document record rows in round 1 all-on, 0 in f1 without F5). So
-  all-on's measured gain may partly depend on F5, and the wave config without F5 was never run as a paid development
-  arm. Choose one:
-  - Keep the plan default: F5 off, which confirms a config development didn't run.
-  - Override d1b and keep the development all-on config. F5 is then on only if the Mac precision check passes before
-    the wave slots are built; otherwise it stays off.
-  - Run a free replay first, which the plan assigns to the F1 interaction check.
-- **D3, wave − baseline wrong-value minimum effect.** Proposed: −2.0 pp pooled, with the upper bound below 0. The
-  plan asks for a stated minimum effect and gives no number.
+- **Development never ran the confirmation's wave config,** all-on without F5 on the F5-removed head. The round 3
+  diagnostic arm (`all-on-no-f5`, declared in `docs/benchmarks/2026-10-13-cat40-dev-round-3/DECLARATION.md`) runs
+  before any confirmation cell, and its result is recorded below. If it is clearly worse than all-on by the
+  declaration's definition, that is recorded here as a known limitation. Either way, the wave arm stays all-on
+  without F5.
+- **F5's links reached agents in development only through F1's record rows** (d1b record). Without F5, documents
+  that name an account only by an owner phrase can't appear among that account's records.
+- **Intervals are conditional on the two worlds per generator.** Seeds are not resampled.
 
 ## Recorded before cells
 
-(Appended by the executor once D1-D3 are recorded; no edits above this line after that.)
+(Appended by the executor; no edits above this line.)
