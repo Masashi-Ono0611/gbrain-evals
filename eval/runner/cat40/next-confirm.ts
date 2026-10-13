@@ -27,11 +27,14 @@ export const NEXT_WORLDS: Record<NextWorld, { machine: Machine; seed: number | n
   s2: { machine: 'sealed', seed: null, digest: null, file_sha256: null },
 };
 
-/** Wave: the Part 1 head with F5's commits removed. Baseline: the wave's merge base with master. */
-export const NEXT_BUILDS = { wave: 'a3384b989a85f1f5fbb582c596e47af798a6157d', baseline: '09d21554d7ab75cc5643a7f5a0e7f163aa4dae5b' } as const;
+/** Wave: the Part 1 head with F5 restored (owner override, 2026-10-13). Baseline: the wave's merge base with master. */
+export const NEXT_BUILDS = { wave: '4e10136b4b7b79cb99408dca1136d3350f5de5e4', baseline: '09d21554d7ab75cc5643a7f5a0e7f163aa4dae5b' } as const;
 
-/** The development all-on restore-time keys (dev-arms.ts round 1/2 all-on), F5 off: the wave build has no F5 key. */
+/** The development all-on restore-time keys (dev-arms.ts round 1/2 all-on). */
 export const WAVE_CONFIG = 'entity.names_references=true,entity.record_types=contract,amendment,entity.row_page_status=true,search.long_page_unit=section,search.long_page_min_chars=20000,mcp.instructions_governing_rule=in_effect';
+
+/** F5 on at slot build, as development all-on (dev-arms.ts SLOT_BUILD_CONFIG f5-on): its own slot family. */
+export const WAVE_BUILD_CONFIG = 'mentions.owner_phrases=true';
 
 export const NEXT_MODELS = ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6.1-sol'] as const;
 export const NEXT_JUDGE = 'gpt-6.1-sol';
@@ -60,12 +63,12 @@ export function worldPlan(world: NextWorld, harnessSha: string, date: string): S
   const ledger = NEXT_LEDGERS[w.machine];
   const drift = ['--accept-freeze-drift', driftNote(harnessSha, date)];
   const common = ['--world', file, '--models', NEXT_MODELS.join(','), '--concurrency', '10', '--repeat', '1', '--judge', NEXT_JUDGE, '--budget-ledger', ledger, '--transcripts', ...drift];
-  const gbrain = (arm: 'wave' | 'baseline') => ['--arms', 'gbrain', '--gbrain-label', NEXT_LABELS[arm], '--gbrain-repo', '../gbrain', '--gbrain-ref', NEXT_BUILDS[arm], '--gbrain-root', NEXT_GBRAIN_ROOTS[arm], '--slots', String(NEXT_SLOTS), '--no-pglite-analyze', ...(arm === 'wave' ? ['--gbrain-config', WAVE_CONFIG] : [])];
+  const gbrain = (arm: 'wave' | 'baseline') => ['--arms', 'gbrain', '--gbrain-label', NEXT_LABELS[arm], '--gbrain-repo', '../gbrain', '--gbrain-ref', NEXT_BUILDS[arm], '--gbrain-root', NEXT_GBRAIN_ROOTS[arm], '--slots', String(NEXT_SLOTS), '--no-pglite-analyze', ...(arm === 'wave' ? ['--gbrain-config', WAVE_CONFIG, '--gbrain-build-config', WAVE_BUILD_CONFIG] : [])];
   const slots = (arm: 'wave' | 'baseline'): Step => ({
     id: `slots-${arm}`,
-    argv: ['bun', 'eval/runner/cat40-model-ladder.ts', '--build-slots', '--world', file, '--gbrain-repo', '../gbrain', '--gbrain-ref', NEXT_BUILDS[arm], '--gbrain-root', NEXT_GBRAIN_ROOTS[arm], '--slots', String(NEXT_SLOTS), '--no-pglite-analyze',
+    argv: ['bun', 'eval/runner/cat40-model-ladder.ts', '--build-slots', '--world', file, '--gbrain-repo', '../gbrain', '--gbrain-ref', NEXT_BUILDS[arm], '--gbrain-root', NEXT_GBRAIN_ROOTS[arm], '--slots', String(NEXT_SLOTS), '--no-pglite-analyze', ...(arm === 'wave' ? ['--gbrain-build-config', WAVE_BUILD_CONFIG] : []),
       '--slot-build-allowance-usd', String(NEXT_SLOT_ALLOWANCE_USD[w.machine]), '--budget-ledger', ledger, '--out', `${dir}/slots-${arm}`, '--budget-usd', String(NEXT_SLOTS * NEXT_SLOT_ALLOWANCE_USD[w.machine])],
-    note: 'every slot must pass the write, restore and rerank probes with 0 queued effects',
+    note: `every slot must pass the write, restore and rerank probes with 0 queued effects${arm === 'wave' ? ' and hold at least one owner-phrase link' : ' and hold 0 owner-phrase links'}`,
   });
   return [
     { id: 'ledger', argv: ['bun', 'eval/runner/budget-ledger.ts', 'init', '--budget-ledger', ledger, '--program-cap-usd', String(NEXT_PROGRAM_CAP_USD), '--reason', 'Cat 40 next wave confirmation (PREREG.md; $3,400 approved, Garry gate rev 2 via GBRA-40)'], note: 'once per machine' },

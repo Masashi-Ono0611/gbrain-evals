@@ -6,8 +6,8 @@ import { join } from 'node:path';
 import { HARD_SEEDS, type HardWorld } from '../../eval/generators/hard/schema.ts';
 import { generateHardWorld } from '../../eval/generators/model-ladder-hard.ts';
 import { requiresFreeze } from '../../eval/runner/cat40/hard.ts';
-import { DEV_ROUNDS } from '../../eval/runner/cat40/dev-arms.ts';
-import { NEXT_BUILDS, NEXT_CAPS_USD, NEXT_LEDGERS, NEXT_WORLDS, WAVE_CONFIG, checkWorld, driftNote, worldPlan } from '../../eval/runner/cat40/next-confirm.ts';
+import { DEV_ROUNDS, SLOT_BUILD_CONFIG } from '../../eval/runner/cat40/dev-arms.ts';
+import { NEXT_BUILDS, NEXT_CAPS_USD, NEXT_LEDGERS, NEXT_WORLDS, WAVE_BUILD_CONFIG, WAVE_CONFIG, checkWorld, driftNote, worldPlan } from '../../eval/runner/cat40/next-confirm.ts';
 
 const flag = (argv: string[], k: string) => argv[argv.indexOf(k) + 1];
 
@@ -18,8 +18,11 @@ describe('Cat 40 next wave confirmation program (PREREG.md)', () => {
     expect(requiresFreeze({ seed: 20261234, version: 'model-ladder-hard-v2' } as HardWorld)).toBe(false);
   });
 
-  test('the wave recipe is the development all-on config with F5 off; the baseline gets no wave keys', () => {
-    const allOn = DEV_ROUNDS[1].find(a => a.id === 'all-on')!.config;
+  test('the wave recipe is development all-on, F5 on at slot build; the baseline gets no wave keys', () => {
+    const allOnArm = DEV_ROUNDS[1].find(a => a.id === 'all-on')!;
+    const allOn = allOnArm.config;
+    expect(Object.fromEntries(WAVE_BUILD_CONFIG.split(',').map(p => p.split('=')))).toEqual(SLOT_BUILD_CONFIG[allOnArm.slots]);
+    expect(allOnArm.slots).toBe('f5-on');
     expect(Object.fromEntries(WAVE_CONFIG.replace('record_types=contract,amendment', 'record_types=contract;amendment').split(',').map(p => p.replace(';', ',').split('=')))).toEqual(allOn);
     for (const world of Object.keys(NEXT_WORLDS) as Array<keyof typeof NEXT_WORLDS>) {
       const steps = worldPlan(world, 'abc1234', '2026-10-14');
@@ -29,7 +32,9 @@ describe('Cat 40 next wave confirmation program (PREREG.md)', () => {
       expect(flag(by['cells-wave']!, '--gbrain-ref')).toBe(NEXT_BUILDS.wave);
       expect(by['cells-baseline']!.includes('--gbrain-config')).toBe(false);
       expect(flag(by['cells-baseline']!, '--gbrain-ref')).toBe(NEXT_BUILDS.baseline);
-      for (const s of steps) expect(s.argv.includes('--gbrain-build-config')).toBe(false);
+      expect(flag(by['slots-wave']!, '--gbrain-build-config')).toBe(WAVE_BUILD_CONFIG);
+      expect(flag(by['cells-wave']!, '--gbrain-build-config')).toBe(WAVE_BUILD_CONFIG);
+      for (const id of ['slots-baseline', 'oracle', 'cells-baseline', 'cells-fs']) expect(by[id]!.includes('--gbrain-build-config')).toBe(false);
       expect(flag(by['cells-wave']!, '--budget-usd')).toBe(String(NEXT_CAPS_USD.gbrain));
       expect(flag(by['cells-fs']!, '--budget-usd')).toBe(String(NEXT_CAPS_USD.fs));
       expect(flag(by['oracle']!, '--budget-usd')).toBe(String(NEXT_CAPS_USD.oracle));
