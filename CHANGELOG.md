@@ -2,6 +2,16 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.87] - 2026-10-13
+
+### Low-hanging-fruit wave item 5: per-stage search timings change no results
+
+gbrain v0.60.205.0 (gbrain#6601) reports per-stage timings in `_meta.retrieval.timings` and `--explain`. On the
+keyless 400-page refactor-wave-1 bench, all 40 result digests match master before the merge and no time went
+unclaimed by a stage (`other_ms` 0 on every response); added to the
+[wave report](docs/benchmarks/2026-10-12-lhf-wave.md#item-5-per-stage-search-timings-no-paid-run) with receipts. No
+paid run.
+
 ## [0.10.86] - 2026-10-13
 
 ### Cat 41 setup re-measure on gbrain v0.60.203.0: three of four targets still missed
