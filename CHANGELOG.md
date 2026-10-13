@@ -2,6 +2,23 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.91] - 2026-10-13
+
+### Cat 41 setup, fourth run: push delivers a preference; first push 1/3
+
+A new preregistration, written after the v0.60.208.0 results and approved by Garry, made three changes (scorer
+`cat41-score-v8`): a world-visible preference ("I take my coffee black, with a pinch of cardamom") as the first-push
+item, any unambiguous form of the expected date, and an agent's save-and-recall smoke fact counted as its exempt
+install check. On v0.60.208.0, with `claude-opus-5-5`, 3 runs per cell and the frozen targets:
+- First push: missed. The SessionStart hook printed the preference into all 3 fresh sessions, but the target was met
+  in 1 of 3 runs, because two agents also saved the preference to Claude Code's own memory.
+- Wired recall: met, 55.5 s.
+- Consent: met, 0 provider requests.
+- Faster setup: missed, 20.7% (18.4% on reading).
+
+$7.58 of a $10 ledger cap ([result](docs/benchmarks/2026-10-13-cat41-setup-run4.md),
+[preregistration](docs/benchmarks/2026-10-13-cat41-setup-run4-preregistration.md)).
+
 ## [0.10.90] - 2026-10-13
 
 ### Low-hanging fruit plan: published with its outcome

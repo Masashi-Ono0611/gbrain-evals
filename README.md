@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.89 (`VERSION`) |
+| This repository | gbrain-evals v0.10.91 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except two: the Cat 40 Hard row's, which shipped after it
@@ -302,6 +302,14 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-13: Cat 41 setup fourth run; repository row names v0.10.91
+
+gbrain-evals v0.10.91. With a world-visible preference as the first-push item, gbrain v0.60.208.0's hook printed it
+into all 3 fresh Claude Code sessions. First push still met its target in only 1 of 3 runs, because two agents also
+saved the preference to Claude Code's own memory. Wired recall (55.5 s) and consent (no provider request) are met,
+and faster setup (20.7%) is missed ([report](docs/benchmarks/2026-10-13-cat41-setup-run4.md)). No result row on this
+page changes. The repository row names v0.10.91 (was v0.10.89, since v0.10.90 did not update it).
 
 ### 2026-10-13: Cat 41 setup on v0.60.208.0; repository row names v0.10.89
 
