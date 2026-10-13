@@ -2,6 +2,24 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.85] - 2026-10-13
+
+### Memory proof wave 2: question-ranked combined recall passes its gates; adaptive W5 ships on at 1.50
+
+Wave 2 confirmed gbrain's question-ranked combined lane (`combined-v2`) at gbrain `71b6d85`, the head of #6445
+([results](docs/benchmarks/2026-10-13-memory-proof-wave-2-results.md), [preregistration](docs/benchmarks/2026-10-10-memory-proof-wave-2-preregistration.md)
+and [addenda](docs/benchmarks/2026-10-10-memory-proof-wave-2-preregistration-addenda.md)).
+
+- **Gate 1, LongMemEval-S (400 questions):** +14.00 points over the old combined lane (lower bound +10.96) and
+  non-inferior to pages alone (+2.75, lower bound −0.87 against −2).
+- **Gates 2 and 3, 72 BEAM conversations:** +1.62 over the old combined lane [+0.49, +2.79], and +3.97 over the
+  memory-bank server it was compared against [+2.63, +5.33], at the same 8,000-token budget.
+- **Adaptive W5 passes at factor 1.50** (−0.25 points pooled, [−1.00, +0.49]; no question kind below −3), so the
+  default flips on. The factor was set by an amendment after the dev re-tune, recorded beside the result.
+- **Cost per correct answer** is 0.750× the comparator's at R = 20 [0.727, 0.773]. Gate 4 (W3) failed under A15,
+  which changes W3's ship form only. LoCoMo10 was not run.
+- Confirmation spend $398.04; wave 2 $591.35 in all, before A15's own spend.
+
 ## [0.10.84] - 2026-10-13
 
 ### Reranker settings on LongMemEval-S: no cheaper setting holds recall, keep the default
