@@ -1,4 +1,6 @@
 [test]
 # Reuse one pre-migrated PGLite cluster per embedding shape instead of
 # replaying gbrain's migrations for every in-memory test brain.
-preload = ["./test/support/pglite-snapshot.ts"]
+# Hash the source tree and gbrain package for receipts before any test timer
+# starts (test/support/receipt-identity.ts).
+preload = ["./test/support/pglite-snapshot.ts", "./test/support/receipt-identity.ts"]

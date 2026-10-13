@@ -2,6 +2,18 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.92] - 2026-10-13
+
+### Receipt tests: the source-tree hash runs before any test timer
+
+The intermittent 2-failure run of the receipts tests (`round-trips atomically` timed out, then `writeReceipt stores
+the executed source tree` saw `dirty: null`) came from the receipt identity cache. The first receipt upgraded in a
+test process hashed the whole evals tree (about 1.7 GB) and the gbrain package inside that test: about 1.6 s warm and
+3.4 s cold on a 4-core machine, against Bun's 5 s timeout. A timeout during `git status` also left `dirty: null`
+cached for the rest of the process. A new test preload, `test/support/receipt-identity.ts`, computes both identities
+once per process before any test starts. No assertion or timeout changed. A forced probe (cold page cache plus six
+CPU hogs, 3 trials each) failed 3 of 3 before the fix and passed 3 of 3 after, at the default timeout and at 1.5 s.
+
 ## [0.10.91] - 2026-10-13
 
 ### Cat 41 setup, fourth run: push delivers a preference; first push 1/3
