@@ -2,6 +2,25 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.83] - 2026-10-12
+
+### BEAM-1M S1: the harness reranks by default; the diverse pool and wider reading stay off
+
+Wave 3's S1 measured the three fixes the BEAM-1M failure analysis ranked, on the BEAM-1M dev split with Opus 5.5,
+Sonnet 5.5 and gpt-6.1-sol ([report](docs/benchmarks/2026-10-12-beam-1m-s1-fixes.md), preregistered with two
+amendments).
+
+- **The memory-qa harness reranks by default and fails closed** (`RERANKER_INACTIVE`) when a query is not reranked.
+  At gbrain master that raises strict recall at 5 from 46 to 55 of 198 (+4.5 points, [1.5, 8.1]). This is a harness
+  change, not a product change: BEAM-1M numbers from the old harness (reranker off) are not directly comparable.
+- **`search.diverse_pool_depth=100`** (gbrain#6568, shipped off): strict recall at 10 +3.5 [0.0, 6.6], answers within
+  ±0.4 points per reader. Two of three preregistered flip rules fail, so the default stays off.
+- **Reading 10 turn groups instead of 5:** answers +2.0 [-0.7, 4.7] for gpt-6.1-sol, with abstention down from 63.6%
+  to 43.2%; the default stays 5.
+- **Readers on identical evidence:** Opus 5.5 69.7%, Sonnet 5.5 68.1%, gpt-6.1-sol 66.7%, not distinguished; no-memory
+  floors 30.0%, 32.0% and 28.6%.
+- Spend $55.45 of a $60 cap.
+
 ## [0.10.82] - 2026-10-12
 
 ### Cat 41: the scripted user answers both install arms alike; setup re-measure preregistered

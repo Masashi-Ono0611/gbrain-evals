@@ -23,6 +23,8 @@ Four conclusions:
 3. **Reading 10 turn groups instead of 5 helps answerable questions and hurts abstention.** Stacked on the diverse pool, `gpt-6.1-sol` gains +2.0 answer points ([-0.7, 4.7]) and +6 all-items-met answers ([0.5, 5.0] points): answerable questions rise from 67.3% to 71.9%, abstention questions fall from 63.6% to 43.2%. The harness default stays 5.
 4. **The three frontier readers are not distinguished on identical evidence.** With the 1,024-token limit that cut 41 to 49% of Claude answers removed (no answer reached 4,096 here), Opus 5.5 is +3.0 points over `gpt-6.1-sol` ([-0.2, 7.0]) and +1.6 over Sonnet 5.5 ([-1.1, 4.5]). Opus costs about 3x `gpt-6.1-sol` per cell. Memory adds 36 to 40 points over each reader's floor.
 
+**The reranker gain is a harness change, not a product change.** gbrain already shipped the reranker; what changed is that the evaluation harness now turns it on by default and refuses to run without it. So the +4.5 points of strict recall at 5 measure the harness catching up with the product, and BEAM-1M numbers measured under the old harness (reranker off, including the published 53.5% row and the failure analysis's top-5 arms) are not directly comparable with numbers from this harness.
+
 ## The experiment and results
 
 ### Retrieval arms (198 answerable questions; feasible subsets 145 at 5 and 160 at 10)

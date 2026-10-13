@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.82, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.83, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -205,7 +205,7 @@ procedure with documented missing pieces; it is not the current refresh command.
 
 ### 2026-10-12: BEAM-1M S1 fixes row
 
-The held-out program row gained the October 12 BEAM-1M S1 fixes report (wave 3 item S1, development split): the memory-qa harness now reranks by default and fails closed with `RERANKER_INACTIVE`, which raises strict recall at 5 from 46 to 55 of 198 at master; gbrain's `search.diverse_pool_depth` knob (+3.5 strict@10, interval [0.0, 6.6]) and reading 10 turn groups (+2.0 answer points, [-0.7, 4.7]) are not distinguished, so the knob ships off and the breadth default stays 5; Opus 5.5, Sonnet 5.5 and `gpt-6.1-sol` score 66.7% to 69.7% on identical evidence, not distinguished. Version stamped when the PR is next to merge.
+gbrain-evals v0.10.83 (the opening names it; was v0.10.82). The held-out program row gained the October 12 BEAM-1M S1 fixes report (wave 3 item S1, development split): the memory-qa harness now reranks by default and fails closed with `RERANKER_INACTIVE`, which raises strict recall at 5 from 46 to 55 of 198 at master; gbrain's `search.diverse_pool_depth` knob (+3.5 strict@10, interval [0.0, 6.6]) and reading 10 turn groups (+2.0 answer points, [-0.7, 4.7]) are not distinguished, so the knob ships off and the breadth default stays 5; Opus 5.5, Sonnet 5.5 and `gpt-6.1-sol` score 66.7% to 69.7% on identical evidence, not distinguished. Version stamped when the PR is next to merge.
 
 ### 2026-10-12: Cat 41 setup re-measure preregistered
 
