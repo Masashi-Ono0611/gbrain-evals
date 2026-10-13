@@ -251,6 +251,238 @@
     }
   },
   "answers": {
+    "f-opus55": {
+      "status": "complete",
+      "all": {
+        "n": 220,
+        "mean_score": 0.3003,
+        "all_items_met": 45
+      },
+      "answerable": {
+        "n": 198,
+        "mean_score": 0.2225,
+        "all_items_met": 23
+      },
+      "abstention": {
+        "n": 22,
+        "mean_score": 1,
+        "all_items_met": 22
+      },
+      "qa_errors": 0,
+      "reused_answers": 0,
+      "stopped_at_limit": 0,
+      "input_tokens_per_answer": 134,
+      "output_tokens_per_answer": 441,
+      "committed_wrong_detector": {
+        "all": 80,
+        "answerable": 80,
+        "abstention": 0
+      },
+      "usd": 2.1755
+    },
+    "f-sonnet55": {
+      "status": "complete",
+      "all": {
+        "n": 220,
+        "mean_score": 0.3202,
+        "all_items_met": 47
+      },
+      "answerable": {
+        "n": 198,
+        "mean_score": 0.2447,
+        "all_items_met": 25
+      },
+      "abstention": {
+        "n": 22,
+        "mean_score": 1,
+        "all_items_met": 22
+      },
+      "qa_errors": 0,
+      "reused_answers": 0,
+      "stopped_at_limit": 0,
+      "input_tokens_per_answer": 134,
+      "output_tokens_per_answer": 468,
+      "committed_wrong_detector": {
+        "all": 95,
+        "answerable": 95,
+        "abstention": 0
+      },
+      "usd": 1.2088
+    },
+    "s1-gpt61sol": {
+      "status": "complete",
+      "all": {
+        "n": 220,
+        "mean_score": 0.6665,
+        "all_items_met": 107
+      },
+      "answerable": {
+        "n": 198,
+        "mean_score": 0.6699,
+        "all_items_met": 93
+      },
+      "abstention": {
+        "n": 22,
+        "mean_score": 0.6364,
+        "all_items_met": 14
+      },
+      "qa_errors": 0,
+      "reused_answers": 2,
+      "stopped_at_limit": 0,
+      "input_tokens_per_answer": 7025,
+      "output_tokens_per_answer": 449,
+      "committed_wrong_detector": {
+        "all": 36,
+        "answerable": 28,
+        "abstention": 8
+      },
+      "usd": 5.0273
+    },
+    "s1-opus55": {
+      "status": "complete",
+      "all": {
+        "n": 220,
+        "mean_score": 0.6968,
+        "all_items_met": 114
+      },
+      "answerable": {
+        "n": 198,
+        "mean_score": 0.701,
+        "all_items_met": 100
+      },
+      "abstention": {
+        "n": 22,
+        "mean_score": 0.6591,
+        "all_items_met": 14
+      },
+      "qa_errors": 0,
+      "reused_answers": 2,
+      "stopped_at_limit": 0,
+      "input_tokens_per_answer": 11562,
+      "output_tokens_per_answer": 1210,
+      "committed_wrong_detector": {
+        "all": 32,
+        "answerable": 25,
+        "abstention": 7
+      },
+      "usd": 15.6442
+    },
+    "s1-sonnet55": {
+      "status": "complete",
+      "all": {
+        "n": 220,
+        "mean_score": 0.6808,
+        "all_items_met": 113
+      },
+      "answerable": {
+        "n": 198,
+        "mean_score": 0.6807,
+        "all_items_met": 98
+      },
+      "abstention": {
+        "n": 22,
+        "mean_score": 0.6818,
+        "all_items_met": 15
+      },
+      "qa_errors": 0,
+      "reused_answers": 2,
+      "stopped_at_limit": 0,
+      "input_tokens_per_answer": 11562,
+      "output_tokens_per_answer": 1032,
+      "committed_wrong_detector": {
+        "all": 38,
+        "answerable": 31,
+        "abstention": 7
+      },
+      "usd": 7.5206
+    },
+    "s3-gpt61sol": {
+      "status": "complete",
+      "all": {
+        "n": 220,
+        "mean_score": 0.6695,
+        "all_items_met": 101
+      },
+      "answerable": {
+        "n": 198,
+        "mean_score": 0.6731,
+        "all_items_met": 87
+      },
+      "abstention": {
+        "n": 22,
+        "mean_score": 0.6364,
+        "all_items_met": 14
+      },
+      "qa_errors": 0,
+      "reused_answers": 128,
+      "stopped_at_limit": 0,
+      "input_tokens_per_answer": 7029,
+      "output_tokens_per_answer": 449,
+      "committed_wrong_detector": {
+        "all": 36,
+        "answerable": 28,
+        "abstention": 8
+      },
+      "usd": 2.1982
+    },
+    "s3-opus55": {
+      "status": "complete",
+      "all": {
+        "n": 220,
+        "mean_score": 0.6928,
+        "all_items_met": 113
+      },
+      "answerable": {
+        "n": 198,
+        "mean_score": 0.6965,
+        "all_items_met": 99
+      },
+      "abstention": {
+        "n": 22,
+        "mean_score": 0.6591,
+        "all_items_met": 14
+      },
+      "qa_errors": 0,
+      "reused_answers": 128,
+      "stopped_at_limit": 0,
+      "input_tokens_per_answer": 11574,
+      "output_tokens_per_answer": 1199,
+      "committed_wrong_detector": {
+        "all": 34,
+        "answerable": 27,
+        "abstention": 7
+      },
+      "usd": 6.6809
+    },
+    "s3-sonnet55": {
+      "status": "complete",
+      "all": {
+        "n": 220,
+        "mean_score": 0.684,
+        "all_items_met": 110
+      },
+      "answerable": {
+        "n": 198,
+        "mean_score": 0.6843,
+        "all_items_met": 95
+      },
+      "abstention": {
+        "n": 22,
+        "mean_score": 0.6818,
+        "all_items_met": 15
+      },
+      "qa_errors": 0,
+      "reused_answers": 128,
+      "stopped_at_limit": 0,
+      "input_tokens_per_answer": 11574,
+      "output_tokens_per_answer": 1024,
+      "committed_wrong_detector": {
+        "all": 36,
+        "answerable": 29,
+        "abstention": 7
+      },
+      "usd": 3.2425
+    },
     "f-gpt61sol": {
       "status": "complete",
       "all": {
@@ -281,6 +513,169 @@
       "usd": 0.6038
     }
   },
-  "answers_paired": {},
-  "spend_usd_this_measurement": 1.3023
+  "answers_paired": {
+    "gpt61sol: s3 minus s1": {
+      "score": {
+        "n": 220,
+        "a": 0.6665,
+        "b": 0.6695,
+        "delta": 0.0029,
+        "ci95": [
+          -0.0172,
+          0.0248
+        ],
+        "better": 17,
+        "worse": 14
+      },
+      "all_items_met": {
+        "n": 220,
+        "a": 0.4864,
+        "b": 0.4591,
+        "delta": -0.0273,
+        "ci95": [
+          -0.05,
+          0
+        ],
+        "better": 2,
+        "worse": 8
+      }
+    },
+    "gpt61sol: s1 minus floor": {
+      "score": {
+        "n": 220,
+        "a": 0.2857,
+        "b": 0.6665,
+        "delta": 0.3808,
+        "ci95": [
+          0.3384,
+          0.421
+        ],
+        "better": 137,
+        "worse": 11
+      }
+    },
+    "gpt61sol: s3 minus floor": {
+      "score": {
+        "n": 220,
+        "a": 0.2857,
+        "b": 0.6695,
+        "delta": 0.3837,
+        "ci95": [
+          0.3571,
+          0.4106
+        ],
+        "better": 137,
+        "worse": 11
+      }
+    },
+    "sonnet55: s3 minus s1": {
+      "score": {
+        "n": 220,
+        "a": 0.6808,
+        "b": 0.684,
+        "delta": 0.0032,
+        "ci95": [
+          -0.0253,
+          0.031
+        ],
+        "better": 19,
+        "worse": 15
+      },
+      "all_items_met": {
+        "n": 220,
+        "a": 0.5136,
+        "b": 0.5,
+        "delta": -0.0136,
+        "ci95": [
+          -0.0455,
+          0.0182
+        ],
+        "better": 4,
+        "worse": 7
+      }
+    },
+    "sonnet55: s1 minus floor": {
+      "score": {
+        "n": 220,
+        "a": 0.3202,
+        "b": 0.6808,
+        "delta": 0.3606,
+        "ci95": [
+          0.2935,
+          0.4202
+        ],
+        "better": 133,
+        "worse": 10
+      }
+    },
+    "sonnet55: s3 minus floor": {
+      "score": {
+        "n": 220,
+        "a": 0.3202,
+        "b": 0.684,
+        "delta": 0.3638,
+        "ci95": [
+          0.3125,
+          0.4132
+        ],
+        "better": 132,
+        "worse": 9
+      }
+    },
+    "opus55: s3 minus s1": {
+      "score": {
+        "n": 220,
+        "a": 0.6968,
+        "b": 0.6928,
+        "delta": -0.004,
+        "ci95": [
+          -0.0322,
+          0.0237
+        ],
+        "better": 14,
+        "worse": 20
+      },
+      "all_items_met": {
+        "n": 220,
+        "a": 0.5182,
+        "b": 0.5136,
+        "delta": -0.0045,
+        "ci95": [
+          -0.0409,
+          0.0318
+        ],
+        "better": 6,
+        "worse": 7
+      }
+    },
+    "opus55: s1 minus floor": {
+      "score": {
+        "n": 220,
+        "a": 0.3003,
+        "b": 0.6968,
+        "delta": 0.3965,
+        "ci95": [
+          0.3532,
+          0.4342
+        ],
+        "better": 143,
+        "worse": 11
+      }
+    },
+    "opus55: s3 minus floor": {
+      "score": {
+        "n": 220,
+        "a": 0.3003,
+        "b": 0.6928,
+        "delta": 0.3925,
+        "ci95": [
+          0.3592,
+          0.4231
+        ],
+        "better": 141,
+        "worse": 11
+      }
+    }
+  },
+  "spend_usd_this_measurement": 45.0003
 }
