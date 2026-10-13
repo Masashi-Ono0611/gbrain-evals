@@ -147,6 +147,7 @@ These documents fix a method before measuring. They publish no capability scores
 | Will a release still look better on questions nobody tuned against? | [September 29 sealed confirmation set](benchmarks/2026-09-29-sealed-confirmation-protocol.md) |
 | What end-to-end task does a 10x memory claim stand on, and what sample can show it? | [October 8 program primary preregistration (T0) and power (PW)](benchmarks/2026-10-08-program-primary-preregistration.md) |
 | What harder workload replaces T0's ceiling, and how was it calibrated? | [October 8 harder program primary preregistration (T0b), with its three calibration rounds](benchmarks/2026-10-08-program-primary-hard-preregistration.md) |
+| Does `gbrain setup claude-code` meet the setup targets on v0.60.208.0, with `remember` listed in the help and lazy model discovery? | [October 13 Cat 41 setup preregistration for v0.60.208.0](benchmarks/2026-10-13-cat41-setup-v208-preregistration.md) (the [second run's](benchmarks/2026-10-13-cat41-setup-remeasure.md) targets, scoring and cells, unchanged) |
 
 ## Data and methods
 
@@ -202,6 +203,11 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-13: Cat 41 setup preregistered on v0.60.208.0
+
+"Protocols and preregistrations" gained the [third Cat 41 setup measurement's preregistration](benchmarks/2026-10-13-cat41-setup-v208-preregistration.md),
+on gbrain v0.60.208.0 with the second run's frozen targets and scoring.
 
 ### 2026-10-13: Cat 41 setup re-measure results
 
