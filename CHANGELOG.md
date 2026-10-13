@@ -2,6 +2,16 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [Unreleased]
+
+### Vector side alongside the keyword arms: about 150 ms faster per search on a 20,000-page Postgres brain
+
+gbrain v0.60.214.0 (gbrain#6641) starts the query embed and expansion with the keyword arms instead of after them
+([report](docs/benchmarks/2026-10-13-vector-side-early.md)). Median warm `search` went from 578 / 572 ms to
+424 / 402 ms and `query` from 578 / 548 ms to 448 / 428 ms on a 20,000-page Postgres brain with Voyage. On a 400-page
+PGLite brain the saving is only the 13 to 15 ms the keyword arms take. Results are unchanged: the bench digests match
+master, and with stub providers on the 20k brain all 80 result lists match. About $0.40 in provider calls.
+
 ## [0.10.93] - 2026-10-13
 
 ### Reranker settings addendum: rerank-3-lite at the shipped shape cuts rerank cost 60% with no loss
