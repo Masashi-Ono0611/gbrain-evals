@@ -415,3 +415,35 @@ ledger rate of 1.108:
   check gates the Part 1 merge, not the confirmation. The confirmation runs and is reported whatever the check
   shows. If the check fails, F5's commits come out of Part 1 before merge, and the confirmation result is reported
   as describing a build that did not ship as tested.
+- **Wave build with F5 restored** (2026-10-13, before any cell): gbrain `capy/cat40-next-part1` @
+  `4e10136b4b7b79cb99408dca1136d3350f5de5e4`. It is `a3384b989` plus `3391a72d7` (revert of the F5 removal) and
+  `4e10136b4` (TODOS.md only). The Part 1 implementer reports the full 8-VM ci:ubicloud gate green on this exact head.
+  - **`src/` against `e67dcc9f8`: identical** (`git diff e67dcc9f8 4e10136b4 -- src` is empty). The whole-tree diff
+    from `e67dcc9f8` is `TODOS.md` only (1 line). `src/` is also identical to the development build `a798de1f`, so
+    the wave arm runs the code development rounds 1 and 2 measured.
+  - **Merge base with master:** still `09d21554d`, so the baseline build is unchanged and the measured path set is
+    `git diff --name-only 09d21554d 4e10136b4 -- src` (the `e67dcc9f8` set named under "What runs"). This replaces
+    the `a3384b989` wave build and its 35-file path set recorded above.
+- **Harness re-frozen for the F5-on wave arm** (2026-10-13, before any cell):
+  `06a46d951c627296c64e3234c291ca88614ed30c`, replacing `e805203f`. It is `e805203f` plus this file's commits and one
+  harness commit, `06a46d95`, which changes only `eval/runner/cat40/next-confirm.ts` and its test:
+  - `NEXT_BUILDS.wave` is `4e10136b4`, and a new `WAVE_BUILD_CONFIG = 'mentions.owner_phrases=true'` is passed as
+    `--gbrain-build-config` to the `slots-wave` and `cells-wave` steps, so wave slots form their own F5-on family.
+  - The slot-step notes require at least one owner-phrase link in every wave slot and 0 in every baseline slot. The
+    runner enforces both after restore (`gbrain-arm.ts` zero-link refusal and its F5-off counterpart); no runner code
+    changed.
+  - The test pins the build config to development all-on's (`dev-arms.ts` `SLOT_BUILD_CONFIG['f5-on']`) and checks
+    that no other step carries it.
+  - **No world-shaping file changed** (`git diff --name-only e805203f 06a46d95` outside `docs/`: those two files), so
+    the minted sealed digests and the public world digests hold.
+  - **Checks:** `bunx tsc --noEmit -p .` is clean, and the 317 cat40 tests pass. The freeze check lists the same
+    frozen files as at `e805203f`.
+  - **Counted steps run at this exact commit** (detached checkout, so `plan`'s drift note names it). The drift note
+    `next-confirm.ts` builds here:
+    `PREREG.md (cat40-next-wave): harness 06a46d951c627296c64e3234c291ca88614ed30c preregistered; drift is the confirmation seed registration (schema.ts, hard.ts), the scripted gbrain agent and whole-result transcripts (hard.ts), the write-tool list taken while the gbrain slot is live (hard.ts, arms.ts), and unused loop hooks (loop.ts) and an embedder base URL (pg-arm.ts) merged from main; none changes a model cell (<date>)`.
+- **Sealed staging steps 1 and 2** (2026-10-13, GBRA-40 on Garry's Mac): s1 and s2 were regenerated from their seed
+  files with the mint command without `--digest-only`. `check-world` does not exist at `a85e6e29`, the checkout used,
+  so GBRA-40 verified with `shasum -a 256`: each `world.json` equals its minted digest (`561759a8…`, `54d6ca94…`).
+  For this generator the file's SHA-256 is the world digest. `check-world` is rerun on the custody VM as the plan's
+  step.
+
