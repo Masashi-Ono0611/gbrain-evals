@@ -21,10 +21,8 @@ const args = process.argv.slice(2);
 const flag = (name: string, dflt?: string) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : dflt; };
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
 
-export const CELLS = [
-  { id: 'ref.50x1400.r25', n: 50, t: 1400, model: 'rerank-2.5' },
-  ...['rerank-2.5', 'rerank-2.5-lite'].flatMap(model => [25, 15, 10].flatMap(n => [1400, 768, 512].map(t => ({ id: `${n}x${t}.${model === 'rerank-2.5' ? 'r25' : 'r25lite'}`, n, t, model })))),
-];
+import { CELLS_SPEC } from './cells-spec.ts';
+export const CELLS = CELLS_SPEC;
 
 const corpus = loadLmeS();
 const sanitizer = new Sanitizer(corpus, 'gbra86');
@@ -98,7 +96,7 @@ async function build(qids: string[], workers: number) {
     if (!list.length) return;
     const { proc, sys } = await startShim(w);
     try {
-      for (const qid of list) {
+      for (const qid of list) try {
         const t0 = performance.now();
         const ns = sanitizer.ns(qid);
         const prev = readState(qid);
@@ -110,7 +108,12 @@ async function build(qids: string[], workers: number) {
           await control(`w${w}`, { mode: 'build', key: qid, phase: 'build' });
           const plan = sanitizer.ingestPlan(convById.get(qid)!);
           let chars = 0;
-          for (const step of plan) { await sys.ingestSession(ns, step.input, step.event_time); chars += step.input.turns.reduce((a, t) => a + t.content.length, 0); }
+          const failed: string[] = [];
+          for (const step of plan) {
+            try { await sys.ingestSession(ns, step.input, step.event_time); chars += step.input.turns.reduce((a, t) => a + t.content.length, 0); }
+            catch (e) { failed.push(String((e as Error).message).slice(0, 200)); }
+          }
+          st.failed_sessions = failed;
           const fin = await sys.finishIngest(ns, 1800);
           st.built = fin.ready; st.sessions = plan.length; st.chars = chars; st.finish = { ready: fin.ready, completeness: fin.completeness, waited_ms: fin.waited_ms, liabilities: (fin.raw as any)?.background_liabilities ?? null };
           st.build_ms = Math.round(performance.now() - t0);
@@ -127,8 +130,8 @@ async function build(qids: string[], workers: number) {
         }
         st.captured = st.capture.q.frozen && st.capture.p.frozen;
         writeFileSync(statePath(qid), JSON.stringify(st, null, 1));
-        log(`w${w} ${qid} built=${st.built} captured=${st.captured} ${Math.round((performance.now() - t0) / 1000)}s`);
-      }
+        log(`w${w} ${qid} built=${st.built} captured=${st.captured} failed_sessions=${st.failed_sessions?.length ?? 0} ${Math.round((performance.now() - t0) / 1000)}s`);
+      } catch (e) { log(`w${w} ${qid} ERROR ${String((e as Error).message).slice(0, 300)}`); }
     } finally { proc.kill(); await proc.exited; }
   }));
 }
