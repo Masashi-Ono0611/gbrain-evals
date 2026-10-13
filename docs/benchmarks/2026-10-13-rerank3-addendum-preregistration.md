@@ -1,6 +1,6 @@
 # Reranker settings, addendum: Voyage rerank-3 and rerank-3-lite (GBRA-86)
 
-**Status, 2026-10-13: preregistered before any counted cell of this addendum ran.** No `rerank-3` or `rerank-3-lite`
+**Status, 2026-10-13: final; results below.** Preregistered before any counted cell of this addendum ran. No `rerank-3` or `rerank-3-lite`
 result on the eval questions has been seen. A tokenizer check sent the first 5 documents of one frozen list to each
 model; it read only billed tokens and latency, not rankings (all three models billed the same 3,139 tokens). Sina
 approved the run with a hard cap of $5 in provider spend.
@@ -81,3 +81,46 @@ are dropped from every cell.
 Results are published as aggregates only: the per-cell table, per-type losses and latency percentiles
 (`2026-10-13-rerank3-addendum/results/verdict.json`). No per-question rows are committed. This recommends a setting
 and changes no gbrain default.
+
+## Results (2026-10-13)
+
+**Recommendation: `rerank-3-lite` at the shipped shape (50 candidates × 1,400 tokens). It cuts rerank cost 60%
+and passes every check; its reranker latency is about the same as today's.** It is the only acceptable cell cheaper
+than the reference. `rerank-3` at 50 × 1,400 also passes, but it costs the same as the reference and is not faster, so
+rule 2 does not pick it. Every cell with fewer candidates fails strict recall@10 again, as in #141.
+
+All 300 questions ran in all nine cells (5,400 queries). Every read was clean, there were no errors and no retried
+provider calls, and every reranker request matched its frozen list. Aggregates: `2026-10-13-rerank3-addendum/results/verdict.json`.
+
+| cell | strict@10 | cell-only / ref-only | strict@5 | nDCG@10 | max type loss | $ per 1k queries | cost cut | rerank p50 / p95 ms | acceptable |
+|---|---|---|---|---|---|---|---|---|---|
+| **reference 50×1400, rerank-2.5 (re-run)** | **299** | | **288** | **0.9591** | | **1.510** | | **232 / 596** | |
+| 50×1400, rerank-3 | 298 | 0 / 1 | 291 | 0.9595 | 1 | 1.510 | 0% | 240 / 624 | yes |
+| 25×1400, rerank-3 | 295 | 0 / 4 | 286 | 0.9624 | 1 | 0.764 | 49.4% | 211 / 507 | no: strict@10 |
+| 15×1400, rerank-3 | 294 | 0 / 5 | 284 | 0.9605 | 4 | 0.460 | 69.5% | 198 / 491 | no: strict@10, types |
+| 25×512, rerank-3 | 295 | 0 / 4 | 285 | 0.9621 | 1 | 0.633 | 58.1% | 198 / 487 | no: strict@10 |
+| **50×1400, rerank-3-lite** | **298** | **0 / 1** | **289** | **0.9579** | **1** | **0.604** | **60.0%** | **251 / 604** | **yes** |
+| 25×1400, rerank-3-lite | 296 | 0 / 3 | 285 | 0.9600 | 1 | 0.306 | 79.8% | 214 / 576 | no: strict@10 |
+| 15×1400, rerank-3-lite | 294 | 0 / 5 | 284 | 0.9561 | 4 | 0.184 | 87.8% | 193 / 448 | no: strict@10, types |
+| 25×512, rerank-3-lite | 296 | 0 / 3 | 284 | 0.9597 | 2 | 0.253 | 83.2% | 204 / 431 | no: strict@10 |
+
+Clean reads were 300 of 300 for real queries and probes in every cell, and the probe found its session every time.
+Cost averages real queries and probes; all four models bill the same tokens for the same request.
+
+- **`rerank-3-lite` at 50 × 1,400 compared with the reference:** strict@10 −1 (one multi-session question), strict@5
+  +1, nDCG@10 −0.0012. Rerank cost goes from $1.51 to $0.60 per 1,000 queries. p50 latency is 19 ms higher (+8%) and
+  p95 8 ms higher. The rule doesn't count that as a latency gain, and it isn't a loss that matters next to the
+  rest of a query.
+- **Fewer candidates is the only real latency lever, and it costs recall.** Against the reference, 25 and 15 candidates take 8–17%
+  off p50 and 3–28% off p95. Every such cell loses 3–5 questions on strict recall@10, the same pattern as with the 2.5
+  models.
+- **`rerank-3` ranks the top a little better:** strict@5 +3 at 50 × 1,400, the highest of any cell in either run.
+  It is a quality option at today's price, not a saving.
+- **How stable the reference is:** the re-run reference made fresh `rerank-2.5` calls on the same lists. Voyage's
+  scores moved by up to 0.003 between runs. That reordered the top-10 sessions on 45 of 300 real queries and changed
+  the set on 17, but no question flipped on strict recall@10 or @5, and nDCG@10 moved 0.0001. Single-question
+  differences between cells sit inside that kind of jitter. The rule's 2-question margin covers it.
+
+**Spend:** an estimated $3.74 of the $5 cap, all Voyage reranking (embeddings and expansion were replayed from the
+cache). That's an estimate from Voyage's usage counts at list price, not metered. One more `GET /v1/models` (OpenAI) at
+a serve start was refused by the proxy outside installs; it touched no query.
