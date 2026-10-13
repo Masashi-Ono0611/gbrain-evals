@@ -254,6 +254,10 @@ export function callTargets(name: string, args: Record<string, unknown>): string
 }
 
 export function isWriteCall(arm: Arm, name: string, args: Record<string, unknown>): boolean {
-  const w = arm.writeTools();
-  return w.includes(name) || w.includes(`${name}:${String(args.command ?? '')}`);
+  return isWriteName(arm.writeTools(), name, args);
+}
+
+/** `isWriteCall` against a write-tool list taken earlier (a gbrain arm's list needs its live slot). */
+export function isWriteName(writeTools: string[], name: string, args: Record<string, unknown>): boolean {
+  return writeTools.includes(name) || writeTools.includes(`${name}:${String(args.command ?? '')}`);
 }

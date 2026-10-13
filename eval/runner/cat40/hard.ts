@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { runAgent, provider, type AgentRun, type Arm, type ScriptedModel } from './loop.ts';
-import { FsArm, MemoryArm, OracleArm, FileStore, isWriteCall, callTargets, type ToolLimits } from './arms.ts';
+import { FsArm, MemoryArm, OracleArm, FileStore, isWriteCall, isWriteName, callTargets, type ToolLimits } from './arms.ts';
 import { PgArm, type PgStore } from './pg-arm.ts';
 import { GbrainArm, GbrainFsArm, cellLabel, type CellArm, type GbrainPool, type GbrainSlot, type MeteringProxy } from './gbrain-arm.ts';
 import { scoreHardTask, HARD_SCORER_VERSION } from './score-hard.ts';
@@ -313,6 +313,9 @@ export async function runHardCell(ctx: HardCtx, model: string, armName: CellArm,
     ctx.proxy!.bind(slot.id, attemptId);
     arm = armName === 'gbrain' ? new GbrainArm(slot) : new GbrainFsArm(slot, new FileStore(ctx.files.all), { limits: ctx.toolLimits });
   } else throw new HardStop('HARD_ARM_NOT_APPLICABLE', `arm ${armName}`, 'use oracle,fs,pg,memory,gbrain');
+  // Taken while the slot is live: after restoreOrQuarantine the pool may hand the slot to another cell, whose restart
+  // clears the client, so the scoring and H5 write diagnostic below must not ask the slot again.
+  const writeTools = arm.writeTools();
   const messages = hardSessions(ctx.world, task, armName);
   const runs: AgentRun[] = [];
   const sessions: SessionRecord[] = [];
@@ -346,7 +349,7 @@ export async function runHardCell(ctx: HardCtx, model: string, armName: CellArm,
   }
   // Whole results: the firing counters (firing.ts) read fields gbrain appends after long evidence, e.g. a long page's `delivered`.
   hardTranscripts.set(attemptId, runs.flatMap((r, k) => r.tools.map(t => ({ session: k + 1, name: t.name, args: t.args, result: t.result }))));
-  const isWrite = (name: string, args: Record<string, unknown>) => isWriteCall(arm, name, args);
+  const isWrite = (name: string, args: Record<string, unknown>) => isWriteName(writeTools, name, args);
   const wrote = runs.some(r => r.tools.some(t => isWrite(t.name, t.args)));
   const scored = runs.length === messages.length ? scoreHardTask(ctx.world, task, runs, { wrote }) : scoreHardTask(ctx.world, task, [{ final: null, stop: 'harness_error' } as unknown as AgentRun], { wrote });
   const stop: HardStopKind = failure?.stop ?? (runs.at(-1)!.stop as HardStopKind);
