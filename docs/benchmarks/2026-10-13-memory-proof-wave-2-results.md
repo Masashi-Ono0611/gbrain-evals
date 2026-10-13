@@ -53,6 +53,8 @@ Scores are graded accuracy times 100, from one joint blinded re-judge per group 
 
 **Result.** W5 passes, and the default flips on at factor 1.50. On BEAM it costs nothing measurable and gains nothing measurable. On LongMemEval-S dev, factor 1.50 scored 3 points above W5 off.
 
+**Ship rule.** The preregistered rule in [W5 gate on BEAM](2026-10-10-memory-proof-wave-2-preregistration-addenda.md#w5-gate-on-beam) reads: "**A pass flips the default.** The W5 key ships on, at the dev-chosen ratio. A failure keeps it off, and the result is reported as measured." The amendment reads: "A pass flips the default on at factor 1.50. If W5 fails, it ships off." The W5 rule depends only on the W5 gate. Gate 4 is W3's own gate, governed by TC2 in the [preregistration](2026-10-10-memory-proof-wave-2-preregistration.md): "If the shadow probe fails its floor, W3 ships as the shadow grade only." Its failure changes W3's ship form and nothing else.
+
 ## Cost per correct answer
 
 This uses wave 1's formula: ingest dollars ÷ R reads per stored conversation, plus read dollars per question, all divided by graded accuracy. Ingest CPU is priced at $0.05 per vCPU-hour, with 4 vCPUs for gbrain and 16 for the comparator.
@@ -91,6 +93,10 @@ Over the 72 conversations:
 - **VMs.** Every VM is recorded and destroyed.
 
 ## Changelog
+
+### 2026-10-13: W5 ship rule
+
+Added the ship rule under the W5 result: the preregistered rule and the amendment, quoted verbatim, and a note that gate 4's failure governs W3's ship form only (TC2), not W5's.
 
 ### 2026-10-13: First version
 
