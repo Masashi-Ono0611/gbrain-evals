@@ -287,3 +287,38 @@ ledger rate of 1.108:
 ## Recorded before cells
 
 (Appended by the executor; no edits above this line.)
+
+- **Wave build** (2026-10-13): gbrain `capy/cat40-next-part1` @ `a3384b989a85f1f5fbb582c596e47af798a6157d` (v0.60.189.0,
+  "Remove F5 owner phrases from Part 1: failed the preregistered d1b gate"). The Part 1 implementer reports the full
+  8-VM ci:ubicloud gate green on this SHA.
+  - **`src/` against `e67dcc9f8`:** 23 files, 21 insertions and 1,829 deletions, all on F5 paths: the owner-phrase
+    module, mention wiring, ops, persistence, verbs and the F5 schema migrations. The implementer reports that this
+    mechanically matches the inverse of F5's own diff.
+  - **`src/` against the baseline:** `src/schema.sql` is byte-identical to the baseline `09d21554d`. The merge base
+    with master is still `09d21554d`. The confirmation's measured path set is `git diff --name-only 09d21554d a3384b989
+    -- src`: 35 files, list SHA-256 `cd4c3e926a3c…`. It replaces the 53-file `e67dcc9f8` set named above.
+- **Harness** (2026-10-13): gbrain-evals `capy/cat40-next-prereg` @ `f4208ddd54e900f4ea8d410e0cbae2e16451d705`. That is
+  `a85e6e29` plus four executor commits:
+  - `dc2bb79a`: `HARD_SEEDS.next_confirmation = [20262041, 20262051]`, and `requiresFreeze` covers them.
+  - `9696e195`: `eval/runner/cat40/next-confirm.ts`, which holds the worlds, builds, recipes, caps, ledgers, oracle gate
+    and `check-world`. `plan --world <w> --date <d>` prints every step's exact command.
+  - `76558dc7`: `eval/runner/cat40/next_confirm_analysis.py` and `test/eval/cat40-next-confirm.test.ts`.
+  - `f4208ddd`: the drift note, below.
+
+  Later commits on this branch touch only this file. `bunx tsc --noEmit -p .` is clean, and the 316 cat40 tests pass.
+  - **Freeze check** (`hard-ops.ts freeze check`): frozen code changed in `schema.ts`, `hard.ts`, `loop.ts` and
+    `pg-arm.ts`. In detail: the seed constants; the scripted gbrain agent and whole-result transcripts in `hard.ts`
+    (both on the development harness); two optional loop hooks merged from main that the Hard runner doesn't pass;
+    and an embedder base-URL default merged from main that the pg arm (not run here) uses. None changes a model cell.
+  - **World output is unchanged.** At this SHA the public generator still produces P1's base digest `e5cbde0b…` and
+    #93 M's `84f0614a…`. The sealed generator's test seed 101 (4k, frozen knobs, `--digest-only`) prints `cc784e5f…`
+    at both `a85e6e29` and this SHA. So sealed digests minted at `a85e6e29` hold here.
+- **Drift note, corrected before any cell** (2026-10-13). The freeze check names `loop.ts` and `pg-arm.ts` too, so the
+  note under "Freeze rules" undercounted the drift. Counted steps use the note `next-confirm.ts` builds:
+  `PREREG.md (cat40-next-wave): harness f4208ddd54e900f4ea8d410e0cbae2e16451d705 preregistered; drift is the confirmation seed registration (schema.ts, hard.ts), the scripted gbrain agent and whole-result transcripts (hard.ts), and unused loop hooks (loop.ts) and an embedder base URL (pg-arm.ts) merged from main; none changes a model cell (<date>)`.
+  `<date>` is the date passed to `plan --date`, and it is the same for every step of a world.
+- **Analysis check** (2026-10-13): on #93's M cells (`main-cells/results.jsonl`, gbrain-hard vs fs) the primary
+  procedure reproduces the published +7.67 pp [+2.67, +12.67]. A synthetic two-world test confirms that draws stay
+  inside each seed. #93's S cells were not used, because this executor doesn't open sealed outputs.
+- **Sealed digests.** They are not compiled into the harness. `check-world --world s1|s2 --digest <d>` compares each
+  sealed world with the digest recorded here.
