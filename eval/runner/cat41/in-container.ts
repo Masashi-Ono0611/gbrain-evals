@@ -208,6 +208,7 @@ function makeBox(state: { gbrainEnv: Record<string, string>; mcp: Parameters<Box
       return Number(r.stdout.trim()) || p.pid!;
     },
     setGbrainEnv(vars) { Object.assign(state.gbrainEnv, vars); },
+    setAgentEnv(vars) { Object.assign(agentEnv, vars); },
     setSilentStdin(on) { state.silent = on; },
     setMcp(m) { state.mcp = m; },
     note(k, v) { state.notes[k] = v; },
@@ -247,8 +248,11 @@ function makeBox(state: { gbrainEnv: Record<string, string>; mcp: Parameters<Box
 
 // ─── Harness invocation ──────────────────────────────────────────────
 
+/** Env a scenario adds to the harness process (Box.setAgentEnv). */
+const agentEnv: Record<string, string> = {};
+
 function harnessEnv(extra: Record<string, string> = {}): Record<string, string> {
-  return { HOME, PATH: `${HOME}/.bun/bin:${HOME}/.local/bin:${BASE_PATH}`, LANG: 'C.UTF-8', TZ: 'UTC', TERM: 'dumb', MCP_TIMEOUT: '120000', DISABLE_AUTOUPDATER: '1', ...extra };
+  return { HOME, PATH: `${HOME}/.bun/bin:${HOME}/.local/bin:${BASE_PATH}`, LANG: 'C.UTF-8', TZ: 'UTC', TERM: 'dumb', MCP_TIMEOUT: '120000', DISABLE_AUTOUPDATER: '1', ...agentEnv, ...extra };
 }
 
 function writeHarnessConfig(harness: Harness, mcp: Parameters<Box['setMcp']>[0] | undefined) {
@@ -341,24 +345,26 @@ async function main() {
     writeFileSync(ENV_FILE, Object.entries(state.gbrainEnv).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join('\n') + '\n');
     chmodSync(ENV_FILE, 0o644);
     if (state.silent) writeFileSync(SILENT_FLAG, '1');
-    if (scenario.id !== 'fresh_install_to_wired_recall' && !scenario.id.startsWith('docs_')) {
+    if (scenario.group !== 'install' && !scenario.id.startsWith('docs_')) {
       writeFileSync('/usr/local/bin/gbrain', WRAPPER); chmodSync('/usr/local/bin/gbrain', 0o755);
     }
     writeHarnessConfig(harness, state.mcp);
     writeFileSync(CALL_LOG, '');
     phase = 'session';
 
-    const ctx = { harness, docsBase: arg('docs-base'), installSpec: arg('install-spec'), gbrainRef: arg('gbrain-ref') };
+    const ctx = { harness, docsBase: arg('docs-base'), installSpec: arg('install-spec'), gbrainRef: arg('gbrain-ref'), nonce: String(state.notes.nonce ?? '') };
     const first = await runHarness(harness, model, scenario.prompt(ctx), { index: 1, resumeId: null, useRegistrations: false, mcp: state.mcp, timeoutMs: scenario.timeoutMs });
     result.sessions.push(first.rec);
     let last = first;
     let index = 1;
     for (const f of (scenario.followups ?? []) as Followup[]) {
-      if (f.when && !f.when(last.finalText, box)) continue;
-      index++;
-      const next = await runHarness(harness, model, f.prompt, { index, resumeId: f.mode === 'resume' ? last.sessionId : null, useRegistrations: f.useHarnessRegistrations === true, mcp: state.mcp, timeoutMs: scenario.timeoutMs });
-      result.sessions.push(next.rec);
-      last = next;
+      for (let sent = 0; sent < (f.max ?? 1); sent++) {
+        if (f.when && !f.when(last.finalText, box)) break;
+        index++;
+        const next = await runHarness(harness, model, f.prompt, { index, resumeId: f.mode === 'resume' ? last.sessionId : null, useRegistrations: f.useHarnessRegistrations === true, mcp: state.mcp, timeoutMs: scenario.timeoutMs });
+        result.sessions.push(next.rec);
+        last = next;
+      }
     }
     write();
     // Stop leftover MCP servers the harness started, keep processes the scenario owns (a user's own serve).

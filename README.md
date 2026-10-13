@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.78 (`VERSION`) |
+| This repository | gbrain-evals v0.10.82 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except the Cat 40 Hard row's, which shipped
@@ -293,6 +293,30 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-12: Cat 41 scripted user v7 and setup re-measure preregistration; repository row names v0.10.82
+
+gbrain-evals v0.10.82. Cat 41's scripted user now answers a closing question the same way in every install arm, the
+October 12 setup runs are re-scored under v7 beside their unchanged report, and the setup re-measure is preregistered
+against the same targets. The repository row names v0.10.82 (was v0.10.81).
+
+### 2026-10-12: Low-hanging-fruit wave paid gates; repository row names v0.10.81
+
+gbrain-evals v0.10.81 records the paid gates of the low-hanging-fruit wave
+([report](docs/benchmarks/2026-10-12-lhf-wave.md)). No current-results row changes, because the results gate gbrain
+defaults rather than score a release. The repository row names v0.10.81 (was v0.10.80).
+
+### 2026-10-12: Cat 41 `gbrain setup claude-code` TTHW; repository row names v0.10.80
+
+gbrain-evals v0.10.80. The wave 2 setup measurement on v0.60.184.0 misses its wired-recall (83.8 s against 60 s),
+first-push (0/3) and consent targets as written and meets the faster-setup threshold as scored (35%, 23% like-for-like)
+([report](docs/benchmarks/2026-10-12-cat41-setup-tthw.md)). The repository row names v0.10.80 (was v0.10.79).
+
+### 2026-10-12: Cat 40 warm boot waits for the persistence drain; repository row names v0.10.79
+
+gbrain-evals v0.10.79. The Cat 40 warm boot no longer snapshots a slot while gbrain is still draining persistence
+effects, and the D2/D4 notice smoke is recorded ([verdict](docs/benchmarks/2026-10-12-d2d4-smoke/VERDICT.md)). The
+repository row names v0.10.79 (was v0.10.78).
 
 ### 2026-10-12: Retire the Cat 40 v1 success headline; repository row names v0.10.78
 

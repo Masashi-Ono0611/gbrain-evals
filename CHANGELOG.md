@@ -2,6 +2,78 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.82] - 2026-10-12
+
+### Cat 41: the scripted user answers both install arms alike; setup re-measure preregistered
+
+- **Scorer `cat41-score-v7`.** The October 12 setup TTHW's scripted user replied to the by-hand arm's closing question
+  and missed the setup arm's wording, so the arms got unequal help. v7 sends one fixed reply ("Use the defaults you
+  recommend and go ahead.") whenever an agent's turn closes by asking for input or gbrain is not registered yet, at
+  most 3 per run, in every install arm; counts closing and unanswered closing questions; detects `gbrain setup`
+  through any gbrain launcher; and, in the consent-negative scenario, counts any provider request, the unbilled model
+  list included.
+- **Re-score beside the published report.** The #136 report stands as published. Re-scored under v7, the setup arm
+  has 3 unanswered closing questions (interventions 3 by hand and 3 with setup, where v6 counted 3 and 0; the
+  faster-setup rule is still met on those transcripts) and every consent run has 1 violation. Descriptive only.
+- **Re-measure preregistered** ([preregistration](docs/benchmarks/2026-10-12-cat41-setup-remeasure-preregistration.md)):
+  the same frozen targets on a gbrain release containing gbrain#6562 and gbrain#6572, Opus 5.5 on Claude Code, n = 3
+  per cell, a new $25 ledger. Paid cells wait for that release and an amendment naming its commit.
+- **Runner errors.** Nineteen eval runners print an error's message before its stack: under load Bun sometimes printed
+  the stack without the message line (12 of 240 runs before, 0 of 480 after).
+
+## [0.10.81] - 2026-10-12
+
+### Low-hanging-fruit wave paid gates: `query` expansion follows the mode; `balanced` stays opt-in
+
+The paid gates of the low-hanging-fruit plan (#134), run at gbrain `f77f1418c` under the
+[preregistration](docs/benchmarks/2026-10-12-lhf-wave-preregistration.md)
+([report](docs/benchmarks/2026-10-12-lhf-wave.md)).
+
+- **Item 1b passes.** On `balanced`, `query` without expansion answered 451 of 470 LongMemEval-S questions in strict
+  `recall_all@5`, against 448 with expansion (+5/−2, lower bound −0.21 points). Operation latency p50 fell from
+  2,216 ms to 370 ms. gbrain's `query` now expands only when the search mode says so.
+- **Item 1's default flip does not ship.** `balanced` tied `tokenmax` on LongMemEval-S, 451 vs 451 for both `search`
+  and `query` with expansion off, so both comparisons passed. The Cat 40 Hard world M rerank-pool replay was
+  inconclusive: gold hit@5 37.0% under a 25-row pool against 37.9% under 50 over 966 calls (−0.93 points, lower bound
+  −1.55, needs above −1.0). New installs with a chat key are still recommended `tokenmax`.
+- **Tooling.** The via-operation LongMemEval driver, its analysis script with unit tests, the arm runner and the Cat 40
+  rerank-pool replay runner. Spend $13.64 of a $30 cap.
+
+## [0.10.80] - 2026-10-12
+
+### Cat 41: time to a working memory with `gbrain setup claude-code`
+
+The wave 2 measurement of `gbrain setup claude-code` on gbrain v0.60.184.0 (`a618302c9`), with real Claude Code
+sessions on Opus 5.5, three runs per cell, against targets frozen before any paid session
+([report](docs/benchmarks/2026-10-12-cat41-setup-tthw.md),
+[preregistration](docs/benchmarks/2026-10-12-cat41-setup-tthw-preregistration.md)).
+
+- **Wired recall missed:** 3/3 correct, 83.8 s mean against the 60 s target (the documented path on v0.60.130.0 was
+  98.8 s).
+- **First push missed, 0/3:** the SessionStart hook prints nothing while Claude Code is still starting gbrain's
+  server, so no fresh session saw the remembered item without a tool call.
+- **Faster-setup threshold met as scored:** 35% lower median than the by-hand path on the same release. Only the
+  by-hand runs got a scripted reply; without that session the gap is 23%, under the 25% threshold. Both are reported.
+- **Consent negatives not met as written:** no capture, no unrequested fact write and no paid request, but every run's
+  `gbrain doctor` sent one unbilled `GET /v1/models` with the user's key.
+- **Harness:** five named-only Claude Code scenarios (the release-gate `all` set is unchanged), scorer v6 (re-scoring
+  the published re-baseline gives identical scores) and a recorded `--preregistration` attestation. Spend $8.37 of a
+  $25 cap.
+
+## [0.10.79] - 2026-10-12
+
+### Cat 40 warm boot waits for gbrain's persistence drain; D2/D4 smoke records
+
+- **Harness fix.** gbrain answers tool calls while it is still draining queued persistence effects. The Cat 40 warm
+  boot treated the first answer as the end of the drain, stopped the server and snapshotted the slot: one master slot
+  was saved with 5,081 effects still queued. `eval/runner/cat40/gbrain-arm.ts` now holds the server until gbrain
+  reports no drain in progress; the rebuilt slot has 0 queued.
+- **D2/D4 smoke** ([verdict](docs/benchmarks/2026-10-12-d2d4-smoke/VERDICT.md), preregistered with one amendment
+  written before any cell). D2's `hidden_tool_content` notice passes: gpt-6.1-sol 10/10 on the branch against 1/10 on
+  master, Opus 5.5 and Sonnet 5.5 10/10 (all at the ceiling, so the smoke cannot rank them), 0 leaks, 0 unsafe writes,
+  0 `unknown_tool` answers after a notice. D4's `grant_blocked_operations` is not exercised by Cat 40's stdio arm, as
+  preregistered. Spend $3.30 of an $8 cap.
+
 ## [0.10.78] - 2026-10-12
 
 ### Retire the Cat 40 v1 success headline
