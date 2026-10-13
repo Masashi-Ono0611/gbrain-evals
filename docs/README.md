@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.81, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.82, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -205,7 +205,7 @@ procedure with documented missing pieces; it is not the current refresh command.
 
 ### 2026-10-12: Cat 41 setup re-measure preregistered
 
-"Protocols and preregistrations" gained the [Cat 41 setup re-measure preregistration](benchmarks/2026-10-12-cat41-setup-remeasure-preregistration.md):
+gbrain-evals v0.10.82 (the opening names it; was v0.10.81). "Protocols and preregistrations" gained the [Cat 41 setup re-measure preregistration](benchmarks/2026-10-12-cat41-setup-remeasure-preregistration.md):
 the scripted user now replies to any closing question in every arm (scorer `cat41-score-v7`), the first run's
 transcripts are re-scored beside its report without changing it, and the paid cells wait for a gbrain release with
 gbrain#6562 and lane 31's trailing-question fix.
