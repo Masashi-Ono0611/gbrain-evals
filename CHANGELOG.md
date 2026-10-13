@@ -2,6 +2,17 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.88] - 2026-10-13
+
+### W1 guidance smoke (A12g): fails, guidance stays parked
+
+A preregistered one-shot smoke installed the gbrain plugin natively in Claude Code from gbrain `d5a86e4f8` (master
+`148b74d14` plus the `recall` `question` guidance) and ran A12's prompt and MCP setup in 5 fresh sessions per model.
+Opus 5.5 passed 2 of 5 and Fable 5.1 passed 5 of 5; the rule needs both at 4 of 5, so the guidance stays parked. No
+session invoked a skill, though `brain-ops` and `query` were listed in every one. All 30 answers were correct. $3.43, run
+once, none replaced ([result](docs/benchmarks/2026-10-13-w1-guidance-smoke.md),
+[preregistration](docs/benchmarks/2026-10-13-w1-guidance-smoke-preregistration.md)).
+
 ## [0.10.87] - 2026-10-13
 
 ### Low-hanging-fruit wave item 5: per-stage search timings change no results
