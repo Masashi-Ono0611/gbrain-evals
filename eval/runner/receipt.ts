@@ -108,7 +108,12 @@ export interface JudgeProvenance {
 }
 
 export interface SourceTreeIdentity {
-  /** sha256 over (name, size, bytes) of every file in `git ls-files -co --exclude-standard`, read from disk. */
+  /**
+   * sha256 over (name, git blob id) of every file in `git ls-files -co --exclude-standard`, as it sits on disk.
+   * Files `git status` reports as matching the index use the index's blob id; changed and untracked files are read
+   * and hashed as git blobs. Before v0.10.92 the hash ran over (name, size, bytes), so values from earlier receipts
+   * are not comparable.
+   */
   sha256: string | null;
   files: number;
   git_head: string | null;
@@ -303,32 +308,52 @@ const REPO_ROOT = resolve(import.meta.dir, '../..');
 const identityCache = new Map<string, unknown>();
 
 /** A git command's output, or null when it fails. The file listing passed 1 MB (execFileSync's default buffer) as the repo grew, so the buffer is raised. */
-function gitText(cwd: string, args: string[]): string | null {
-  try { return execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 256 * 1024 * 1024 }).trim(); }
-  catch { return null; }
+function gitText(cwd: string, args: string[], trim = true): string | null {
+  try {
+    const out = execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 256 * 1024 * 1024 });
+    return trim ? out.trim() : out;
+  } catch { return null; }
 }
 
-/** Hash the evals tree as it sits on disk: tracked plus untracked non-ignored files, dirty edits included. */
+/**
+ * Hash the evals tree as it sits on disk: tracked plus untracked non-ignored files, dirty edits included.
+ * Only files that differ from git's index are read, so the cost follows the edit, not the 1.7 GB of committed
+ * artifacts. A result is cached only when every git call succeeded; a failed or interrupted call is reported, not kept.
+ */
 export function sourceTreeIdentity(root = REPO_ROOT): SourceTreeIdentity {
   const key = `tree:${root}`;
   if (identityCache.has(key)) return identityCache.get(key) as SourceTreeIdentity;
-  let identity: SourceTreeIdentity;
   const listing = gitText(root, ['ls-files', '-z', '-co', '--exclude-standard']);
-  if (listing === null) {
-    identity = { sha256: null, files: 0, git_head: null, dirty: null, error: 'not a git checkout; source tree not hashed' };
-  } else {
-    const hash = createHash('sha256');
-    const files = [...new Set(listing.split('\0').filter(Boolean))].sort();
-    for (const name of files) {
-      const path = join(root, name);
-      if (!existsSync(path) || !lstatSync(path).isFile()) { hash.update(`${Buffer.byteLength(name)}:${name}:deleted:`); continue; }
-      const bytes = readFileSync(path);
-      hash.update(`${Buffer.byteLength(name)}:${name}:${bytes.length}:`);
-      hash.update(bytes);
-    }
-    const status = gitText(root, ['status', '--porcelain', '--untracked-files=normal']);
-    identity = { sha256: hash.digest('hex'), files: files.length, git_head: gitText(root, ['rev-parse', 'HEAD']), dirty: status === null ? null : status !== '' };
+  if (listing === null) return { sha256: null, files: 0, git_head: null, dirty: null, error: 'not a git checkout; source tree not hashed' };
+  const files = [...new Set(listing.split('\0').filter(Boolean))].sort();
+  const staged = gitText(root, ['ls-files', '-z', '-s'], false);
+  const status = gitText(root, ['status', '-z', '--porcelain=v1', '--untracked-files=all'], false);
+  const head = gitText(root, ['rev-parse', 'HEAD']);
+  if (staged === null || status === null) return { sha256: null, files: files.length, git_head: head, dirty: null, error: 'git index or status unreadable; source tree not hashed' };
+  const indexBlob = new Map<string, string>();
+  for (const entry of staged.split('\0').filter(Boolean)) {
+    const [meta, name] = entry.split('\t');
+    const [mode, blob, stage] = meta.split(' ');
+    if (stage === '0' && (mode === '100644' || mode === '100755')) indexBlob.set(name, blob);
   }
+  const changed = new Set<string>();
+  const entries = status.split('\0');
+  for (let i = 0; i < entries.length; i++) {
+    if (!entries[i]) continue;
+    changed.add(entries[i].slice(3));
+    if (/[RC]/.test(entries[i].slice(0, 2))) changed.add(entries[++i]);
+  }
+  const hash = createHash('sha256');
+  for (const name of files) {
+    const path = join(root, name);
+    let blob = changed.has(name) ? undefined : indexBlob.get(name);
+    if (blob === undefined && existsSync(path) && lstatSync(path).isFile()) {
+      const bytes = readFileSync(path);
+      blob = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+    }
+    hash.update(`${Buffer.byteLength(name)}:${name}:${blob ?? 'deleted'}:`);
+  }
+  const identity: SourceTreeIdentity = { sha256: hash.digest('hex'), files: files.length, git_head: head, dirty: status !== '' };
   identityCache.set(key, identity);
   return identity;
 }

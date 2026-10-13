@@ -4,15 +4,24 @@ This records what each gbrain-evals release changed and what its measurements me
 
 ## [0.10.92] - 2026-10-13
 
-### Receipt tests: the source-tree hash runs before any test timer
+### Receipt source-tree hash reads only changed files
 
 The intermittent 2-failure run of the receipts tests (`round-trips atomically` timed out, then `writeReceipt stores
-the executed source tree` saw `dirty: null`) came from the receipt identity cache. The first receipt upgraded in a
-test process hashed the whole evals tree (about 1.7 GB) and the gbrain package inside that test: about 1.6 s warm and
-3.4 s cold on a 4-core machine, against Bun's 5 s timeout. A timeout during `git status` also left `dirty: null`
-cached for the rest of the process. A new test preload, `test/support/receipt-identity.ts`, computes both identities
-once per process before any test starts. No assertion or timeout changed. A forced probe (cold page cache plus six
-CPU hogs, 3 trials each) failed 3 of 3 before the fix and passed 3 of 3 after, at the default timeout and at 1.5 s.
+the executed source tree` saw `dirty: null`) came from `sourceTreeIdentity`. The first receipt in each process
+hashed every byte of the evals tree, about 1.7 GB of committed artifacts: 1.4 s warm, 2.3 s cold and over 5 s under
+load on a 4-core machine, inside a test with Bun's 5 s timeout. A timeout during `git status` also left `dirty: null`
+cached for the rest of the process.
+
+- The hash now takes each file's blob id from git's index when `git status` reports the file unchanged, and reads
+  and hashes (as a git blob) only changed and untracked files: 0.1 to 0.4 s warm, 0.6 to 0.7 s cold under load.
+  `execution.source_tree.sha256` is now sha256 over (name, git blob id), so its values are not comparable with
+  receipts written before v0.10.92. Nothing compared them. For the evals tree and for clones with modified,
+  untracked, deleted, staged, renamed, touched and copied files, the result matched a full read of every file.
+- A failed or interrupted git call returns an identity with an error and is no longer cached. A new test makes
+  `git status` fail once and checks that the next call hashes the tree.
+
+No assertion or timeout was loosened. A forced probe (cold page cache plus six CPU hogs, the targeted receipts
+command, default timeout) failed 3 of 3 trials before the fix and passed 3 of 3 after.
 
 ## [0.10.91] - 2026-10-13
 

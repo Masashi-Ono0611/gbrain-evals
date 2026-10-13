@@ -303,10 +303,10 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 
 ## Changelog
 
-### 2026-10-13: receipt-test flake fix; repository row names v0.10.92
+### 2026-10-13: receipt source-tree hash fix; repository row names v0.10.92
 
-gbrain-evals v0.10.92 hashes the source tree for receipts in a test preload, so the one-time hash no longer runs
-inside a timed test. No result on this page changes. The repository row names v0.10.92 (was v0.10.91).
+gbrain-evals v0.10.92 hashes the source tree for receipts from git's index, reading only changed files, so the
+first receipt in a test no longer hashes 1.7 GB. No result on this page changes. The repository row names v0.10.92 (was v0.10.91).
 
 ### 2026-10-13: Cat 41 setup fourth run; repository row names v0.10.91
 

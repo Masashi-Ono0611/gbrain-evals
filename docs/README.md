@@ -204,10 +204,10 @@ procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
 
-### 2026-10-13: receipt-test flake fix
+### 2026-10-13: receipt source-tree hash fix
 
-gbrain-evals v0.10.92 (the opening names it; was v0.10.91). A test preload now hashes the source tree for receipts
-before any test starts. No result on this page changes.
+gbrain-evals v0.10.92 (the opening names it; was v0.10.91). The receipt source-tree hash now reads only files that differ
+from git's index. No result on this page changes.
 
 ### 2026-10-13: Cat 41 setup fourth-run results
 
