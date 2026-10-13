@@ -1,6 +1,6 @@
 # Reranker settings on LongMemEval-S: preregistration (GBRA-86)
 
-**Status, 2026-10-12: preregistered before any counted cell ran.** The brains and frozen candidate lists were being
+**Status, 2026-10-13: final; results below.** Preregistered 2026-10-12, before any counted cell ran. The brains and frozen candidate lists were being
 built when this was written (they cost embeddings and query expansion only, and no reranker call was made on them).
 No reranked result from any cell below has been seen. The owner (Efficiency captain) runs this with Sina's approval
 and a hard cap of $8 in provider spend.
@@ -142,3 +142,69 @@ It recommends one setting and its cost cut. It does not change gbrain's defaults
 Not covered here: Voyage now lists `rerank-3` and `rerank-3-lite` at the same prices as `rerank-2.5` and
 `rerank-2.5-lite`, and calls the 2.5 models older. They are outside the approved grid and budget; a follow-up can run
 them the same way on the same frozen lists.
+
+## Results (2026-10-13)
+
+**No grid cell is acceptable, so the recommendation is to keep the current default** (50 candidates × 1,400 tokens ×
+`rerank-2.5`). The closest cells miss by one question: every 25-candidate cell loses 3 questions on strict recall@10
+(the rule allows 2) and gains none.
+
+All 300 questions were built and frozen, and every cell ran on all 300 (600 queries per cell, 11,400 in all). Every
+query read clean under the pinned classifier, none errored or needed a retry, and every reranker request matched its
+frozen list. Machine-readable results: `2026-10-12-rerank-settings/results/` (`verdict.json`, `rows.ndjson`,
+`spend.json`); `harness/score.ts` evaluates the rule.
+
+| cell | strict@10 | cell-only / ref-only | strict@5 | nDCG@10 | max type loss | billed tokens per query | $ per 1k queries | cost cut | acceptable |
+|---|---|---|---|---|---|---|---|---|---|
+| **reference 50×1400, rerank-2.5** | **299** | | **288** | **0.9590** | | **30,209** | **1.510** | | |
+| 25×1400, rerank-2.5 | 296 | 0 / 3 | 286 | 0.9598 | 1 | 15,279 | 0.764 | 49.4% | no: strict@10 |
+| 25×768, rerank-2.5 | 296 | 0 / 3 | 286 | 0.9598 | 1 | 15,182 | 0.759 | 49.7% | no: strict@10 |
+| 25×512, rerank-2.5 | 296 | 0 / 3 | 283 | 0.9634 | 1 | 12,657 | 0.633 | 58.1% | no: strict@10 |
+| 15×1400, rerank-2.5 | 293 | 0 / 6 | 284 | 0.9556 | 4 | 9,208 | 0.460 | 69.5% | no: strict@10, types |
+| 15×768, rerank-2.5 | 293 | 0 / 6 | 284 | 0.9556 | 4 | 9,158 | 0.458 | 69.7% | no: strict@10, types |
+| 15×512, rerank-2.5 | 293 | 0 / 6 | 282 | 0.9581 | 4 | 7,618 | 0.381 | 74.8% | no: strict@10, types |
+| 10×1400, rerank-2.5 | 293 | 0 / 6 | 285 | 0.9547 | 4 | 6,169 | 0.308 | 79.6% | no: strict@10, types |
+| 10×768, rerank-2.5 | 293 | 0 / 6 | 285 | 0.9547 | 4 | 6,135 | 0.307 | 79.7% | no: strict@10, types |
+| 10×512, rerank-2.5 | 293 | 0 / 6 | 281 | 0.9572 | 4 | 5,094 | 0.255 | 83.1% | no: strict@10, types |
+| 25×1400, rerank-2.5-lite | 296 | 0 / 3 | 281 | 0.9562 | 1 | 15,279 | 0.306 | 79.8% | no: strict@10 |
+| 25×768, rerank-2.5-lite | 296 | 0 / 3 | 281 | 0.9563 | 1 | 15,182 | 0.304 | 79.9% | no: strict@10 |
+| 25×512, rerank-2.5-lite | 296 | 0 / 3 | 280 | 0.9542 | 2 | 12,657 | 0.253 | 83.2% | no: strict@10 |
+| 15×1400, rerank-2.5-lite | 294 | 0 / 5 | 279 | 0.9514 | 4 | 9,208 | 0.184 | 87.8% | no: strict@10, types, nDCG |
+| 15×768, rerank-2.5-lite | 294 | 0 / 5 | 279 | 0.9514 | 4 | 9,158 | 0.183 | 87.9% | no: strict@10, types, nDCG |
+| 15×512, rerank-2.5-lite | 294 | 0 / 5 | 280 | 0.9482 | 4 | 7,618 | 0.152 | 89.9% | no: strict@10, types, nDCG |
+| 10×1400, rerank-2.5-lite | 293 | 0 / 6 | 281 | 0.9507 | 4 | 6,169 | 0.123 | 91.8% | no: strict@10, types, nDCG |
+| 10×768, rerank-2.5-lite | 293 | 0 / 6 | 281 | 0.9507 | 4 | 6,135 | 0.123 | 91.9% | no: strict@10, types, nDCG |
+| 10×512, rerank-2.5-lite | 293 | 0 / 6 | 280 | 0.9481 | 4 | 5,094 | 0.102 | 93.3% | no: strict@10, types, nDCG |
+
+Clean reads were 300 of 300 for real queries and probes in every cell, and the probe found its session in every
+cell, so those checks never bind. Billed tokens average real queries and probes.
+
+What the table says:
+
+- **Candidate count is what costs recall; the losses only grow as the count shrinks and never reverse.** No cell
+  gained a single question over the reference on strict recall@10. The 25-candidate `rerank-2.5` cells lose the same 3
+  questions (one each in knowledge-update, temporal-reasoning and single-session-user); at 15 and 10 candidates the
+  losses reach 6, four of them temporal-reasoning (the type rule fails at 4). The 25-candidate losses are not
+  distinguishable from noise on their own (exact McNemar p = 0.25), but the rule was written to stop at 2 and they are
+  one-sided.
+- **The document cap is not a cost lever at 768.** Conversation chunks are mostly under 768 tokens, so 768 bills 1%
+  less than 1,400 with the same rankings for `rerank-2.5` and an nDCG change of 0.0001 for lite. 512 saves about 17% more and moves strict@5 by +1 to −4.
+- **`rerank-2.5-lite` holds strict@10 at 25 candidates but ranks less precisely:** strict@5 drops 7 to 9 against the
+  reference, and nDCG@10 falls past the 0.005 margin at 15 and 10 candidates.
+- **The cost targets are reachable only by accepting the losses:** 25×1400 `rerank-2.5` halves the cost with −3
+  strict@10, −2 strict@5 and nDCG +0.0008; 25×512 `rerank-2.5-lite` cuts 83% with −3 strict@10, −8 strict@5 and
+  nDCG −0.0048.
+
+Deviations and notes:
+
+- **Duplicate session ids:** 13 LongMemEval-S haystacks repeat a session id. The shim refuses the second write (HTTP
+  409, "never partly re-ingested"), as it does in the scoreboard; the harness records it and continues, like the
+  memory-qa runner. 3 of the 300 haystacks have one such refused session, identical in every cell.
+- **One refused `GET /v1/models` (OpenAI)** during a cell-phase serve start; the proxy refuses OpenAI outside
+  installs. It did not touch a query: every row read clean.
+- **The semantic-cache line and the out-of-container shim** are as preregistered. Bun 1.4.3 replaced the image's
+  1.4.2.
+
+**Spend:** an estimated $6.33 of the $8 cap: $2.34 building 300 brains (voyage-4), $0.38 freezing 600 queries (haiku
+expansion and query embeddings), $3.61 for the 19 cells. These are estimates from the providers' usage counts at list
+price, not metered invoices.
