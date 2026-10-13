@@ -53,6 +53,7 @@ save, find, update and forget what it knows. The parts that matter for an agent:
 | Relationship retrieval on reworded one-hop questions, recall at five | **0.411 → 0.537**, 19 better, 0 worse | `3a284ae` | [N9](docs/benchmarks/2026-10-01-n9-multi-hop.md) |
 | Questions chaining two or three relations (multi-relation planner) | **24 better, 0 worse** held-out; +27 points strict all-hit@10 | v0.60.60.0 | [Held-out program](docs/benchmarks/2026-10-05-heldout-program.md) |
 | Meeting attendance from a documented `## Attendees` list | **132 of 132** attendees stored, 0 false; "who attended" recall at five 32% → 80% | `c5fb0201` | [Attendance world](docs/benchmarks/2026-10-06-attendance-world.md) |
+| Answers on 72 BEAM conversations, question-ranked facts plus pages at 8,000 tokens, against a memory-bank server at the same budget | **70.5 vs 66.5** points (+4.0, lower bound +2.6, ahead at the 3.5-point margin); 0.75× its cost per correct answer at 20 reads | `71b6d85` (gbrain #6445) | [Wave 2 results](docs/benchmarks/2026-10-13-memory-proof-wave-2-results.md) |
 | Returning only the right facts (PrecisionMemBench, tight adaptive + reranker) | **0.586 precision**, 0.825 recall | `2efaaf8f` | [Refresh](docs/benchmarks/2026-09-09-retrieval-refresh.md) |
 | Serving the new value after an update | **388 of 388** probes, never stale | `739e5cc` | [N1](docs/benchmarks/2026-10-01-n1-knowledge-update.md) |
 | Nothing left behind after `forget` | **0** prohibited outputs, 6 of 6 reinstatements | `739e5cc` | [N5](docs/benchmarks/2026-10-01-n5-forget-residue.md) |
@@ -118,6 +119,14 @@ prompts and retrieval budgets differ, so this is context, not a ranking. Publish
 PrecisionMemBench table except the benchmark author's own belief store.** Its mean precision is 0.586, against 0.22,
 0.09 and 0.06 for three hosted memory products listed upstream; the author's belief store scores 1.00. Upstream rows may use different
 denominators and machines.
+
+**Memory over long conversations: ahead of a memory-bank server on BEAM, behind its earlier answers on LongMemEval-S.**
+On 72 BEAM conversations (1,440 questions), gbrain's question-ranked facts-plus-pages lane scores 70.5 against 66.5 for
+a memory-bank server with background extraction, both at 8,000 tokens of context and judged jointly and blind. The gap is
++4.0 points, with a lower bound of +2.6. gbrain costs 0.75 times as much per correct answer at 20 reads per stored
+conversation. On LongMemEval-S, gbrain trails that server's earlier answers by 3.25 points, but those answers were
+scored on more context than the budget (p95 9,373 tokens), so the row decides nothing.
+[Wave 2 results](docs/benchmarks/2026-10-13-memory-proof-wave-2-results.md).
 
 **Concept search: level with a vector store, when both are reranked.** gbrain 130 of 181, vectors with the same
 reranker 128.
@@ -262,6 +271,12 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-13: Memory proof wave 2 results
+
+Adds the wave 2 BEAM row to current results and a memory comparison to how gbrain compares. Both are measured at gbrain
+`71b6d85` (#6445): `combined-v2` passes gates 1, 2 and 3, and adaptive W5 passes its gate at factor 1.50. No other row
+changes.
 
 ### 2026-10-10: Repository row names v0.10.68
 

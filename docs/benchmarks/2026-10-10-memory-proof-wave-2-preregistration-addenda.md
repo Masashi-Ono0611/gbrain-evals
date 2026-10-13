@@ -821,3 +821,36 @@ Auto-approved under Garry's standing rule, 2026-10-12.
 Of the gbrain cells that started before the change, the three BEAM-100K and BEAM-1M `v2` cells were copied by hand from their VMs, which outlive their first cell.
 
 **The choice.** The comparator's BEAM-100K group runs once more, as `comparator-beam-100k-r2`. It uses the same spec with a $21 budget, which gives it a new cell id. The joint BEAM-100K re-judge uses this second cell whatever its result, and both cells' in-cell scores are reported. The expected cost is about $11, inside the $456.51.
+
+## Confirmation results (October 13, 2026)
+
+Every counted cell ran at gbrain `71b6d85bce8bf80aacec2dffe96e29cf0202c8d2`, and every one passes the delivered-context gate. The scores come from one joint blinded re-judge per group: four LongMemEval-S shards and five BEAM groups. The [results page](2026-10-13-memory-proof-wave-2-results.md) has the full tables. The gate output is in `2026-10-10-memory-proof-wave-2/confirm-analysis/gates.json` (`eval/runner/memory-proof-wave-2-confirm-analysis.ts`), and the cost output is in `confirm-analysis/cost.json`.
+
+| Gate | Result |
+|---|---|
+| 1, LongMemEval-S (400) | **Pass.** `combined-v2` beats `combined-v1@pin`, +14.00 points with a one-sided 95% lower bound of +10.96. It is non-inferior to `raw@pin`: +2.75, lower bound −0.87 against the −2 margin. |
+| 2, BEAM pooled (1,440 questions, 72 conversations) | **Pass, ahead.** `combined-v2` − `combined-v1@pin` is +1.62, with bounds +0.49 to +2.79 and a 2-point margin. |
+| 3, BEAM pooled against the comparator | **Pass, ahead.** +3.97, with bounds +2.63 to +5.33 and a 3.5-point margin. On LongMemEval-S, against the comparator's wave-1 answers, `combined-v2` is −3.25 (one-sided lower bound −6.97). That comparator cell missed its delivered-context gate in wave 1, with a p95 of 9,373. This row is reported and decides nothing. |
+| W5, BEAM pooled | **Pass.** `combined-v2+w5` (factor 1.50) − `combined-v2` is −0.25, with bounds −1.00 to +0.49, so the lower bound clears −3. No TC6 kind's two-sided 95% interval lies entirely below −3. The upper bounds are +3.28 for multi-session, +2.09 contradiction, +3.25 temporal, +1.49 event ordering and +6.20 abstention. Multi-session is −0.12. **The default flips on at factor 1.50.** That factor was chosen under the amendment after the re-tune, which set condition 5 aside. |
+| 4 | Recorded as failed (A15). |
+| 5, cost | Cost per correct answer, gbrain ÷ comparator: 0.750 at R = 20 (95% interval 0.727 to 0.773), so the cost claim holds. At R = 1 it is 0.664 (0.646 to 0.683), and at R = 200 it is 0.896 (0.863 to 0.930). |
+
+**Cost notes.** Gate 5 uses wave 1's formula and tool (`mpw_tools/sealed_cost.py`), with strata merged by BEAM size and the bootstrap seed `20261010`. gbrain's read cost is $23.03, of which $21.22 is the answer model, $1.81 rerank, and under $0.01 query embedding. The comparator's read cost is the answer model alone, $22.95. Receipts don't carry request bodies, so the tool can't tell query embeddings from ingest embeddings. They are counted as ingest. That moves under $0.01 of the $57 total, and inside the question phase there are no other read-time requests.
+
+**Descriptive.**
+
+- `recall-one-call` scores 83.00 on LongMemEval-S, against 82.50 for `combined-v2` (+0.50, lower bound −0.70). With the fill fix it now passes the delivered-context gate at every shard: means 8,163 to 8,170, p95 at most 8,223.
+- One `combined-v1@pin` row (`lme-4`) is an answer failure: the answer model returned an unparseable response after six retries. It is scored 0 as preregistered.
+- LoCoMo10 confirmation was not run, as the go decided. Gate 2's LoCoMo10 test and gate 3's LoCoMo10 report are recorded as not run.
+
+**Run notes.**
+
+- The run operation reached its six-hour limit while `lme-1`'s and `lme-2`'s `raw` cells were finishing. Their cells were collected unchanged by `confirm-recover.sh`.
+- Four BEAM re-judges reached their two-hour limit. They resumed from their judge caches inside the same ledgers. Each of those ledgers keeps an open reservation of about $0.59 from the stopped run, which was never spent.
+
+**Spend.** Confirmation cost $398.04: $316.69 for cells and $81.35 for the re-judges, with $2.37 of reservations never spent. That is inside the $456.51. Wave 2's spend is $591.35 in total, before A15's own spend.
+
+**Custody and VMs.**
+
+- Every ledger is mirrored to the integrator's primary machine under `mpw-ledgers/wave2/confirm/`, along with the BEAM-100K and BEAM-1M custody copies, those groups' re-judge outputs and the analysis. All 43 files' SHA-256 values match. BEAM-100K and BEAM-1M publish aggregates only.
+- All 20 VMs of the re-tune, the smoke and the confirmation are destroyed and recorded in their stages' `VMS.md`, and none of the owner's VMs remain.
