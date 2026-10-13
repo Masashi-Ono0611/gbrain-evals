@@ -342,3 +342,18 @@ ledger rate of 1.108:
   `--scale large` (`1c3ee3c8…`) and on test seed 202 at 4k (`8d2a4284…`), and for the public generator on P1's base
   (`e5cbde0b…`). #93's M base (`84f0614a…`) and the d4b base (`82b983fa…`) also reproduce under Bun 1.4.3. So
   staging doesn't need Bun 1.3.13. The digest precondition above still decides each world.
+- **Harness re-frozen** (2026-10-13, before any confirmation cell): `e805203fd60f87d1bc7249925dbfef7e01773fed`. It
+  replaces `f4208ddd` because development round 3 hit a harness crash that the confirmation could also hit.
+  - **The crash.** `runHardCell` asked the gbrain slot for its write-tool list after the pool had taken the slot back.
+    The pool's restart for the next cell clears the client, so an H5 cell's write diagnostic could throw "gbrain slot
+    not started" and end the whole runner process. In round 3 that happened after 194 cells; the run resumed with no
+    lost or duplicated cell.
+  - **The fix** (`3cb5aaaf`, merged from `capy/cat40-dev-harness`). The list is taken once, when the cell acquires its
+    freshly restored slot, which is the same base list the old code read after the restore. So no score or diagnostic
+    changes. A forced probe in `test/eval/cat40-hard.test.ts` fails with the crash before the fix and passes after.
+  - **Scope of the change.** `git diff f4208ddd e805203f` touches only `arms.ts`, `hard.ts`, `next-confirm.ts` (the
+    drift note), the test and this file. No world-shaping file changed, so the minted digests hold.
+  - **Checks:** tsc is clean, and the 317 cat40 tests pass.
+  - **Freeze check:** it now also lists `arms.ts`.
+  - **Drift note:** counted steps use the note `next-confirm.ts` builds at this SHA:
+    `PREREG.md (cat40-next-wave): harness e805203fd60f87d1bc7249925dbfef7e01773fed preregistered; drift is the confirmation seed registration (schema.ts, hard.ts), the scripted gbrain agent and whole-result transcripts (hard.ts), the write-tool list taken while the gbrain slot is live (hard.ts, arms.ts), and unused loop hooks (loop.ts) and an embedder base URL (pg-arm.ts) merged from main; none changes a model cell (<date>)`.
