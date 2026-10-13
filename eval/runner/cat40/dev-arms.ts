@@ -10,7 +10,10 @@
  * a restore-time key. Prices are per gbrain arm on M at the 1.108 ledger rate;
  * each arm's `--budget-usd` cap is 1.15 times its price, rounded down to the cent.
  *
- *   bun eval/runner/cat40/dev-arms.ts --round 1 [--json]
+ *   bun eval/runner/cat40/dev-arms.ts --round 1|2|3 [--json]
+ *
+ * Round 3 is one diagnostic arm added after the d1b gate failed (owner decision 2026-10-13): the confirmation's wave
+ * config, all-on with F5 off, on F5-off slots of the Part 1 head with F5's commits removed.
  */
 
 export const CAP_FACTOR = 1.15;
@@ -50,13 +53,17 @@ export interface DevArm { id: string; item: string; scope: DevScope; slots: Slot
 const arm = (id: string, item: string, scope: DevScope, slots: SlotFamily, on: Record<string, string> = {}): DevArm =>
   ({ id, item, scope, slots, config: { ...CONTROL_CONFIG, ...on } });
 
+const ALL_ON = { ...F1, ...F2, ...F3, ...F4 };
+
 const FULL_FAMILY_ARMS = [
   arm('control', 'all-off control', 'full', 'f5-off'),
-  arm('all-on', 'all-on (preregistered wave config)', 'full', 'f5-on', { ...F1, ...F2, ...F3, ...F4 }),
+  arm('all-on', 'all-on (preregistered wave config)', 'full', 'f5-on', ALL_ON),
   arm('f5', 'F5 owner-phrase only', 'full', 'f5-on'),
 ];
 
-export const DEV_ROUNDS: Record<1 | 2, DevArm[]> = {
+export type DevRound = 1 | 2 | 3;
+
+export const DEV_ROUNDS: Record<DevRound, DevArm[]> = {
   1: [
     ...FULL_FAMILY_ARMS,
     arm('f1', 'F1 only (enrollment, names-row key on)', 'H2-H4', 'f5-off', F1),
@@ -65,6 +72,7 @@ export const DEV_ROUNDS: Record<1 | 2, DevArm[]> = {
     arm('f4', 'F4 only', 'H2-H4', 'f5-off', F4),
   ],
   2: FULL_FAMILY_ARMS,
+  3: [arm('all-on-no-f5', 'all-on with F5 off (the confirmation wave config)', 'full', 'f5-off', ALL_ON)],
 };
 
 /** The slot family's build-time config. */
@@ -76,7 +84,7 @@ export const capUsd = (a: DevArm) => Math.floor(priceUsd(a) * CAP_FACTOR * 100 +
 const pairs = (c: Record<string, string>) => Object.entries(c).map(([k, v]) => `${k}=${v}`).join(',');
 
 /** The arm's flags for cat40-model-ladder.ts (the world, models, build, ledger and --out come from the step). */
-export function devArmFlags(round: 1 | 2, a: DevArm): string[] {
+export function devArmFlags(round: DevRound, a: DevArm): string[] {
   const build = SLOT_BUILD_CONFIG[a.slots];
   return [
     '--gbrain-label', `gbrain-dev-r${round}-${a.id}`,
@@ -90,9 +98,9 @@ export function devArmFlags(round: 1 | 2, a: DevArm): string[] {
 if (import.meta.main) {
   const argv = process.argv.slice(2);
   const round = Number(argv[argv.indexOf('--round') + 1]);
-  if (round !== 1 && round !== 2) { console.error('usage: bun eval/runner/cat40/dev-arms.ts --round 1|2 [--json]'); process.exit(2); }
-  const arms = DEV_ROUNDS[round];
-  const rows = arms.map(a => ({ arm: a.id, item: a.item, scope: a.scope, slots: a.slots, price_usd: priceUsd(a), cap_usd: capUsd(a), flags: devArmFlags(round, a) }));
+  if (round !== 1 && round !== 2 && round !== 3) { console.error('usage: bun eval/runner/cat40/dev-arms.ts --round 1|2|3 [--json]'); process.exit(2); }
+  const arms = DEV_ROUNDS[round as DevRound];
+  const rows = arms.map(a => ({ arm: a.id, item: a.item, scope: a.scope, slots: a.slots, price_usd: priceUsd(a), cap_usd: capUsd(a), flags: devArmFlags(round as DevRound, a) }));
   if (argv.includes('--json')) { console.log(JSON.stringify({ round, cap_factor: CAP_FACTOR, total_price_usd: Math.round(rows.reduce((n, r) => n + r.price_usd, 0) * 100) / 100, arms: rows }, null, 2)); process.exit(0); }
   for (const r of rows) console.log(`${r.arm.padEnd(16)} ${r.scope.padEnd(6)} ${r.slots.padEnd(7)} $${r.price_usd.toFixed(2).padStart(7)} cap $${r.cap_usd.toFixed(2).padStart(7)}  ${r.flags.join(' ')}`);
   console.log(`total $${rows.reduce((n, r) => n + r.price_usd, 0).toFixed(2)}`);

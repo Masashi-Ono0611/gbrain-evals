@@ -121,3 +121,14 @@ off, unless the owner decides otherwise before any confirmation cell. Then:
 
 The preregistration (`docs/plans/2026-10-11-cat40-next-wave/PREREG.md` on `capy/cat40-next-prereg`) records this
 decision point.
+
+## Decision (2026-10-13)
+
+Auto-approved under Garry's standing rule (2026-10-12) and relayed by GBRA-39's parent: **F5 is off in the
+confirmation, and d1b is not overridden.** Overriding a preregistered gate after seeing its result would be a one-way
+door, so the verdict stands. This record notes again that the plan never put numbers on the minimum effect or the
+per-family margin, and that the verdict doesn't depend on them.
+
+The remaining gap is that no development arm ran the exact confirmation config. One diagnostic arm fills it,
+`all-on-no-f5`, on the Part 1 head with F5's commits removed. Its comparisons are declared before cells in
+`../2026-10-13-cat40-dev-round-3/DECLARATION.md`. Whatever it shows, the confirmation's wave arm is all-on without F5.
