@@ -2,6 +2,43 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.82] - 2026-10-12
+
+### Cat 41: the scripted user answers both install arms alike; setup re-measure preregistered
+
+- **Scorer `cat41-score-v7`.** The October 12 setup TTHW's scripted user replied to the by-hand arm's closing question
+  and missed the setup arm's wording, so the arms got unequal help. v7 sends one fixed reply ("Use the defaults you
+  recommend and go ahead.") whenever an agent's turn closes by asking for input or gbrain is not registered yet, at
+  most 3 per run, in every install arm; counts closing and unanswered closing questions; detects `gbrain setup`
+  through any gbrain launcher; and, in the consent-negative scenario, counts any provider request, the unbilled model
+  list included.
+- **Re-score beside the published report.** The #136 report stands as published. Re-scored under v7, the setup arm
+  has 3 unanswered closing questions (interventions 3 by hand and 3 with setup, where v6 counted 3 and 0; the
+  faster-setup rule is still met on those transcripts) and every consent run has 1 violation. Descriptive only.
+- **Re-measure preregistered** ([preregistration](docs/benchmarks/2026-10-12-cat41-setup-remeasure-preregistration.md)):
+  the same frozen targets on a gbrain release containing gbrain#6562 and gbrain#6572, Opus 5.5 on Claude Code, n = 3
+  per cell, a new $25 ledger. Paid cells wait for that release and an amendment naming its commit.
+- **Runner errors.** Nineteen eval runners print an error's message before its stack: under load Bun sometimes printed
+  the stack without the message line (12 of 240 runs before, 0 of 480 after).
+
+## [0.10.81] - 2026-10-12
+
+### Low-hanging-fruit wave paid gates: `query` expansion follows the mode; `balanced` stays opt-in
+
+The paid gates of the low-hanging-fruit plan (#134), run at gbrain `f77f1418c` under the
+[preregistration](docs/benchmarks/2026-10-12-lhf-wave-preregistration.md)
+([report](docs/benchmarks/2026-10-12-lhf-wave.md)).
+
+- **Item 1b passes.** On `balanced`, `query` without expansion answered 451 of 470 LongMemEval-S questions in strict
+  `recall_all@5`, against 448 with expansion (+5/−2, lower bound −0.21 points). Operation latency p50 fell from
+  2,216 ms to 370 ms. gbrain's `query` now expands only when the search mode says so.
+- **Item 1's default flip does not ship.** `balanced` tied `tokenmax` on LongMemEval-S, 451 vs 451 for both `search`
+  and `query` with expansion off, so both comparisons passed. The Cat 40 Hard world M rerank-pool replay was
+  inconclusive: gold hit@5 37.0% under a 25-row pool against 37.9% under 50 over 966 calls (−0.93 points, lower bound
+  −1.55, needs above −1.0). New installs with a chat key are still recommended `tokenmax`.
+- **Tooling.** The via-operation LongMemEval driver, its analysis script with unit tests, the arm runner and the Cat 40
+  rerank-pool replay runner. Spend $13.64 of a $30 cap.
+
 ## [0.10.80] - 2026-10-12
 
 ### Cat 41: time to a working memory with `gbrain setup claude-code`
