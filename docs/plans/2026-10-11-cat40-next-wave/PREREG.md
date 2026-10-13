@@ -322,3 +322,23 @@ ledger rate of 1.108:
   inside each seed. #93's S cells were not used, because this executor doesn't open sealed outputs.
 - **Sealed digests.** They are not compiled into the harness. `check-world --world s1|s2 --digest <d>` compares each
   sealed world with the digest recorded here.
+- **Sealed worlds minted** (2026-10-13, GBRA-40 on Garry's Mac): gbrain-evals `a85e6e2997def8652996cc0386c43f78453d7150`,
+  `hard-sealed-v2`, `--scale large`, frozen knobs (knob digest `37a16085e0fbf2e92072b2e7cf00468d43451dd4fb35bb1232ebbf79d3027434`),
+  Bun 1.3.13, `--digest-only`, no redraws. The seeds stay on the Mac.
+
+  | World | Digest | Entities | Docs | Tasks |
+  |---|---|---|---|---|
+  | S1 | `561759a86819cda78184da4f22398daeee92f2ccd4b57fac89c8ed6ce6cb8fb8` | 2,880 | 55,758 | 100 |
+  | S2 | `54d6ca94860c6401653d415afbb00ed69e7aae84dd8b228e9e76355e1b3d2dc6` | 2,882 | 55,676 | 100 |
+
+- **Staging precondition (sealed).** The worlds are regenerated from the seeds at staging, with the mint command
+  without `--digest-only`. That world's digest must equal the minted digest above. On the custody VM,
+  `bun eval/runner/cat40/next-confirm.ts check-world --world s1|s2 --file <world.json> --digest <digest above>`
+  regenerates the world from its recorded seed and knobs, and compares digests; for sealed worlds `hardWorldDigest`
+  equals `sealedWorldDigest`, checked on test seed 202. A world whose digest differs is void: no slot or cell runs on
+  it, and it is escalated to Garry through GBRA-40.
+- **Runtime independence of the generators** (checked 2026-10-13 at `31c73953`, whose world-shaping code is that of
+  `a85e6e29`). Bun 1.3.13 and Bun 1.4.3 print identical digests for the sealed generator on test seed 101 at
+  `--scale large` (`1c3ee3c8…`) and on test seed 202 at 4k (`8d2a4284…`), and for the public generator on P1's base
+  (`e5cbde0b…`). #93's M base (`84f0614a…`) and the d4b base (`82b983fa…`) also reproduce under Bun 1.4.3. So
+  staging doesn't need Bun 1.3.13. The digest precondition above still decides each world.
