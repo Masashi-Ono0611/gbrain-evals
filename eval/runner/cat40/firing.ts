@@ -11,6 +11,7 @@
  *   page_status_rows                                     F3: rows carrying `page_status`
  *   known_as_rows / owner_phrase_referrer_rows           F5: card `known_as` rows; referrer rows whose page links to
  *                                                        the row's entity only through an owner phrase
+ *   names_call_ms                                        `entity` names-mode call latency (n, p50, p99) from attempts.jsonl
  *
  *   bun eval/runner/cat40/firing.ts --run <out dir> [--slot <slot dir> --gbrain-build <build dir>] [--json]
  */
@@ -29,6 +30,7 @@ export interface FiringCounts {
   page_status_rows: number;
   known_as_rows: number;
   owner_phrase_referrer_rows: number | null;
+  names_call_ms: { n: number; p50: number | null; p99: number | null };
 }
 
 /** The JSON value a tool result starts with (gbrain appends `[gbrain …]` notice lines after it); null when it starts with none. */
@@ -86,13 +88,34 @@ export function ownerPhrasePairs(slotDir: string, buildDir: string): Set<string>
   return new Set(JSON.parse(execFileSync('bun', ['-e', script], { encoding: 'utf8', maxBuffer: 256 << 20 })) as string[]);
 }
 
+/** Nearest-rank percentile of sorted values. */
+const pct = (sorted: number[], p: number) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.ceil(p * sorted.length) - 1)] : null);
+
 export function countRun(runDir: string, ownerPairs: Set<string> | null): FiringCounts {
-  const c: FiringCounts = { cells: 0, calls: {}, names_rows: 0, names_rows_with_records: 0, names_rows_with_count: 0, record_rows: 0, delivered_units: {}, page_status_rows: 0, known_as_rows: 0, owner_phrase_referrer_rows: ownerPairs ? 0 : null };
-  for (const line of readFileSync(join(runDir, 'transcripts.jsonl'), 'utf8').split('\n').filter(Boolean)) {
-    const t = JSON.parse(line) as { tools: Array<{ name: string; args: Obj; result: string }> };
-    c.cells++;
-    for (const call of t.tools) countResult(c, call.name, call.args ?? {}, call.result ?? '', ownerPairs);
+  const c: FiringCounts = { cells: 0, calls: {}, names_rows: 0, names_rows_with_records: 0, names_rows_with_count: 0, record_rows: 0, delivered_units: {}, page_status_rows: 0, known_as_rows: 0, owner_phrase_referrer_rows: ownerPairs ? 0 : null, names_call_ms: { n: 0, p50: null, p99: null } };
+  // Per-call latency lives in attempts.jsonl (tool_calls, in call order per session); arguments live in the transcript.
+  const attempts = new Map<string, Array<Array<{ name: string; ms: number }>>>();
+  const attemptsPath = join(runDir, 'attempts.jsonl');
+  if (existsSync(attemptsPath)) for (const line of readFileSync(attemptsPath, 'utf8').split('\n').filter(Boolean)) {
+    const a = JSON.parse(line) as { attempt_id: string; sessions?: Array<{ run?: { tool_calls?: Array<{ name: string; ms: number }> } }> };
+    attempts.set(a.attempt_id, (a.sessions ?? []).map(s => s.run?.tool_calls ?? []));
   }
+  const namesMs: number[] = [];
+  for (const line of readFileSync(join(runDir, 'transcripts.jsonl'), 'utf8').split('\n').filter(Boolean)) {
+    const t = JSON.parse(line) as { attempt_id?: string; tools: Array<{ session?: number; name: string; args: Obj; result: string }> };
+    c.cells++;
+    const timed = t.attempt_id ? attempts.get(t.attempt_id) : undefined;
+    const seen = new Map<number, number>();
+    for (const call of t.tools) {
+      countResult(c, call.name, call.args ?? {}, call.result ?? '', ownerPairs);
+      const k = call.session ?? 1, i = seen.get(k) ?? 0;
+      seen.set(k, i + 1);
+      const ev = timed?.[k - 1]?.[i];
+      if (call.name === 'entity' && Array.isArray(call.args?.names) && ev?.name === 'entity') namesMs.push(ev.ms);
+    }
+  }
+  namesMs.sort((a, b) => a - b);
+  c.names_call_ms = { n: namesMs.length, p50: pct(namesMs, 0.5), p99: pct(namesMs, 0.99) };
   return c;
 }
 
