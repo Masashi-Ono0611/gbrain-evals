@@ -2,6 +2,16 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.90] - 2026-10-13
+
+### Low-hanging fruit plan: published with its outcome
+
+[The plan](docs/plans/2026-10-11-low-hanging-fruit/PLAN.md) and its autoplan review record (CEO, DX and Eng phases,
+each with a native Claude Opus 5.5 and an outside GPT-6 Astra reviewer) are published, approved by Garry on
+2026-10-12 and closed on 2026-10-13. Items 0, 1b and 2 to 5 shipped in gbrain v0.60.178.0, v0.60.188.0 and
+v0.60.205.0. The `balanced` new-install default did not ship because its Cat 40 gate was inconclusive. The measured
+verdicts are in the [wave report](docs/benchmarks/2026-10-12-lhf-wave.md).
+
 ## [0.10.89] - 2026-10-13
 
 ### Cat 41 setup on gbrain v0.60.208.0: wired recall and consent met, first push missed
