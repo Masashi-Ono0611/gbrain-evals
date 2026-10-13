@@ -18,7 +18,13 @@ import type { ContainerResult, Effect, NEvent, StepClass, WrapperCall } from './
  * shell command segments with any gbrain-named launcher; a scenario with `anyProviderRequest` counts unbilled
  * provider requests (model lists) against consent as `egress`. Gate scenarios score as in v6.
  */
-export const SCORER_VERSION = 'cat41-score-v7';
+/**
+ * v8 (2026-10-13, the fourth setup measurement): install scenarios accept any unambiguous form of the expected date;
+ * an agent's save-and-recall smoke fact counts as its exempt install check (`INSTALL_CHECK_RE`); the opt-in
+ * `fresh_install_to_first_push_pref` asks for a world-visible preference instead of a locker code. Gate scenarios
+ * score as in v7.
+ */
+export const SCORER_VERSION = 'cat41-score-v8';
 
 /** A gbrain call that has not finished after this long is counted as hung. */
 export const HANG_MS = 90_000;
