@@ -107,14 +107,19 @@ export interface JudgeProvenance {
   seed?: number;
 }
 
+/**
+ * How `SourceTreeIdentity.sha256` was computed. `git-index-blob-v1` (written since v0.10.92): sha256 over
+ * (name, git blob id) of every file, with blob ids from git's index for files `git status` reports unchanged and
+ * computed from disk for the rest. `legacy-full-read`: sha256 over (name, size, bytes) of every file read from disk;
+ * receipts written before v0.10.92 carry no `scheme` and use it. Hashes from different schemes are not comparable.
+ */
+export type SourceTreeScheme = 'legacy-full-read' | 'git-index-blob-v1';
+
 export interface SourceTreeIdentity {
-  /**
-   * sha256 over (name, git blob id) of every file in `git ls-files -co --exclude-standard`, as it sits on disk.
-   * Files `git status` reports as matching the index use the index's blob id; changed and untracked files are read
-   * and hashed as git blobs. Before v0.10.92 the hash ran over (name, size, bytes), so values from earlier receipts
-   * are not comparable.
-   */
+  /** sha256 over every file in `git ls-files -co --exclude-standard` as it sits on disk, computed as `scheme` says. */
   sha256: string | null;
+  /** Absent on receipts written before v0.10.92; read it with `sourceTreeScheme`. */
+  scheme?: 'git-index-blob-v1';
   files: number;
   git_head: string | null;
   /** True when the working tree differs from git_head; the hash covers the dirty content. */
@@ -268,6 +273,11 @@ export function validateStoredReceipt(obj: unknown): string[] {
   return v;
 }
 
+/** The scheme a stored source-tree hash used; a receipt without one used the legacy full read. */
+export function sourceTreeScheme(tree: SourceTreeIdentity): SourceTreeScheme {
+  return tree.scheme ?? 'legacy-full-read';
+}
+
 const nonNegative = (value: unknown) => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 const nullableString = (value: unknown) => value === null || typeof value === 'string';
 
@@ -279,6 +289,7 @@ function validateV2(r: Record<string, unknown>, requireAll: boolean): string[] {
   const product = execution?.product;
   if (check('execution') && (!tree || !nullableString(tree.sha256) || !nonNegative(tree.files) || !nullableString(tree.git_head)
     || !(tree.dirty === null || typeof tree.dirty === 'boolean'))) v.push('v2 execution.source_tree requires sha256, files, git_head, dirty');
+  if (tree && !(tree.scheme === undefined || tree.scheme === 'git-index-blob-v1')) v.push('v2 execution.source_tree.scheme must be git-index-blob-v1 or absent (legacy full read)');
   if (check('execution') && (!product || !['gbrain', 'gbrain-cues', 'gbrain-reader'].includes(product.package as string) || !nullableString(product.declared_pin)
     || !nullableString(product.declared_sha) || !nullableString(product.version) || !nullableString(product.package_sha256)
     || !nullableString(product.loaded_git_head))) v.push('v2 execution.product requires package, declared_pin, declared_sha, version, package_sha256, loaded_git_head');
@@ -324,12 +335,12 @@ export function sourceTreeIdentity(root = REPO_ROOT): SourceTreeIdentity {
   const key = `tree:${root}`;
   if (identityCache.has(key)) return identityCache.get(key) as SourceTreeIdentity;
   const listing = gitText(root, ['ls-files', '-z', '-co', '--exclude-standard']);
-  if (listing === null) return { sha256: null, files: 0, git_head: null, dirty: null, error: 'not a git checkout; source tree not hashed' };
+  if (listing === null) return { sha256: null, scheme: 'git-index-blob-v1', files: 0, git_head: null, dirty: null, error: 'not a git checkout; source tree not hashed' };
   const files = [...new Set(listing.split('\0').filter(Boolean))].sort();
   const staged = gitText(root, ['ls-files', '-z', '-s'], false);
   const status = gitText(root, ['status', '-z', '--porcelain=v1', '--untracked-files=all'], false);
   const head = gitText(root, ['rev-parse', 'HEAD']);
-  if (staged === null || status === null) return { sha256: null, files: files.length, git_head: head, dirty: null, error: 'git index or status unreadable; source tree not hashed' };
+  if (staged === null || status === null) return { sha256: null, scheme: 'git-index-blob-v1', files: files.length, git_head: head, dirty: null, error: 'git index or status unreadable; source tree not hashed' };
   const indexBlob = new Map<string, string>();
   for (const entry of staged.split('\0').filter(Boolean)) {
     const [meta, name] = entry.split('\t');
@@ -353,7 +364,7 @@ export function sourceTreeIdentity(root = REPO_ROOT): SourceTreeIdentity {
     }
     hash.update(`${Buffer.byteLength(name)}:${name}:${blob ?? 'deleted'}:`);
   }
-  const identity: SourceTreeIdentity = { sha256: hash.digest('hex'), files: files.length, git_head: head, dirty: status !== '' };
+  const identity: SourceTreeIdentity = { sha256: hash.digest('hex'), scheme: 'git-index-blob-v1', files: files.length, git_head: head, dirty: status !== '' };
   identityCache.set(key, identity);
   return identity;
 }

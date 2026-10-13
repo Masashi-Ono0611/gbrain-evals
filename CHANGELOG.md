@@ -14,14 +14,19 @@ cached for the rest of the process.
 
 - The hash now takes each file's blob id from git's index when `git status` reports the file unchanged, and reads
   and hashes (as a git blob) only changed and untracked files: 0.1 to 0.4 s warm, 0.6 to 0.7 s cold under load.
-  `execution.source_tree.sha256` is now sha256 over (name, git blob id), so its values are not comparable with
-  receipts written before v0.10.92. Nothing compared them. For the evals tree and for clones with modified,
-  untracked, deleted, staged, renamed, touched and copied files, the result matched a full read of every file.
+  For the evals tree and for clones with modified, untracked, deleted, staged, renamed, touched and copied files,
+  the result matched a full read of every file.
+- The field is versioned. New receipts write `execution.source_tree.scheme: "git-index-blob-v1"` next to `sha256`,
+  which is sha256 over (name, git blob id). Receipts written before v0.10.92 have no `scheme`; readers
+  (`sourceTreeScheme`) treat them as `legacy-full-read`, sha256 over (name, size, bytes). The validator accepts
+  `git-index-blob-v1` or no scheme and rejects anything else. Hashes from the two schemes are not comparable, and
+  nothing in the repository compares them. A test pins both: a new receipt carries the scheme, and a legacy receipt
+  without one still validates and loads.
 - A failed or interrupted git call returns an identity with an error and is no longer cached. A new test makes
   `git status` fail once and checks that the next call hashes the tree.
 
 No assertion or timeout was loosened. A forced probe (cold page cache plus six CPU hogs, the targeted receipts
-command, default timeout) failed 3 of 3 trials before the fix and passed 3 of 3 after.
+command, default timeout) failed all 6 trials before the fix and passed all 9 after.
 
 ## [0.10.91] - 2026-10-13
 

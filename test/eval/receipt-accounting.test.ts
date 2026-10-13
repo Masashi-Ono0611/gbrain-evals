@@ -22,6 +22,7 @@ import {
   latencySummary,
   productIdentity,
   sourceTreeIdentity,
+  sourceTreeScheme,
   upgradeReceipt,
   validateStoredReceipt,
   type Receipt,
@@ -217,6 +218,26 @@ describe('receipt schema v2', () => {
     expect(product.package_sha256).toMatch(/^[a-f0-9]{64}$/);
     expect(validateStoredReceipt(upgraded)).toEqual([]);
     expect(upgradeReceipt(upgraded)).toEqual(upgraded);
+  });
+
+  test('new receipts record the git-index-blob-v1 scheme; a legacy receipt without one still validates and loads', () => {
+    const fresh = upgradeReceipt(makeReceipt()).execution!.source_tree;
+    expect(fresh.scheme).toBe('git-index-blob-v1');
+    expect(sourceTreeScheme(fresh)).toBe('git-index-blob-v1');
+    const upgraded = upgradeReceipt(makeReceipt());
+    const legacy: Receipt = { ...upgraded, execution: { ...upgraded.execution!, source_tree: { sha256: 'a'.repeat(64), files: 12, git_head: 'b'.repeat(40), dirty: false } } };
+    expect(validateStoredReceipt(legacy)).toEqual([]);
+    expect(sourceTreeScheme(legacy.execution!.source_tree)).toBe('legacy-full-read');
+    const dir = mkdtempSync(join(tmpdir(), 'receipt-legacy-'));
+    try {
+      const path = join(dir, 'receipt.json');
+      writeFileSync(path, JSON.stringify(legacy));
+      const loaded = loadReceipt(path);
+      expect(loaded).toEqual(legacy);
+      expect(sourceTreeScheme(loaded.execution!.source_tree)).toBe('legacy-full-read');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+    const unknown = { ...legacy, execution: { ...legacy.execution!, source_tree: { ...legacy.execution!.source_tree, scheme: 'other' } } };
+    expect(validateStoredReceipt(unknown)).toContain('v2 execution.source_tree.scheme must be git-index-blob-v1 or absent (legacy full read)');
   });
 
   test('the source-tree hash covers uncommitted edits', () => {
