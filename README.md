@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.85 (`VERSION`) |
+| This repository | gbrain-evals v0.10.86 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except two: the Cat 40 Hard row's, which shipped after it
@@ -302,6 +302,12 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-13: Cat 41 setup re-measure; repository row names v0.10.86
+
+gbrain-evals v0.10.86. On gbrain v0.60.203.0 setup still misses wired recall (67.8 s against 60 s), first push (0/3)
+and consent, and meets the faster-setup threshold as scored (26.5%) but not on reading (19%, a frozen date-rule miss)
+([report](docs/benchmarks/2026-10-13-cat41-setup-remeasure.md)). The repository row names v0.10.86 (was v0.10.85).
 
 ### 2026-10-13: Memory proof wave 2 results; repository row names v0.10.85
 
