@@ -280,6 +280,8 @@ ledger rate of 1.108:
   before any confirmation cell, and its result is recorded below. If it is clearly worse than all-on by the
   declaration's definition, that is recorded here as a known limitation. Either way, the wave arm stays all-on
   without F5.
+  *Superseded 2026-10-13, before any cell:* the owner restored F5 ("F5 restored by owner override" below), so the
+  wave config is now development's all-on, which rounds 1 and 2 ran.
 - **F5's links reached agents in development only through F1's record rows** (d1b record). Without F5, documents
   that name an account only by an owner phrase can't appear among that account's records.
 - **Intervals are conditional on the two worlds per generator.** Seeds are not resampled.
@@ -288,6 +290,14 @@ ledger rate of 1.108:
   control (success −0.5 pp [−3.8, +2.8]) and below pooled all-on (success −5.3 pp [−9.5, −1.3], wrong values +4.8 pp
   [+1.5, +8.5]), with the loss concentrated in H4 (−20.0 pp) and in Sonnet (−10.5 pp). So the confirmation tests a
   wave that development measured at about the control's level, not all-on's +4.8 pp. The arm does not change.
+  *Superseded 2026-10-13, before any cell:* this measurement motivated the owner's override, and the wave arm is now
+  all-on with F5. The round 3 result stands as a record.
+- **The wave arm was chosen after seeing development results.** F5 failed its preregistered d1b gate, and the owner
+  restored it after seeing round 3. All-on's development gain (+4.8 pp success, −4.5 pp wrong values against control,
+  rounds 1+2) is in-sample on World M, and the arm was picked partly because of it. The four confirmation worlds are
+  untouched by that choice, so they test it fairly, but the development numbers are not independent support.
+- **The tested build may not ship.** F5 ships only if its precision check on Garry's brain passes ("Ship condition
+  for F5" below). If it fails, the confirmation describes a build that did not ship as tested.
 
 ## Recorded before cells
 
@@ -380,3 +390,28 @@ ledger rate of 1.108:
   "Known limitations". The wave arm stays all-on without F5. Firing: served instructions are identical to all-on's;
   known_as and owner-phrase rows are 0, and the share of names rows carrying records falls from about 82% to 60%.
   Spend: round 3 $187.20 of its $228.19 cap; development program $1,518.50 of $1,777.15.
+- **F5 restored by owner override** (2026-10-13, before any confirmation cell). Garry's words, 2026-10-13: "approve
+  all", in reply to GBRA-39's parent's question offering (A) keep F5 off or (B) restore F5, with round 3's evidence
+  attached. He chose (B).
+  - **This is a gate changed after seeing development results, approved by the owner.** F5's d1b gate failed
+    (`docs/benchmarks/2026-10-13-cat40-dev-d1b/`: seen share +0.2 pp [−3.3, +3.6], cells 24 better / 23 worse, sign
+    test p = 1.0). That verdict is unchanged as a record. D2 ("off, no override") is reversed by this decision.
+  - **The evidence that motivated it** is the round 3 diagnostic above: without F5, all-on's keys are level with the
+    pooled control and clearly worse than pooled all-on (success −5.3 pp [−9.5, −1.3], wrong values +4.8 pp
+    [+1.5, +8.5], H4 −20.0 pp). F5 alone moves nothing (f5 vs control +0.7 pp [−1.3, +2.8]), but with the other keys
+    on it carries all-on's H4 gain.
+  - **New wave arm.** All-on exactly as development rounds 1 and 2: `--gbrain-config` as listed under "Arm configs"
+    plus `--gbrain-build-config mentions.owner_phrases=true`, on F5-on slots built from the wave build. The wave
+    build becomes the Part 1 head with F5 restored; its SHA and `src/` difference are recorded below before any cell.
+    This replaces "Arm configs: gbrain-wave" above (no build config, F5 off) and the F5-removed wave build
+    `a3384b989` recorded above. Baseline, fs and oracle are unchanged.
+  - **Gate 3 changes with it.** Wave slots must hold at least one owner-phrase link (the runner's zero-link refusal
+    stops an F5-on slot that holds none); baseline slots must hold 0. Every other slot check is unchanged.
+  - **Budget.** Unchanged. In development, F5-on and F5-off slots cost the same ($2.74 per slot on World M) and cells
+    are priced the same.
+- **Ship condition for F5** (2026-10-13, before any cell). F5 ships only if its precision check on Garry's brain
+  passes: the plan's labeled real-brain sample, run on Garry's Mac through GBRA-40, with a Wilson 95% lower bound of
+  0.85 or more (fewer than 22 derived links keeps F5 off; PLAN.md "precision bar" and "precision procedure"). The
+  check gates the Part 1 merge, not the confirmation. The confirmation runs and is reported whatever the check
+  shows. If the check fails, F5's commits come out of Part 1 before merge, and the confirmation result is reported
+  as describing a build that did not ship as tested.
