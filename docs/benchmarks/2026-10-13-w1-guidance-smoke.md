@@ -49,7 +49,7 @@ The guidance does not ship and stays parked on gbrain branch `capy/w1-guidance-p
 
 In [`2026-10-13-w1-guidance-smoke/`](2026-10-13-w1-guidance-smoke/):
 
-- `transcripts/s-o1.jsonl` … `s-f5.jsonl`: every session's stream-json transcript, and `install-*.log`, each session's plugin install. Home and run-directory paths are replaced with `<home>` and `<run-dir>`; nothing else changed, and the scrubbed transcripts score the same.
+- `transcripts/s-o1.jsonl` … `s-f5.jsonl`: every session's stream-json transcript, and `install-*.log`, each session's plugin install. Home and temp paths are rewritten to `~/` and `<tmp>/` with the repo's `scrubMachinePaths` (`eval/runner/receipt.ts`). Nothing else changed, and the scrubbed transcripts score the same.
 - `scores.txt`: `score-a12g.py` output (its `answers` field is case-sensitive and reads "North entrance" as missing; the case-insensitive check above finds all three answers in all 10 sessions).
 - `run-all.log`: the run log, with spend after each session.
 - `skillcheck.out`: the no-model skill check from the preregistration.
