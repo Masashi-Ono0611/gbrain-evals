@@ -447,3 +447,8 @@ ledger rate of 1.108:
   For this generator the file's SHA-256 is the world digest. `check-world` is rerun on the custody VM as the plan's
   step.
 
+- **F5 precision check, first attempt: not a measurement** (2026-10-13, before any cell). GBRA-40 ran the F5
+  precision sampler on a local PGLite copy of Garry's brain on his Mac. The copy was stale (CLI 0.52.1, last written
+  2026-10-10, migrated on the copy only, and its data migration did not fully converge), and the sampler refused with
+  exit 3 for fewer than 22 links (16,365 pages, 91 windows, population 0, 125 unresolved). That attempt does not
+  count as a precision result; a run on the production brain is queued. The ship condition for F5 stands.
