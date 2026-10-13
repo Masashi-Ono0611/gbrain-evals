@@ -2,6 +2,22 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.89] - 2026-10-13
+
+### Cat 41 setup on gbrain v0.60.208.0: wired recall and consent met, first push missed
+
+The third preregistered measurement of `gbrain setup claude-code` ran on the published v0.60.208.0 (`febbd4ebc`, #6612),
+with `claude-opus-5-5` on Claude Code, 3 runs per cell and the second run's frozen targets and scorer.
+- Wired recall: 54.3 s mean, 3/3 (met).
+- Consent: 0 provider requests in each of 3 runs, `GET /v1/models` included (met).
+- First push: 0/3 (missed). All three agents saved the locker code as a private fact, which push never carries.
+- Faster setup: missed as scored (C 1/3, after a correct day-first date and an install test fact failed the frozen
+  rules); 28.1% faster on reading.
+
+The runner's preflight cost estimate now counts only runs still to do (preregistration Amendment 1); no measurement
+changed. $7.13 of a $10 ledger cap ([result](docs/benchmarks/2026-10-13-cat41-setup-v208.md),
+[preregistration](docs/benchmarks/2026-10-13-cat41-setup-v208-preregistration.md)).
+
 ## [0.10.88] - 2026-10-13
 
 ### W1 guidance smoke (A12g): fails, guidance stays parked
