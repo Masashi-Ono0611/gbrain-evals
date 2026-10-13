@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.86, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.88, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -81,7 +81,7 @@ gap does not isolate the effect of a graph alone.
 | Does useful memory arrive at the right moment in a conversation? | [Memory conformance](benchmarks/2026-06-12-brainbench-memory.md) |
 | Where does a small decision model (TypeSafe Jev) help gbrain triage, rerank, prune, abstain or spot contradicting facts, and where does it hurt? | [September 30 System One v1 slots](benchmarks/2026-09-30-system-one-jev.md) |
 | Does gbrain answer questions about long conversations as well as a memory-bank server with background extraction and reflection, at lower cost per correct answer? | [Sealed BEAM results, October 9: gbrain combined is ahead by 2.6 points (lower bound +0.9); cheaper at 20 reads per stored conversation, not at 200](benchmarks/2026-10-09-memory-proof-wave-sealed-results.md) |
-| Which memory proof wave ideas did gbrain ship, keep off or make opt-in: interleaved supersession candidates, per-model supersession thresholds, pinned questions, entity-anchored query retrieval and the facts arm in query? | [October 5 gbrain decision records, mirrored from gbrain #6066](benchmarks/2026-10-05-memory-proof-wave-gbrain-verdicts.md) |
+| Which memory proof wave ideas did gbrain ship, keep off or make opt-in: interleaved supersession candidates, per-model supersession thresholds, pinned questions, entity-anchored query retrieval and the facts arm in query? | [October 5 gbrain decision records, mirrored from gbrain #6066](benchmarks/2026-10-05-memory-proof-wave-gbrain-verdicts.md); [October 13 W1 guidance smoke (A12g)](benchmarks/2026-10-13-w1-guidance-smoke.md) ([preregistration](benchmarks/2026-10-13-w1-guidance-smoke-preregistration.md)): with the gbrain plugin installed natively, Opus 5.5 passed 2 of 5 sessions and Fable 5.1 5 of 5 and no session loaded a skill, so the `recall` `question` guidance stays parked |
 | Which embedder and reranker should a gbrain brain use, and what does each cost and send off the machine? | [October 6 embedding-provider matrix](benchmarks/2026-10-06-embedding-matrix.md) ([preregistration](benchmarks/2026-10-06-embedding-matrix-preregistration.md)) |
 | Does code search find a function from a description that never names it, and does a code embedder help? | [October 6 Cat 21 paraphrase questions](benchmarks/2026-10-06-cat21-paraphrase.md) ([preregistration](benchmarks/2026-10-06-cat21-paraphrase-preregistration.md)) |
 | On today's frontier models, does the takes-bootstrap classifier avoid attributing someone else's claims to the page holder? | [October 6 frontier rerun](benchmarks/2026-10-06-takes-bootstrap-frontier.md) ([preregistration](benchmarks/2026-10-06-takes-bootstrap-frontier-preregistration.md)) |
@@ -208,6 +208,12 @@ procedure with documented missing pieces; it is not the current refresh command.
 
 "Protocols and preregistrations" gained the [third Cat 41 setup measurement's preregistration](benchmarks/2026-10-13-cat41-setup-v208-preregistration.md),
 on gbrain v0.60.208.0 with the second run's frozen targets and scoring.
+
+### 2026-10-13: W1 guidance smoke row
+
+gbrain-evals v0.10.88 (the opening names it; was v0.10.86, since v0.10.87 did not update it). The memory proof wave row
+gained the [October 13 W1 guidance smoke (A12g)](benchmarks/2026-10-13-w1-guidance-smoke.md) and its preregistration: the
+`recall` `question` guidance stays parked.
 
 ### 2026-10-13: Cat 41 setup re-measure results
 
