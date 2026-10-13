@@ -4944,6 +4944,22 @@
         "/cells/5/consent_violations": 0
       },
       "note": "Preregistered (2704568) Cat 41 wave 2 TTHW for gbrain setup claude-code on gbrain a618302c9 (v0.60.184.0), Claude Code with claude-opus-5-5, three runs per cell; verdict.json beside it applies the frozen targets."
+    },
+    {
+      "claim_id": "cat41-setup-tthw-rescore-v7",
+      "readme_anchor": "docs/benchmarks/2026-10-12-cat41-setup-remeasure-preregistration.md: The harness fix",
+      "artifact_path": "docs/benchmarks/2026-10-12-cat41-setup-tthw/rescore-v7.json",
+      "artifact_sha256": "1388a9716c333bb96753c2ae35079b40fa87c2c95ee97d2ad6ab03a6f44291ea",
+      "status": "covered",
+      "expected": {
+        "/scorer": "cat41-score-v7",
+        "/faster_setup_interventions_v7/manual/interventions": 3,
+        "/faster_setup_interventions_v7/setup/interventions": 3,
+        "/faster_setup_interventions_v7/setup/unanswered_input_requests": 3,
+        "/comparators/0/success_or_consent_changed": 0,
+        "/comparators/1/success_or_consent_changed": 0
+      },
+      "note": "The first setup TTHW pass (a618302c9, scored v6) re-scored with cat41-score-v7: same transcripts, new classifier; the published report and scores are unchanged."
     }
   ]
 }
