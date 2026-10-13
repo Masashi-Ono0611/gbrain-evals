@@ -2,6 +2,21 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.84] - 2026-10-13
+
+### Reranker settings on LongMemEval-S: no cheaper setting holds recall, keep the default
+
+GBRA-86 reranked frozen candidate lists for 300 stratified LongMemEval-S questions under 18 cheaper settings and the
+shipped one (50 candidates × 1,400 tokens × `rerank-2.5`), through the pinned `gbrain-defaults` shim at gbrain master
+`0832f9fe` ([preregistration and results](docs/benchmarks/2026-10-12-rerank-settings-preregistration.md)).
+
+- **No cell passes the preregistered rule.** Every 25-candidate cell loses 3 questions on strict recall@10 (the rule
+  allows 2) and none gains; 15 and 10 candidates lose 5 to 6, mostly temporal-reasoning.
+- **Nearest misses:** 25×1400 `rerank-2.5` would halve the rerank cost (−3 strict@10, nDCG +0.0008); 25×512
+  `rerank-2.5-lite` would cut it 83% (−3 strict@10, −8 strict@5).
+- **A 768-token document cap saves 1%:** conversation chunks are mostly shorter than that.
+- Clean reads 300 of 300 in every cell; spend about $6.33 of an $8 cap.
+
 ## [0.10.83] - 2026-10-12
 
 ### BEAM-1M S1: the harness reranks by default; the diverse pool and wider reading stay off
