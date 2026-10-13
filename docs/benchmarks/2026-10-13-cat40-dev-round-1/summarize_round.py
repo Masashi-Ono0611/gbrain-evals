@@ -1,7 +1,9 @@
 """Round 1 per-arm results on World M: canonical cells (last harness-clean attempt per key), paired with control on the arm's tasks,
 plus the recorded #93 M fs and gbrain cells as references. Counts only; no world values."""
 import json, collections, os, random
-R = os.path.expanduser('~/.capy/work/devprep/r1-out/r1')
+import sys
+RND = sys.argv[1] if len(sys.argv) > 1 else 'r1'
+R = os.path.expanduser(f'~/.capy/work/devprep/{RND}-out/{RND}')
 REF = os.path.expanduser('~/.capy/work/confirm/main/cells/attempts.jsonl')
 MODELS = ['claude-opus-5-5', 'claude-sonnet-5-5', 'gpt-6.1-sol']
 def canon(rows):
@@ -11,7 +13,7 @@ def canon(rows):
         out[(r['model'], r['task'])] = r
     return out
 def load(arm): return canon(json.loads(l) for l in open(f'{R}/{arm}/attempts.jsonl'))
-arms = ['control', 'all-on', 'f5', 'f1', 'f1-no-names-row', 'f2', 'f4']
+arms = [a for a in ['control', 'all-on', 'f5', 'f1', 'f1-no-names-row', 'f2', 'f4'] if os.path.exists(f'{R}/{a}/attempts.jsonl')]
 A = {a: load(a) for a in arms}
 ref_rows = [json.loads(l) for l in open(REF)]
 REFS = {'fs (#93)': canon(r for r in ref_rows if r['arm'] == 'fs'), 'gbrain (#93, 3e4ff61c)': canon(r for r in ref_rows if r['arm'] == 'gbrain-hard')}
@@ -45,7 +47,7 @@ for a in arms:
         row['vs_control_by_model_success'] = {m: row['by_model'][m]['success'] - stats(A['control'], [k for k in keys if k[0] == m])['success'] for m in MODELS}
     row['vs_fs93_pp'] = boot(A[a], REFS['fs (#93)'], keys)
     out[a] = row
-json.dump(out, open(os.path.expanduser('~/.capy/work/devprep/r1-summary.json'), 'w'), indent=1)
+json.dump(out, open(os.path.expanduser(f'~/.capy/work/devprep/{RND}-summary.json'), 'w'), indent=1)
 print(f"{'arm':16s} {'scope':6s} {'succ':>9s} {'ctrl':>9s} {'d_ctrl pp [95%]':>22s} {'wrong':>5s} {'ctrlW':>5s} {'nosub':>5s} {'H4long':>8s} {'ctlH4L':>7s} {'fs93':>8s} {'d_fs93 pp':>20s} {'usd':>7s}")
 for a, r in out.items():
     n = r['all']['n']

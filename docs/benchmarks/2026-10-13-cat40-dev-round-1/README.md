@@ -110,7 +110,7 @@ config-only world (no `status` field), so F3 did not fire on M. Tool-call mixes 
 
 ## Draft-first (preregistered firing and harm metric)
 
-Script `draft_first_r1.py`, output `r1-draft-first.json`. Firing counts `entity` names rows served in H4 cells whose
+Script `draft_first.py` (`python3 draft_first.py r1`), output `r1-draft-first.json`. Firing counts `entity` names rows served in H4 cells whose
 record list holds a draft amendment row; draft-first means a draft row precedes every executed record row (the
 d4b rule's definition). Expected sign (d4b `DECISION-RULE.md`): positive, since F1 lists records newest first and a
 config-only draft carries no `page_status`.
@@ -133,9 +133,17 @@ where the arm served a draft-first row, against control on the same model and ta
 
 With F1 alone the draft-first lists come with one more wrong-value cell than control (Opus, +1) and one fewer
 success; with all four items on (F4's in-effect governing rule served alongside the records) the same exposure
-comes with 0 wrong values. The plan's "21 of 70 M H4 items" lead with a draft; this record's world-side matcher
-(account code in the document title) finds 15 of 70 but leaves 18 items unmatched, so the served-side counts above
-are the measure; the world-side split is in `r1-draft-first.json` and is not reconciled with the plan's 21.
+comes with 0 wrong values.
+
+World-side definition, settled for rounds 1 and 2: an H4 item is draft-led when the account's contract and amendment
+documents that reference it by name, code or nickname (account page plus identity sibling, from the world's
+`references`), ordered newest document date first with ties by id, lead with a `DRAFT` amendment. This is the
+definition behind the plan's "21 of 70" (autoplan Eng rerun; re-derived in the nextwave eng-check, section 3b), and
+the script asserts 21 of 70 items (15 of 20 tasks). An earlier draft of this record matched accounts by title only,
+found 15 and left 18 items unmatched; that matcher is replaced. Served draft-first rows fall on the draft-led tasks:
+all-on 33 of its 35 served cells, f1 28 of 28, f1-no-names-row 30 of 30. On the 45 cells of draft-led tasks
+(15 tasks × 3 models): control 6 wrong values and 39 successes; all-on 0 and 45; f1 7 and 38; f1-no-names-row 8
+and 37; f5 6 and 39; f2 5 and 40; f4 7 and 38.
 
 ## `entity` names-call latency
 
@@ -193,7 +201,7 @@ From the ledger (`ledger-runs.json`, `ledger-program.json`; program cap $1,800 a
 
 Every arm finished under its cap; the program's recorded overshoot is $0.006. Round 1 came in $220.31 under its
 priced total, so the stop rule does not trigger: round 2 (control, all-on, f5, full family, priced $595.29) fits
-with $916 left under the approved total, and its all-on arm stays full-family.
+with $916 left under the approved total, and its all-on arm stays full-family. Round 2: `../2026-10-13-cat40-dev-round-2/`.
 
 ## Seed 20261031
 
@@ -206,5 +214,5 @@ plan requires it), nothing was spent on seed 20261031 in this round; its world w
 - `<arm>/`: `experiment.json`, budget receipt, `results.jsonl`, `attempts.jsonl`, served instructions and tools,
   `firing.json`, `transcripts.jsonl.gz`.
 - `slots/`: slot-build receipts and experiments for the three parallel build groups of each family.
-- `summarize_r1.py` → `r1-summary.json` (results tables); `draft_first_r1.py` → `r1-draft-first.json`. Both read
-  the pulled run directory and World M from local paths named at the top of each script.
+- `summarize_round.py r1` → `r1-summary.json` (results tables); `draft_first.py r1` → `r1-draft-first.json`. Both
+  read the pulled run directory and World M from local paths named at the top of each script.
