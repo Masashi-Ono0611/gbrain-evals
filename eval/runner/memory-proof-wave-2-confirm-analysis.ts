@@ -31,7 +31,7 @@ type Cells = Record<string, string>;
 
 function cellsOf(out: string): Cells {
   const arms: Cells = {};
-  for (const id of readdirSync(out)) {
+  for (const id of readdirSync(out).sort()) {
     const path = join(out, id, 'cell.json');
     if (!existsSync(path)) continue;
     const cell = JSON.parse(readFileSync(path, 'utf8'));
