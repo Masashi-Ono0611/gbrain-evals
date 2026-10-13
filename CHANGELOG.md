@@ -2,6 +2,22 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.93] - 2026-10-13
+
+### Reranker settings addendum: rerank-3-lite at the shipped shape cuts rerank cost 60% with no loss
+
+GBRA-86 re-ran the frozen LongMemEval-S candidate lists (300 questions) under Voyage `rerank-3` and `rerank-3-lite`,
+with a fresh reference run and per-query reranker latency ([addendum](docs/benchmarks/2026-10-13-rerank3-addendum-preregistration.md)).
+
+- **`rerank-3-lite`, 50 candidates × 1,400 tokens, passes the preregistered rule:** strict recall@10 299 → 298,
+  strict@5 288 → 289, nDCG@10 −0.0012, and rerank cost $1.51 → $0.60 per 1,000 queries (−60%). Reranker latency is
+  about the same (p50 232 → 251 ms, p95 596 → 604 ms).
+- **`rerank-3` at the same shape** passes at today's price and has the best strict@5 (291).
+- **Cutting candidates to 25 or 15** takes 8–17% off p50 latency but loses 3–5 questions on strict@10 with either
+  model, so it fails, as in 0.10.84.
+- **The reference reproduced:** fresh `rerank-2.5` calls jittered scores by up to 0.003 and flipped no question.
+- Spend about $3.74 of a $5 cap. This recommends a setting; it does not change gbrain's default.
+
 ## [0.10.92] - 2026-10-13
 
 ### Receipt source-tree hash reads only changed files
