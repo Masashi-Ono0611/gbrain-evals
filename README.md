@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.82 (`VERSION`) |
+| This repository | gbrain-evals v0.10.83 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except the Cat 40 Hard row's, which shipped
@@ -293,6 +293,13 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-12: BEAM-1M S1 fixes; repository row names v0.10.83
+
+gbrain-evals v0.10.83. The memory-qa harness now reranks by default and fails closed without the reranker (+4.5
+points strict recall at 5 on BEAM-1M dev, a harness change rather than a product change), and the S1 report records
+the diverse pool and wider reading staying off ([report](docs/benchmarks/2026-10-12-beam-1m-s1-fixes.md)). The
+repository row names v0.10.83 (was v0.10.82).
 
 ### 2026-10-12: Cat 41 scripted user v7 and setup re-measure preregistration; repository row names v0.10.82
 
