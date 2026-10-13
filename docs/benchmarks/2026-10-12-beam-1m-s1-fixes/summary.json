@@ -483,6 +483,35 @@
       },
       "usd": 3.2425
     },
+    "s3w-gpt61sol": {
+      "status": "complete",
+      "all": {
+        "n": 220,
+        "mean_score": 0.6898,
+        "all_items_met": 107
+      },
+      "answerable": {
+        "n": 198,
+        "mean_score": 0.7185,
+        "all_items_met": 98
+      },
+      "abstention": {
+        "n": 22,
+        "mean_score": 0.4318,
+        "all_items_met": 9
+      },
+      "qa_errors": 0,
+      "reused_answers": 0,
+      "stopped_at_limit": 0,
+      "input_tokens_per_answer": 14208,
+      "output_tokens_per_answer": 489,
+      "committed_wrong_detector": {
+        "all": 40,
+        "answerable": 28,
+        "abstention": 12
+      },
+      "usd": 9.1226
+    },
     "f-gpt61sol": {
       "status": "complete",
       "all": {
@@ -540,6 +569,32 @@
         "worse": 8
       }
     },
+    "gpt61sol: s3w minus s3": {
+      "score": {
+        "n": 220,
+        "a": 0.6695,
+        "b": 0.6898,
+        "delta": 0.0204,
+        "ci95": [
+          -0.007,
+          0.0465
+        ],
+        "better": 41,
+        "worse": 26
+      },
+      "all_items_met": {
+        "n": 220,
+        "a": 0.4591,
+        "b": 0.4864,
+        "delta": 0.0273,
+        "ci95": [
+          0.0045,
+          0.05
+        ],
+        "better": 21,
+        "worse": 15
+      }
+    },
     "gpt61sol: s1 minus floor": {
       "score": {
         "n": 220,
@@ -566,6 +621,20 @@
         ],
         "better": 137,
         "worse": 11
+      }
+    },
+    "gpt61sol: s3w minus floor": {
+      "score": {
+        "n": 220,
+        "a": 0.2857,
+        "b": 0.6898,
+        "delta": 0.4041,
+        "ci95": [
+          0.3685,
+          0.438
+        ],
+        "better": 147,
+        "worse": 16
       }
     },
     "sonnet55: s3 minus s1": {
@@ -677,5 +746,85 @@
       }
     }
   },
-  "spend_usd_this_measurement": 45.0003
+  "readers_paired_exploratory": {
+    "s1: sonnet55 minus gpt61sol": {
+      "score": {
+        "n": 220,
+        "a": 0.6665,
+        "b": 0.6808,
+        "delta": 0.0143,
+        "ci95": [
+          -0.0341,
+          0.0596
+        ],
+        "better": 31,
+        "worse": 19
+      },
+      "all_items_met": {
+        "n": 220,
+        "a": 0.4864,
+        "b": 0.5136,
+        "delta": 0.0273,
+        "ci95": [
+          -0.0318,
+          0.0818
+        ],
+        "better": 16,
+        "worse": 10
+      }
+    },
+    "s1: opus55 minus gpt61sol": {
+      "score": {
+        "n": 220,
+        "a": 0.6665,
+        "b": 0.6968,
+        "delta": 0.0303,
+        "ci95": [
+          -0.0024,
+          0.0696
+        ],
+        "better": 36,
+        "worse": 22
+      },
+      "all_items_met": {
+        "n": 220,
+        "a": 0.4864,
+        "b": 0.5182,
+        "delta": 0.0318,
+        "ci95": [
+          -0.0136,
+          0.0818
+        ],
+        "better": 18,
+        "worse": 11
+      }
+    },
+    "s1: opus55 minus sonnet55": {
+      "score": {
+        "n": 220,
+        "a": 0.6808,
+        "b": 0.6968,
+        "delta": 0.016,
+        "ci95": [
+          -0.0105,
+          0.0446
+        ],
+        "better": 31,
+        "worse": 25
+      },
+      "all_items_met": {
+        "n": 220,
+        "a": 0.5136,
+        "b": 0.5182,
+        "delta": 0.0045,
+        "ci95": [
+          -0.0318,
+          0.0409
+        ],
+        "better": 12,
+        "worse": 11
+      }
+    }
+  },
+  "spend_usd_this_measurement": 54.1229
 }

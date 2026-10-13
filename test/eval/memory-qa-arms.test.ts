@@ -157,7 +157,7 @@ describe('reranker fidelity', () => {
     expect(ledgerRerankRequests(ledger, other.runId, null)).toEqual({ 'voyage:rerank-2.5': 1 });
   });
 
-  const rerankRun = async (label: string, respond: (documents: string[]) => Response) => {
+  const rerankRun = async (label: string, respond: (documents: string[]) => Response, out = label) => {
     const ledger = join(tmp, `${label}.sqlite`);
     initLedger({ ledgerPath: ledger });
     const real = globalThis.fetch;
@@ -173,7 +173,7 @@ describe('reranker fidelity', () => {
     }) as never;
     try {
       const { receipt } = await runArm(parseRunArgs(['--benchmark', 'fixture', '--embed', 'hash', '--pin', 'search.reranker.enabled=true', '--pin', 'search.reranker.model=voyage:rerank-2.5',
-        '--paid', '--budget-run-id', BudgetRun.open({ runner: 'test', budgetUsd: 1, estimateUsd: 0.1, ledgerPath: ledger }).runId, '--budget-ledger', ledger, '--output', join(tmp, `${label}-out`)]));
+        '--paid', '--budget-run-id', BudgetRun.open({ runner: 'test', budgetUsd: 1, estimateUsd: 0.1, ledgerPath: ledger }).runId, '--budget-ledger', ledger, '--output', join(tmp, `${out}-out`)]));
       return { receipt, calls, fidelity: receipt.fidelity as Record<string, unknown> };
     } finally {
       globalThis.fetch = real;
@@ -206,6 +206,27 @@ describe('reranker fidelity', () => {
     expect(receipt.refusal.message).toMatch(/rerank degradation|without rerank scores/);
     expect(receipt.counts.rows).toBe(0);
     expect(receipt.fidelity.reranked_queries).toBe(0);
+  }, 120_000);
+
+  test('a refused arm resumed to completion counts reranked queries, metered requests and cost across both attempts', async () => {
+    const ok = (docs: string[]) => new Response(JSON.stringify({ object: 'list', data: docs.map((_, index) => ({ index, relevance_score: 1 - index / 100 })), model: 'rerank-2.5', usage: { total_tokens: 10 } }), { status: 200, headers: { 'content-type': 'application/json' } });
+    let served = 0;
+    let err: unknown;
+    try { await rerankRun('resume-a', docs => (++served <= 1 ? ok(docs) : new Response('{}', { status: 503 })), 'resume'); }
+    catch (e) { err = e; }
+    expect((err as DecideError).op.code).toBe('RERANKER_INACTIVE');
+    const first = JSON.parse(readFileSync(join(tmp, 'resume-out', 'receipt.json'), 'utf8'));
+    expect(first.run_status).toBe('refused');
+    expect(first.counts.rows).toBe(1);
+    const { receipt, calls, fidelity } = await rerankRun('resume-b', ok, 'resume');
+    expect(receipt.run_status).toBe('complete');
+    const rows = readFileSync(join(tmp, 'resume-out', 'rows.ndjson'), 'utf8').trim().split('\n').map(l => JSON.parse(l));
+    expect(rows.filter(r => r.rerank.state === 'reranked').length).toBe(1 + calls);
+    expect(fidelity.reranked_queries).toBe(1 + calls);
+    expect((fidelity.rerank_provider_requests as Record<string, number>)['voyage:rerank-2.5']).toBeGreaterThanOrEqual(1 + calls);
+    const attempts = receipt.attempts as Array<{ run_status: string; rows_added: number; usd: number }>;
+    expect(attempts.map(x => [x.run_status, x.rows_added])).toEqual([['refused', 1], ['complete', calls]]);
+    expect(receipt.cost_usd_all_attempts).toBeCloseTo(attempts.reduce((x, y) => x + y.usd, 0), 6);
   }, 120_000);
 
   test('the reranker is on unless the arm is keyless or says otherwise; a contradiction is refused', () => {

@@ -11,7 +11,8 @@ import { scrubMachinePaths } from '../../../eval/runner/receipt.ts';
 
 const [src, name, runIdFile] = process.argv.slice(2);
 if (!src || !name) throw new Error('usage: publish.ts <run output dir> <arm name> [<ledger run id file>]');
-const checkout = process.env.GBRAIN_CHECKOUT ?? '/workspace/gbrain';
+const checkout = process.env.GBRAIN_CHECKOUT;
+if (!checkout) throw new Error('set GBRAIN_CHECKOUT to the gbrain checkout the arms ran against, so its path is scrubbed from the published rows');
 const scrub = (v: unknown) => JSON.parse(JSON.stringify(scrubMachinePaths(v)).split(checkout).join('<gbrain checkout>'));
 const dest = join(import.meta.dir, 'arms', name);
 for (const shard of readdirSync(src).filter(d => /^shard-\d+$/.test(d)).sort()) {

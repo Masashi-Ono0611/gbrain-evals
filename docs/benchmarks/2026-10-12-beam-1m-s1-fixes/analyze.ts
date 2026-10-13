@@ -30,8 +30,8 @@ function load(dir: string) {
   const rerankRequests: Record<string, number> = {};
   for (const s of readdirSync(dir).filter(d => /^shard-\d+$/.test(d)).sort()) {
     for (const r of ndjson(join(dir, s, 'rows.ndjson.gz'))) rows.set(r.id, r);
-    const rec = JSON.parse(readFileSync(join(dir, s, 'receipt.json'), 'utf8')) as { run_status: string; cost: { usd: number } | null; fidelity?: { reranked_queries?: number; rerank_provider_requests?: Record<string, number> | null } };
-    usd += rec.cost?.usd ?? 0;
+    const rec = JSON.parse(readFileSync(join(dir, s, 'receipt.json'), 'utf8')) as { run_status: string; cost: { usd: number } | null; cost_usd_all_attempts?: number | null; fidelity?: { reranked_queries?: number; rerank_provider_requests?: Record<string, number> | null } };
+    usd += rec.cost_usd_all_attempts ?? rec.cost?.usd ?? 0;
     statuses.add(rec.run_status);
     reranked += rec.fidelity?.reranked_queries ?? 0;
     for (const [m, n] of Object.entries(rec.fidelity?.rerank_provider_requests ?? {})) rerankRequests[m] = (rerankRequests[m] ?? 0) + n;
@@ -115,11 +115,16 @@ for (const reader of ['gpt61sol', 'sonnet55', 'opus55']) {
   if (s3 && s3w) answersPaired[`${reader}: s3w minus s3`] = { score: paired(s3, s3w, score, all), all_items_met: paired(s3, s3w, met, all) };
   for (const [n, c] of [['s1', s1], ['s3', s3], ['s3w', s3w]] as const) if (c && floor) answersPaired[`${reader}: ${n} minus floor`] = { score: paired(floor, c, score, all) };
 }
+// Exploratory (not a preregistered comparison): readers on identical S1 evidence at equal 4,096-token limits.
+const readerPaired: Record<string, unknown> = {};
+for (const [x, y] of [['gpt61sol', 'sonnet55'], ['gpt61sol', 'opus55'], ['sonnet55', 'opus55']]) {
+  if (A[`s1-${x}`] && A[`s1-${y}`]) readerPaired[`s1: ${y} minus ${x}`] = { score: paired(A[`s1-${x}`], A[`s1-${y}`], score, all), all_items_met: paired(A[`s1-${x}`], A[`s1-${y}`], met, all) };
+}
 const out = {
   generated_by: 'analyze.ts', bootstrap: { clusters: 'conversation', draws: 10_000, seed: 42 },
   floor_reused: { 'f-gpt61sol': names.includes('f-gpt61sol') ? null : '2026-10-08-beam-1m-failure-analysis/arms/a1-nomem-gpt61sol' },
   retrieval: Object.fromEntries(Object.entries(R).map(([n, a]) => [n, retrieval(a)])), retrieval_paired: retrievalPaired,
-  answers: Object.fromEntries(Object.entries(A).map(([n, a]) => [n, answers(a)])), answers_paired: answersPaired,
+  answers: Object.fromEntries(Object.entries(A).map(([n, a]) => [n, answers(a)])), answers_paired: answersPaired, readers_paired_exploratory: readerPaired,
   spend_usd_this_measurement: round([...Object.values(R), ...names.filter(n => !n.startsWith('r-')).map(n => A[n])].reduce((s, a) => s + a.usd, 0)),
 };
 

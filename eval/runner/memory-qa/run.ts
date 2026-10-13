@@ -438,6 +438,8 @@ export async function runArm(a: RunArgs): Promise<{ receipt: Record<string, unkn
   const rowsPath = join(a.output, 'rows.ndjson');
   const headerPath = join(a.output, 'run-config.json');
   const done = new Set<string>();
+  type Attempt = { run_status: string; finished_at: string; rows_added: number; reranked_queries: number; rerank_provider_requests: Record<string, number> | null; embedding_deferred_pages: number; usd: number | null };
+  let priorAttempts: Attempt[] = [];
   if (existsSync(headerPath)) {
     const prior = JSON.parse(readFileSync(headerPath, 'utf8')) as { run_config_hash: string };
     if (prior.run_config_hash !== hash) throw new Error(`${a.output} holds rows from a different run configuration; use a fresh --output`);
@@ -445,7 +447,14 @@ export async function runArm(a: RunArgs): Promise<{ receipt: Record<string, unkn
       const r = JSON.parse(line) as MemoryQaRow;
       if (!r.error) done.add(r.id);
     }
+    const receiptPath = join(a.output, 'receipt.json');
+    if (existsSync(receiptPath)) {
+      const prev = JSON.parse(readFileSync(receiptPath, 'utf8')) as { run_status: string; finished_at: string; counts?: { rows: number }; attempts?: Attempt[]; fidelity?: Partial<Attempt>; cost?: { usd?: number } | null };
+      priorAttempts = prev.attempts ?? [{ run_status: prev.run_status, finished_at: prev.finished_at, rows_added: prev.counts?.rows ?? 0, reranked_queries: prev.fidelity?.reranked_queries ?? 0,
+        rerank_provider_requests: prev.fidelity?.rerank_provider_requests ?? null, embedding_deferred_pages: prev.fidelity?.embedding_deferred_pages ?? 0, usd: prev.cost?.usd ?? null }];
+    }
   }
+  const rowsBefore = existsSync(rowsPath) ? readFileSync(rowsPath, 'utf8').split('\n').filter(l => l.trim()).length : 0;
   writeFileSync(headerPath, JSON.stringify({ run_config_hash: hash, benchmark: a.benchmark, shard: a.shard }, null, 2));
 
   // Gateway: hash vectors (keyless) or the real provider through the budget ledger and the content-addressed cache.
@@ -630,13 +639,22 @@ export async function runArm(a: RunArgs): Promise<{ receipt: Record<string, unkn
   const mean = (k: keyof MemoryQaRow) => scored.length ? scored.reduce((s, r) => s + Number(r[k] ?? 0), 0) / scored.length : null;
   const retrievalScored = !!frozen || !brainless;
   const invalidReasons: string[] = [];
-  if (fidelity.embedding_deferred_pages > 0) invalidReasons.push(`${fidelity.embedding_deferred_pages} pages were saved without vectors (embedding_deferred), so vector retrieval was not what ran`);
   const expected = questions.filter(q => myConvs.includes(q.conversation)).length;
   let cost: Record<string, unknown> | null = null;
+  if (paid && rerankOn) fidelity.rerank_provider_requests = ledgerRerankRequests(paid.run.ledgerPath, paid.run.runId, paid.run.participant);
+  const attemptFidelity = { ...fidelity };
+  for (const p of priorAttempts) {
+    fidelity.reranked_queries += p.reranked_queries;
+    fidelity.embedding_deferred_pages += p.embedding_deferred_pages;
+    if (p.rerank_provider_requests) {
+      fidelity.rerank_provider_requests ??= {};
+      for (const [m, n] of Object.entries(p.rerank_provider_requests)) fidelity.rerank_provider_requests[m] = (fidelity.rerank_provider_requests[m] ?? 0) + n;
+    }
+  }
+  if (fidelity.embedding_deferred_pages > 0) invalidReasons.push(`${fidelity.embedding_deferred_pages} pages were saved without vectors (embedding_deferred), so vector retrieval was not what ran`);
   if (paid) {
     if (rerankOn) {
-      fidelity.rerank_provider_requests = ledgerRerankRequests(paid.run.ledgerPath, paid.run.runId, paid.run.participant);
-      const metered = rerankModel ? fidelity.rerank_provider_requests[rerankModel] ?? 0 : Object.values(fidelity.rerank_provider_requests).reduce((x, y) => x + y, 0);
+      const metered = rerankModel ? fidelity.rerank_provider_requests![rerankModel] ?? 0 : Object.values(fidelity.rerank_provider_requests!).reduce((x, y) => x + y, 0);
       if (metered < fidelity.reranked_queries || (fidelity.reranked_queries === 0 && allRows.length > 0)) invalidReasons.push(`the budget ledger holds ${metered} ${rerankModel ?? 'rerank'} requests for ${fidelity.reranked_queries} reranked queries`);
     }
     const summary = paid.run.close();
@@ -644,9 +662,12 @@ export async function runArm(a: RunArgs): Promise<{ receipt: Record<string, unkn
     cost = receiptCost(summary) as unknown as Record<string, unknown>;
   }
   const runStatus = refusal ? 'refused' : invalidReasons.length ? 'invalid' : allRows.length < expected ? 'partial' : 'complete';
+  const finishedAt = new Date().toISOString();
+  const attempts: Attempt[] = [...priorAttempts, { run_status: runStatus, finished_at: finishedAt, rows_added: allRows.length - rowsBefore, reranked_queries: attemptFidelity.reranked_queries,
+    rerank_provider_requests: attemptFidelity.rerank_provider_requests, embedding_deferred_pages: attemptFidelity.embedding_deferred_pages, usd: (cost?.usd as number | undefined) ?? null }];
   const receipt = {
     kind: 'memory-qa-arm', schema_version: 1, benchmark: a.benchmark, split: a.split, run_status: runStatus, invalid_reasons: invalidReasons, ...(refusal ? { refusal: refusal.op } : {}),
-    started_at: started, finished_at: new Date().toISOString(), run_config_hash: hash,
+    started_at: started, finished_at: finishedAt, run_config_hash: hash,
     product: productIdentityFor(gut), overlay: overlaySummary(gut), arm_config: a.config, search_pins: a.pins,
     retrieval_path: frozen ? `frozen ranked lists replayed from ${repoRelative(a.retrievedFrom!)}` : a.qa.context === 'none' ? 'none (no-memory reader)' : a.qa.context === 'oracle' ? 'none (oracle: every gold session)'
       : 'hybridSearch (expansion off), chunks reduced to distinct sessions',
@@ -669,7 +690,7 @@ export async function runArm(a: RunArgs): Promise<{ receipt: Record<string, unkn
       const all = allRows.flatMap(r => r.qa_receipts ?? []);
       return { schema: USAGE_RECEIPT_SCHEMA, by_role: Object.fromEntries([...new Set(all.map(r => r.role))].sort().map(role => [role, sumUsage(all.filter(r => r.role === role))])) };
     })(),
-    fidelity, cost, rows_file: 'rows.ndjson',
+    fidelity, cost, attempts, cost_usd_all_attempts: attempts.some(x => x.usd !== null) ? Math.round(attempts.reduce((x, y) => x + (y.usd ?? 0), 0) * 1e6) / 1e6 : null, rows_file: 'rows.ndjson',
   };
   writeFileSync(join(a.output, 'receipt.json'), JSON.stringify(receipt, null, 2) + '\n');
   if (refusal) throw refusal;
