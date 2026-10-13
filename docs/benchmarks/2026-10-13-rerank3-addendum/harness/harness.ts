@@ -13,7 +13,7 @@ import { HttpMemorySystem } from '../evals/eval/runner/systems/http.ts';
 import { strictSources } from '../evals/eval/runner/systems/render.ts';
 import { ndcgAtK, recallAllAtK, recallAnyAtK } from '../evals/eval/runner/metrics.ts';
 
-const W = join(process.env.HOME!, '.capy/work/gbra86');
+const W = process.env.GBRA86_WORK ?? (() => { throw new Error('set GBRA86_WORK to the work directory (gbrain/, evals/, shimcopy/, bin/, datasets/)'); })();
 const ROOT = process.env.EVAL_ROOT ?? join(W, 'run');
 const PROXY = `http://127.0.0.1:${process.env.PROXY_PORT ?? '8790'}`;
 mkdirSync(join(ROOT, 'state'), { recursive: true });

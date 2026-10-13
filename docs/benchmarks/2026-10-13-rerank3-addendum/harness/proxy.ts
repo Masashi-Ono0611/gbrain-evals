@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { estimateTokens } from '../gbrain/src/core/chunkers/token-estimate.ts';
 import { truncateUtf8 } from '../gbrain/src/core/text-safe.ts';
 
-const ROOT = process.env.EVAL_ROOT ?? join(process.env.HOME!, '.capy/work/gbra86/run');
+const ROOT = process.env.EVAL_ROOT ?? (() => { throw new Error('set EVAL_ROOT to the run directory'); })();
 const CAP_USD = Number(process.env.CAP_USD ?? '7.5');
 const PORT = Number(process.env.PROXY_PORT ?? '8790');
 for (const d of ['cache/body', 'cache/rerank', 'frozen']) mkdirSync(join(ROOT, d), { recursive: true });

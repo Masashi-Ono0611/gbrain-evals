@@ -5,7 +5,7 @@ import { CELLS_SPEC as CELLS_V1, CELLS_SPEC_R3 } from './cells-spec.ts';
 const CELLS_SPEC = process.env.CELLSET === 'r3' ? CELLS_SPEC_R3 : CELLS_V1;
 const TAG = process.env.CELLSET === 'r3' ? '-r3' : '';
 
-const ROOT = process.env.EVAL_ROOT ?? join(process.env.HOME!, '.capy/work/gbra86/run');
+const ROOT = process.env.EVAL_ROOT ?? (() => { throw new Error('set EVAL_ROOT to the run directory'); })();
 const PRICE: Record<string, number> = { 'rerank-2.5': 0.05, 'rerank-2.5-lite': 0.02, 'rerank-3': 0.05, 'rerank-3-lite': 0.02 };
 const rows = readFileSync(join(ROOT, `rows${TAG}.ndjson`), 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l));
 const calls = readFileSync(join(ROOT, `cell-calls${TAG}.ndjson`), 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l));
