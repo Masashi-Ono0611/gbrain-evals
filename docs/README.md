@@ -147,6 +147,7 @@ These documents fix a method before measuring. They publish no capability scores
 | Will a release still look better on questions nobody tuned against? | [September 29 sealed confirmation set](benchmarks/2026-09-29-sealed-confirmation-protocol.md) |
 | What end-to-end task does a 10x memory claim stand on, and what sample can show it? | [October 8 program primary preregistration (T0) and power (PW)](benchmarks/2026-10-08-program-primary-preregistration.md) |
 | What harder workload replaces T0's ceiling, and how was it calibrated? | [October 8 harder program primary preregistration (T0b), with its three calibration rounds](benchmarks/2026-10-08-program-primary-hard-preregistration.md) |
+| Does push carry a world-visible preference into a fresh Claude Code session, and does `setup` meet the other targets with an unambiguous-date rule? | [October 13 Cat 41 setup fourth-run preregistration](benchmarks/2026-10-13-cat41-setup-run4-preregistration.md) (draft, awaiting approval; a new preregistration after the [third run](benchmarks/2026-10-13-cat41-setup-v208.md), whose verdicts stand) |
 
 ## Data and methods
 
@@ -202,6 +203,12 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-13: Cat 41 setup fourth run preregistered (draft)
+
+"Protocols and preregistrations" gained the [fourth Cat 41 setup run's preregistration](benchmarks/2026-10-13-cat41-setup-run4-preregistration.md):
+a world-visible preference as the first-push item, an unambiguous-date rule and an install-check exemption for an
+agent's save-and-recall smoke fact (scorer `cat41-score-v8`), made after the third run's results without revising them.
 
 ### 2026-10-13: Cat 41 setup results on v0.60.208.0
 
