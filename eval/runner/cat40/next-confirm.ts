@@ -47,7 +47,7 @@ export const NEXT_GBRAIN_ROOTS = { wave: '/home/ubi/cat40/next-confirm-wave', ba
 export const NEXT_LABELS = { wave: 'gbrain-next-wave', baseline: 'gbrain-next-baseline' } as const;
 
 export function driftNote(harnessSha: string, date: string): string {
-  return `PREREG.md (cat40-next-wave): harness ${harnessSha} preregistered; drift is confirmation seed and program-step registration on the dev harness (scripted gbrain agent, whole-result transcripts), neither of which changes a model cell (${date})`;
+  return `PREREG.md (cat40-next-wave): harness ${harnessSha} preregistered; drift is the confirmation seed registration (schema.ts, hard.ts), the scripted gbrain agent and whole-result transcripts (hard.ts), and unused loop hooks (loop.ts) and an embedder base URL (pg-arm.ts) merged from main; none changes a model cell (${date})`;
 }
 
 export interface Step { id: string; argv: string[]; note?: string }
