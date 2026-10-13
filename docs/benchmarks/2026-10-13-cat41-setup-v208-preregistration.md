@@ -110,3 +110,17 @@ As in the second run:
 
 A harness crash is retried up to twice and otherwise reported inconclusive. A failed or partial run is published with
 the rest, and nothing is rerun to get a better time.
+
+## Amendment 1 (2026-10-13, after repeats 1 and 2, before repeat 3)
+
+- **What happened:** the runner refused the third A–E invocation before it started any session. It printed
+  `PaidArmRefusal: cat41 agent sessions spends money (estimate $7.50), but run … has only $5.73 left of its $10.00
+  budget`. The runner's preflight estimate counted every run of `--repeat 3`, $0.50 each, including the 10 runs
+  repeats 1 and 2 had already finished and that the runner skips. Only the 5 runs of repeat 3 were left to do, about
+  $2.10 at repeats 1 and 2's rate.
+- **The change:** the preflight estimate in `eval/runner/cat41-agent-operator.ts` now counts only runs without a
+  finished first attempt (`-a0/result.json`). The ledger reservation per session ($2.50, refused past the cap), the
+  $10 cap, the cells, the order, the scorer, the scenarios, the scripted user and the targets are unchanged.
+- **Why it is not a measurement change:** no file that runs inside the container, scores a run or computes the
+  verdict changed. The change is made after seeing repeats 1 and 2, so it is recorded here and pushed before repeat
+  3 starts. Repeat 3 runs as preregistered, followed by F if the ledger then shows ≤ $7.00 spent.
