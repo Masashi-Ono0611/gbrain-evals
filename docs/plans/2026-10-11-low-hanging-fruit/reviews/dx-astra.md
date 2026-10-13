@@ -2,7 +2,7 @@ INPUT: dx 4009e57952e0b644ff7168bfb86e5b0bbfbd0c156328abe7bb294511b9f627df
 
 Revise before implementation. The default-mode change lacks a quality gate for the main agent read path, and the proposed upgrade-consent behavior cannot be delivered by adding a behavior-change table row. Four further gaps affect what agents are told, what new installations actually save, and whether the new diagnostics reach a machine-readable interface.
 
-I read the supplied review prompt through EOF and verified the implementation file's SHA-256. References below are to `/workspace/gbrain` unless explicitly prefixed with `/workspace/gbrain-evals`. This was a static review: no paid calls, tests, or repository changes.
+I read the supplied review prompt through EOF and verified the implementation file's SHA-256. References below are to `gbrain` unless explicitly prefixed with `gbrain-evals`. This was a static review: no paid calls, tests, or repository changes.
 
 ### F1 — High: Item 1 changes ordinary search ranking; counting query calls does not waive its quality gate
 
@@ -30,7 +30,7 @@ Name the first-run bundle and post-upgrade banner explicitly in item 1's scope. 
 
 ### F5 — Medium: The ID-saving measurement targets starter, while new installations use full
 
-The largest advertised row saving disappears on the normal newly installed surface under item 2's own compatibility rule. New registrations deliberately pin `full` (`src/core/mcp-registration.ts:17-24`), whereas Cat 40's arm uses starter (`/workspace/gbrain-evals/eval/runner/cat40/gbrain-arm.ts:2-8`; the runner's default is also recorded at `/workspace/gbrain-evals/eval/runner/cat40-model-ladder.ts:745`). Full leaves fetch callable; starter omits it through its membership sets (`src/mcp/surface.ts:91-110`; `src/core/minions/tools/brain-tool-allowlist.ts:17-44`). Consequently, default full users retain the IDs and receive only the score-formatting part of the saving. A successful starter replay cannot establish a 10–15% reduction for the default installation.
+The largest advertised row saving disappears on the normal newly installed surface under item 2's own compatibility rule. New registrations deliberately pin `full` (`src/core/mcp-registration.ts:17-24`), whereas Cat 40's arm uses starter (`gbrain-evals/eval/runner/cat40/gbrain-arm.ts:2-8`; the runner's default is also recorded at `gbrain-evals/eval/runner/cat40-model-ladder.ts:745`). Full leaves fetch callable; starter omits it through its membership sets (`src/mcp/surface.ts:91-110`; `src/core/minions/tools/brain-tool-allowlist.ts:17-44`). Consequently, default full users retain the IDs and receive only the score-formatting part of the saving. A successful starter replay cannot establish a 10–15% reduction for the default installation.
 
 Pin and record both callable and advertised surfaces in the measurement recipe, and label the ID reduction as starter-specific. Add a keyless full-surface payload/token comparison so the report states the benefit new users actually get, separately from the starter benefit. Retain the deep-research compatibility rule; do not narrow registrations to manufacture savings. If the paid run remains starter-only, bound its cost verdict to starter and do not generalize it to full installations.
 
