@@ -133,6 +133,16 @@ describe('scorer on hand-built gold', () => {
     expect(r.out_of_scope.length).toBe(1);
     expect(r.counted.map(c => c.slug)).toEqual([t.gone_slugs[0]]);
   });
+
+  test('a query fact row is tagged with its page_slug, so a retained copy is out of scope and a purged one still counts (39-8)', () => {
+    const t = ledger.targets.find(x => x.remain_slugs.length)!;
+    const row = (slug: string) => ({ result_type: 'fact', fact_id: '1', page_slug: slug, chunk_text: `Saved fact: ${t.claim}` });
+    const items = itemsOf([row(t.remain_slugs[0]), row(t.gone_slugs[0])]);
+    expect(items.map(i => i.slug)).toEqual([t.remain_slugs[0], t.gone_slugs[0]]);
+    const r = probeRecoveries(t, [{ family: 'partial', surface: 'local:query', items }]);
+    expect(r.out_of_scope.length).toBe(1);
+    expect(r.counted.map(c => c.slug)).toEqual([t.gone_slugs[0]]);
+  });
 });
 
 describe('deliberately broken adapters fail the category', () => {

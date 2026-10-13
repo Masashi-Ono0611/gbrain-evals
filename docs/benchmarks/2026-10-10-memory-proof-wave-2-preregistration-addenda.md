@@ -854,3 +854,11 @@ Every counted cell ran at gbrain `71b6d85bce8bf80aacec2dffe96e29cf0202c8d2`, and
 
 - Every ledger is mirrored to the integrator's primary machine under `mpw-ledgers/wave2/confirm/`, along with the BEAM-100K and BEAM-1M custody copies, those groups' re-judge outputs and the analysis. All 43 files' SHA-256 values match. BEAM-100K and BEAM-1M publish aggregates only.
 - All 20 VMs of the re-tune, the smoke and the confirmation are destroyed and recorded in their stages' `VMS.md`, and none of the owner's VMs remain.
+
+## Main merged after confirmation (October 13, 2026)
+
+`main` was merged into this branch after every confirmation cell and re-judge had finished.
+
+- **Ids.** The merge moves `package.json`'s declared gbrain pin to `77cf8e111`. Every cell id and store id records that pin under `pins.gbrain.declared_pin`, so re-planning any wave-2 spec on the merged tree gives new ids. The published cells keep the ids they ran under, and each receipt records its harness commit.
+- **Flaky test fixed.** The merge brings #130's deterministic extraction order for `test_facts_extraction_and_lanes`. That fixes the stub race noted in the adaptive W5 pin addendum.
+- **No measured row changes.**

@@ -2,6 +2,462 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.84] - 2026-10-13
+
+### Reranker settings on LongMemEval-S: no cheaper setting holds recall, keep the default
+
+GBRA-86 reranked frozen candidate lists for 300 stratified LongMemEval-S questions under 18 cheaper settings and the
+shipped one (50 candidates × 1,400 tokens × `rerank-2.5`), through the pinned `gbrain-defaults` shim at gbrain master
+`0832f9fe` ([preregistration and results](docs/benchmarks/2026-10-12-rerank-settings-preregistration.md)).
+
+- **No cell passes the preregistered rule.** Every 25-candidate cell loses 3 questions on strict recall@10 (the rule
+  allows 2) and none gains; 15 and 10 candidates lose 5 to 6, mostly temporal-reasoning.
+- **Nearest misses:** 25×1400 `rerank-2.5` would halve the rerank cost (−3 strict@10, nDCG +0.0008); 25×512
+  `rerank-2.5-lite` would cut it 83% (−3 strict@10, −8 strict@5).
+- **A 768-token document cap saves 1%:** conversation chunks are mostly shorter than that.
+- Clean reads 300 of 300 in every cell; spend about $6.33 of an $8 cap.
+
+## [0.10.83] - 2026-10-12
+
+### BEAM-1M S1: the harness reranks by default; the diverse pool and wider reading stay off
+
+Wave 3's S1 measured the three fixes the BEAM-1M failure analysis ranked, on the BEAM-1M dev split with Opus 5.5,
+Sonnet 5.5 and gpt-6.1-sol ([report](docs/benchmarks/2026-10-12-beam-1m-s1-fixes.md), preregistered with two
+amendments).
+
+- **The memory-qa harness reranks by default and fails closed** (`RERANKER_INACTIVE`) when a query is not reranked.
+  At gbrain master that raises strict recall at 5 from 46 to 55 of 198 (+4.5 points, [1.5, 8.1]). This is a harness
+  change, not a product change: BEAM-1M numbers from the old harness (reranker off) are not directly comparable.
+- **`search.diverse_pool_depth=100`** (gbrain#6568, shipped off): strict recall at 10 +3.5 [0.0, 6.6], answers within
+  ±0.4 points per reader. Two of three preregistered flip rules fail, so the default stays off.
+- **Reading 10 turn groups instead of 5:** answers +2.0 [-0.7, 4.7] for gpt-6.1-sol, with abstention down from 63.6%
+  to 43.2%; the default stays 5.
+- **Readers on identical evidence:** Opus 5.5 69.7%, Sonnet 5.5 68.1%, gpt-6.1-sol 66.7%, not distinguished; no-memory
+  floors 30.0%, 32.0% and 28.6%.
+- Spend $55.45 of a $60 cap.
+
+## [0.10.82] - 2026-10-12
+
+### Cat 41: the scripted user answers both install arms alike; setup re-measure preregistered
+
+- **Scorer `cat41-score-v7`.** The October 12 setup TTHW's scripted user replied to the by-hand arm's closing question
+  and missed the setup arm's wording, so the arms got unequal help. v7 sends one fixed reply ("Use the defaults you
+  recommend and go ahead.") whenever an agent's turn closes by asking for input or gbrain is not registered yet, at
+  most 3 per run, in every install arm; counts closing and unanswered closing questions; detects `gbrain setup`
+  through any gbrain launcher; and, in the consent-negative scenario, counts any provider request, the unbilled model
+  list included.
+- **Re-score beside the published report.** The #136 report stands as published. Re-scored under v7, the setup arm
+  has 3 unanswered closing questions (interventions 3 by hand and 3 with setup, where v6 counted 3 and 0; the
+  faster-setup rule is still met on those transcripts) and every consent run has 1 violation. Descriptive only.
+- **Re-measure preregistered** ([preregistration](docs/benchmarks/2026-10-12-cat41-setup-remeasure-preregistration.md)):
+  the same frozen targets on a gbrain release containing gbrain#6562 and gbrain#6572, Opus 5.5 on Claude Code, n = 3
+  per cell, a new $25 ledger. Paid cells wait for that release and an amendment naming its commit.
+- **Runner errors.** Nineteen eval runners print an error's message before its stack: under load Bun sometimes printed
+  the stack without the message line (12 of 240 runs before, 0 of 480 after).
+
+## [0.10.81] - 2026-10-12
+
+### Low-hanging-fruit wave paid gates: `query` expansion follows the mode; `balanced` stays opt-in
+
+The paid gates of the low-hanging-fruit plan (#134), run at gbrain `f77f1418c` under the
+[preregistration](docs/benchmarks/2026-10-12-lhf-wave-preregistration.md)
+([report](docs/benchmarks/2026-10-12-lhf-wave.md)).
+
+- **Item 1b passes.** On `balanced`, `query` without expansion answered 451 of 470 LongMemEval-S questions in strict
+  `recall_all@5`, against 448 with expansion (+5/−2, lower bound −0.21 points). Operation latency p50 fell from
+  2,216 ms to 370 ms. gbrain's `query` now expands only when the search mode says so.
+- **Item 1's default flip does not ship.** `balanced` tied `tokenmax` on LongMemEval-S, 451 vs 451 for both `search`
+  and `query` with expansion off, so both comparisons passed. The Cat 40 Hard world M rerank-pool replay was
+  inconclusive: gold hit@5 37.0% under a 25-row pool against 37.9% under 50 over 966 calls (−0.93 points, lower bound
+  −1.55, needs above −1.0). New installs with a chat key are still recommended `tokenmax`.
+- **Tooling.** The via-operation LongMemEval driver, its analysis script with unit tests, the arm runner and the Cat 40
+  rerank-pool replay runner. Spend $13.64 of a $30 cap.
+
+## [0.10.80] - 2026-10-12
+
+### Cat 41: time to a working memory with `gbrain setup claude-code`
+
+The wave 2 measurement of `gbrain setup claude-code` on gbrain v0.60.184.0 (`a618302c9`), with real Claude Code
+sessions on Opus 5.5, three runs per cell, against targets frozen before any paid session
+([report](docs/benchmarks/2026-10-12-cat41-setup-tthw.md),
+[preregistration](docs/benchmarks/2026-10-12-cat41-setup-tthw-preregistration.md)).
+
+- **Wired recall missed:** 3/3 correct, 83.8 s mean against the 60 s target (the documented path on v0.60.130.0 was
+  98.8 s).
+- **First push missed, 0/3:** the SessionStart hook prints nothing while Claude Code is still starting gbrain's
+  server, so no fresh session saw the remembered item without a tool call.
+- **Faster-setup threshold met as scored:** 35% lower median than the by-hand path on the same release. Only the
+  by-hand runs got a scripted reply; without that session the gap is 23%, under the 25% threshold. Both are reported.
+- **Consent negatives not met as written:** no capture, no unrequested fact write and no paid request, but every run's
+  `gbrain doctor` sent one unbilled `GET /v1/models` with the user's key.
+- **Harness:** five named-only Claude Code scenarios (the release-gate `all` set is unchanged), scorer v6 (re-scoring
+  the published re-baseline gives identical scores) and a recorded `--preregistration` attestation. Spend $8.37 of a
+  $25 cap.
+
+## [0.10.79] - 2026-10-12
+
+### Cat 40 warm boot waits for gbrain's persistence drain; D2/D4 smoke records
+
+- **Harness fix.** gbrain answers tool calls while it is still draining queued persistence effects. The Cat 40 warm
+  boot treated the first answer as the end of the drain, stopped the server and snapshotted the slot: one master slot
+  was saved with 5,081 effects still queued. `eval/runner/cat40/gbrain-arm.ts` now holds the server until gbrain
+  reports no drain in progress; the rebuilt slot has 0 queued.
+- **D2/D4 smoke** ([verdict](docs/benchmarks/2026-10-12-d2d4-smoke/VERDICT.md), preregistered with one amendment
+  written before any cell). D2's `hidden_tool_content` notice passes: gpt-6.1-sol 10/10 on the branch against 1/10 on
+  master, Opus 5.5 and Sonnet 5.5 10/10 (all at the ceiling, so the smoke cannot rank them), 0 leaks, 0 unsafe writes,
+  0 `unknown_tool` answers after a notice. D4's `grant_blocked_operations` is not exercised by Cat 40's stdio arm, as
+  preregistered. Spend $3.30 of an $8 cap.
+
+## [0.10.78] - 2026-10-12
+
+### Retire the Cat 40 v1 success headline
+
+The README's Cat 40 row reported 95.6% success for gbrain and for plain files on five frontier models. gbrain ran
+without its reranker in all 500 of those cells (gbrain-evals #110), and the world is at its ceiling, so a rerun could
+only confirm parity. The claim is retired without a rerun.
+
+- **Kept:** the permission result, 0 of 100 finance-only leaks into the agent's context, which does not depend on
+  reranking.
+- **Retired:** the frontier tie and the older six-model lead (75.7% against 72.8%), on the README and as the current
+  reading of the [Cat 40 report](docs/benchmarks/2026-10-02-model-ladder.md#retired-2026-10-12). Its numbers stay as
+  measured.
+- **Replaced by:** a README row for the [Cat 40 Hard confirmation](docs/benchmarks/2026-10-10-model-ladder-hard-confirmation.md),
+  where gbrain is ahead of plain files by +7.7 points on a fresh world and +13.0 on a sealed one with reranking
+  verified.
+
+## [0.10.77] - 2026-10-11
+
+### T0b sealed confirmation: 10x fewer end-to-end memory failures than v0.60.106.0
+
+The custodian-sealed run preregistered in T0b amendment 5 compares the shipped stack, gbrain v0.60.174.0
+(`0df9f2ee7`), with the frozen v0.60.106.0 (`7aa2caa0`) on 32 personas minted on the maintainer's Mac
+([report](docs/benchmarks/2026-10-11-t0b-sealed-confirmation.md)).
+
+- **Verdict `10x` under `t0b-score-v2`.** The stack fails 5 of 576 runs and the frozen release fails 271 (failure
+  ratio 0.020, 95% interval 0.006 to 0.045). Opus 5.5 goes from 142 to 0, Sonnet 5.5 from 124 to 5, and gpt-6.1-sol
+  from 5 to 0, near its ceiling and inconclusive on its own.
+- **Under `t0b-score-v1` the verdict is `improvement`** (273 to 13, factor 20, interval 0.019 to 0.101).
+- **Validity held.** Both mutants were detected in 144 of 144 runs, every cell was scored, and the stack stayed inside
+  the resource envelope for every reader.
+- **Cost.** The sealed ledger committed $232.01 of its $265 cap; the round stands at $370.12 of the approved $420.
+- **Records are aggregates and receipts only.** Per-cell scores, receipts, cost records, paired statistics and status
+  logs are committed under `docs/benchmarks/2026-10-08-program-primary-hard/sealed-confirmation/`. No world file,
+  seed, sealed documents, task text or transcripts are.
+
+## [0.10.76] - 2026-10-11
+
+### Re-pin to gbrain v0.60.169.0 (`77cf8e111`)
+
+gbrain-evals installs gbrain release v0.60.169.0, master `77cf8e1116e9af67c1983adcbb3223b96f0991a5` (was `8a3eedeac`,
+v0.60.126.0, 43 first-parent merges earlier), after a preregistered keyless regression check on paired Ubicloud VMs
+([report](docs/benchmarks/2026-10-11-wave14-repin.md), [preregistration](docs/benchmarks/2026-10-11-wave14-repin-preregistration.md)
+with four amendments). The keyless runs cost $0 of provider spend and the paid N2 judge arm cost $7.07.
+
+- **No gbrain regression.** All 34 offline-tier categories pass at `77cf8e111`. Full N1 and N5 pass on PGLite and
+  Postgres through every interface. N6 on Postgres over HTTP passes with 155 of 155 cells and 0 leaks, and N6 and N8
+  pass attested. Every ledger repro, every preregistered check and the memory trust repros 37-1, 37-2 and 37-5 pass.
+- **Memory trust gates.** `eval/registry.ts` drops the hold on Cats 37 to 39. They fail at `8a3eedeac`, which
+  predates the feature, and pass every keyless contract at `77cf8e111`.
+- **The counted pair's two rule breaks were not gbrain.** N6 on Postgres lost `recall` coverage at the new pin (153
+  of 155) through harness defect N6-5. Cat 7 ran 1.3 to 2.7 times slower on every operation, `putPage` included,
+  because of the after VM's host. Two fresh hosts each running both pins (amendment 3) show N6 complete at both pins,
+  no Cat 7 operation more than 25% slower on both hosts, and the Cat7-1 repro passing at both pins. Cat7-1 stays
+  open: `get_timeline` p50 at 1,000 pages is 0.075 to 0.078 ms against the 0.056 ms closure bar. `traverse_paths_d1`
+  at 1,000 pages ran 20% to 30% slower in three pairings; it is below the confirmed-regression rule and recorded as
+  the operation to watch.
+- **Four harness fixes, each with a test, none changing a result at the old pin.**
+  - N6 decodes `delta`'s base64 cursors before masking them (N6-4).
+  - Cat 39 reads a fact row's page from `page_slug` (39-8, found when #6066's query facts arm returned fact rows).
+  - N6 gives an optional `question` its own variant without `include_expired` and `supersessions`, which `recall`
+    refuses alongside it (N6-5).
+  - The operator-wave check `edit-page-diff-order` reads the `edit_page` receipt block and ignores appended notice
+    blocks.
+- **A flaky harness test made deterministic.** `test_facts_extraction_and_lanes` (`eval/harness-provider/`) stores
+  one identical stub fact from five extraction windows running eight at a time. gbrain keeps the first insert, so the
+  conversation that owns the fact depended on timing. It failed on one core at both pins and in four of seven CI
+  runs on this branch. The test now extracts one window at a time with `d-a1` first, and it passes on one core at
+  both pins.
+- **Pin-following updates.** N12 renders gbrain's new `plain-role-no-time` pattern (29 of 29 formats). Four tests
+  that assumed the old pin's behaviour were updated (`tool-bridge`, `pglite-snapshot`, `cat38-state-resolution`,
+  `budgeted-delivery-h1`). The VM scripts for this check live in `docs/benchmarks/2026-10-11-wave14-repin/vm/`.
+- **Docs.** README, `docs/README.md`, `docs/settings.md`, `docs/comparison-systems.md`, `docs/retrieval-lessons.md`,
+  `eval/README.md` and `eval/CONTRIBUTING.md` name the new pin. README moves the rows rerun here to `77cf8e111` and
+  adds the features the old pin predated, each on evidence measured inside the new pin's history: memory trust
+  labels, the verbatim-quote probe, scoped vector search and the matched BEAM comparison.
+- **Paid N2 judge arm at the new pin (approved, $7.07 of a $30 cap).** The judge (`claude-haiku-4-5-20251001`, prompt
+  version 4, the same inputs to the token as the published run at `48ed5e8`) called 146 of 150 planted conflicts
+  contradictions, against 149. It flagged 0 of 40 dated changes and 4 of 51 compatible pairs (6 of 51 before), so all
+  three of the report's decision rules hold. The three lost conflicts are sampling variation (exact McNemar p =
+  0.25). README's N2 row moves to `77cf8e111` with 146 of 150. 2,774 requests went through the budget ledger, all
+  reconciled to provider usage, none refused.
+- **Recorded commits stay.** The sealed MPW (`d7467d1cf`), H1 (`8a3eedeac`), Q1 (`f05943e6`, `7aa2caa0`) and Cat 40
+  runs keep the commits they recorded. The report lists every place that reads the installed pin, including the Q1
+  campaign custody hash, which covers `package.json` and `bun.lock`.
+
+## [0.10.75] - 2026-10-11
+
+### Cat 40 Hard fix wave: plan, development record, preregistration and results
+
+The records behind the October 10 confirmation (released in 0.10.74) move from the plan branch to main, under [docs/plans/2026-10-07-cat40-hard-fix/](docs/plans/2026-10-07-cat40-hard-fix/). No paid call ran for this release.
+
+- **[PLAN.md](docs/plans/2026-10-07-cat40-hard-fix/PLAN.md)** and **[DEV-RECORD.md](docs/plans/2026-10-07-cat40-hard-fix/DEV-RECORD.md):** the fix wave's plan and its development rounds on the calibration world, with the root-cause scripts `rca.py` to `rca4.py`. The development record now carries the alias precision check (2026-10-11): on the owner's real brain the anchored rule was right on 25 of 25 aliases, and on 890 public Wikipedia articles on 20 of 25. Garry Tan accepted it with multi-word captures on. It also records that gbrain #6271 merged as v0.60.174.0 (master `0df9f2ee7`), whose build derives identically to the confirmed `3e4ff61ce` on worlds M and S, the calibration world and the v1 world.
+- **[PREREG.md](docs/plans/2026-10-07-cat40-hard-fix/PREREG.md):** the confirmation preregistration with everything recorded before cells (world digests, custody VMs, ledgers, oracle gates, the slot allowance and the $900 caps).
+- **[RESULTS.md](docs/plans/2026-10-07-cat40-hard-fix/RESULTS.md):** the verdict ("ahead" in both worlds; Δ_M +7.7, Δ_S +13.0), per-model and per-family tables, secondary measures (wrong answers, stops, cost per success, seconds per cell, the rerank check, DX measures), costs with the ledger overstatement explained, the deviations log and the weaknesses. Computed with `confirm_secondary.py`, which prints counts only.
+- **[SEALED.md](docs/benchmarks/cat40-hard/SEALED.md):** the sealed 50k world was generated on 2026-10-10 on the owner's Mac (its digest matched the committed one) and ran once in the confirmation; only aggregates are published, and the seed, documents and task text stay in owner custody. It is no longer a first-look held-out set: a future result on it is a repeat measurement, and the next confirmation needs a new sealed seed.
+- **Version.** Main is at 0.10.74, so this release is 0.10.75.
+
+## [0.10.74] - 2026-10-11
+
+### Cat 40 Hard confirmation: gbrain ahead of plain files on a fresh and a sealed 55,000-document company
+
+On two worlds no development agent had seen, Sonnet 5.5, Opus 5.5 and GPT-6.1 Sol finished more Hard tasks with gbrain v0.60.139.0 (`3e4ff61ce`, gbrain #6271, since merged as gbrain v0.60.174.0, master `0df9f2ee7`) than with plain files: +7.7 points on world M (fresh seed 20261021; 78.7% vs 71.0%, 95% CI +2.7 to +12.7) and +13.0 points on the sealed world S (66.0% vs 53.0%, CI +7.7 to +18.3). Both lower bounds are above 0, so the preregistered wording is "ahead" in both worlds and the kill criterion does not fire. Limits: gbrain trails on M's conflicting-source family H4 (47 vs 56 of 60), S's H1 is at the floor on both arms, fs overflowed the context 22 times on S at the fixed 16-turn cap, and gbrain gives more wrong answers. Report: [docs/benchmarks/2026-10-10-model-ladder-hard-confirmation.md](docs/benchmarks/2026-10-10-model-ladder-hard-confirmation.md); preregistration and full results in `docs/plans/2026-10-07-cat40-hard-fix/` (#93). Ledgers $572.34 (M) and $775.63 (S) of $900 each.
+
+- **Confirmation steps.** `scripts/cat40-hard.sh step confirm-world|confirm-slots|confirm-oracle|confirm-cells` per world (`CONFIRM_WORLD=main|sealed`), seed 20261021 registered as `HARD_SEEDS.confirmation`, one ledger per world (`CONFIRM_CAP_USD` 900), and the 95% oracle gate.
+- **Warm-boot fix.** The slot build's warm start waits for the reply to one read-only `entity` call before the snapshot, so the snapshot no longer keeps tens of thousands of queued persistence effects that stalled every restore's first tool call; each slot receipt records `queued_effects` at snapshot.
+- **Rejected requests settle at $0.** The metering proxy's in-process mode (gbrain's own provider calls) now settles a 4xx answer without usage at $0, as lease mode and the paid-request guard do; a 413 or a prompt over the context window no longer books its whole reservation.
+- **One implementation each** after merging main: `rerankProbe` and `refreshProviderBaseUrls` live in `eval/runner/cat40/gbrain-arm.ts` (the runner re-exports the probe), and every slot start refreshes the Voyage base URL and advertised surface through `refreshProviderBaseUrls`; `MeteringProxy` lives in `eval/runner/metering-proxy.ts`.
+
+### Cat 40 Hard result: gbrain trails plain files by 11.3 points on the 55,000-document company
+
+On 100 unseen Hard tasks, Sonnet 5.5, Opus 5.5 and GPT-6.1 Sol finished 62.0% with gbrain v0.60.95.0 and 73.3% with plain files (paired difference −11.3 points, 95% CI −16.7 to −6.0); Postgres search finished 68.3%. The gap is wrong answers (gbrain 50, fs 13), not turn caps. The preregistered decision is "gbrain behind": the next wave targets retrieval on H1 aggregation, with alias resolution, current-value preference and cross-session recall as the concrete fixes. Fable 5.1's finished cells (descriptive, amendment A6) went the other way: 65% with gbrain, 20% with plain files. Report: [docs/benchmarks/2026-10-07-model-ladder-hard.md](docs/benchmarks/2026-10-07-model-ladder-hard.md). Hard ledger $2,000 of $2,044.
+
+- **Exploratory gbrain-fs arm (plan C16).** `--arms gbrain-fs` gives the agent every gbrain tool plus the fs arm's read tools (`list_dir`, `grep`, `read_file`, same limits) over the same files, with writes through gbrain only (no `write_file`), to ask whether gbrain beside the files beats files alone. Cells are labelled `<gbrain-label>+fs`; a gbrain tool named like an fs read tool is refused; the arm runs only on the calibration-seed development world outside any program step (`HARD_ARM_EXPLORATORY`) and records `exploratory: true` in `experiment.json` and the receipt. No cell has run.
+
+### Cat 40 Hard round 4: questions about several accounts; the held-out run is 50k only
+
+Round 3 (50k, generator v2) left the better simple arm at 83%: H1 fell to 15-20%, but H2 to H5, which each asked about
+one account, stayed at 85 to 100%. Under amendment A2, H2 to H5 questions now ask about several accounts at once and H1
+sets shrink. No paid call ran; round 4 is ready to calibrate.
+
+- **Multi-account questions.** Knobs `multi_account_min` and `multi_account_max` set how many accounts each H2 to H5
+  question asks about; [knobs.round-4.json](docs/benchmarks/cat40-hard/knobs.round-4.json) uses 2 to 3. A question
+  lists its items as numbered one-account questions, each a complete instance of its family with its own records, and
+  asks for a JSON array of the answers in order. No two accounts in a question share a descriptor, first word, code
+  prefix or account manager, so each needs its own search. With a maximum of 1 the generator writes the v2 world, and
+  the round-3 world is unchanged.
+- **Scoring.** The Hard scorer grades the array as a new `values` answer kind (`cat40-hard-score-v2`): each element is
+  graded like a one-account answer, and success needs every element right. Earlier answer kinds score as before. The
+  validator checks every item's accounts and the unlinked rule, and the H5 write diagnostic matches each superseded
+  fact to its own chain.
+- **Smaller H1.** Round 4 asks for 6 to 12 members (round 3: 10 to 40). When a predicate cannot land in range, the
+  generator narrows it to one region or segment.
+- **Held-out path.** The held-out run is 50k only: freeze check, freeze, smoke, the 50k world, slots, then four batches
+  that each run after the one before (gbrain and fs, the oracle, pg, memory on two models), each with its own
+  projection and ledger gate. `slots-4k`, `simple-4k`, `comparator` and `gbrain-4k` stop with `HARD_STEP_RETIRED`.
+  The primary endpoint is `holdout_stats.py --hard-headline gbrain-hard,fs --simple fs`, adding pg when it ran.
+- **Proxy.** `hard-proxy.ts` also reports oracle documents and accounts per answer. On the 50k calibration world,
+  H2 to H5 answers now need 2.4 to 2.7 accounts and two to three times the oracle documents
+  ([calibration.md](docs/benchmarks/cat40-hard/calibration.md)).
+
+### Cat 40 Hard generator v2: records stop naming their account
+
+Calibration round 2 left plain files at 95%: agents searched for the account name in the question and read every
+record, because every record named the account. Generator `model-ladder-hard-v2` (amendment A1) keeps every fact and
+answer key and changes how records refer to accounts. No paid call ran; round 3 is ready to calibrate on the 50k world.
+
+- **Reference forms.** Each account reference in an event record uses the account's name, its code, its nickname, or
+  `<manager>'s <region> <industry> account`, meaning the account that manager held on the record's date. Knobs
+  `direct_name_share`, `code_ref_weight`, `nickname_ref_weight` and `manager_ref_weight` set the mix;
+  [knobs.round-3.json](docs/benchmarks/cat40-hard/knobs.round-3.json) starts at 15% by name and about 30%, 30% and 24%
+  for the others. CRM records, new account sheets, rename and merger notices name the account and resolve the other
+  forms in at most two hops. A manager reference is used only where it fits one account on that date from the records
+  written by then. Event documents get opaque ids, so paths never name an account. A knob file without the new keys
+  writes v1's worlds byte for byte (rounds 1 and 2 still regenerate); with `direct_name_share` 1 the documents and
+  tasks are v1's.
+- **Checks.** `hardWorldProblems` checks every reference: its text is in its document, a reference not by name never
+  names the account, a manager reference fits one account, every code, nickname and descriptor is introduced on or
+  before its use, and every task's oracle documents tie each reference to the asked name. Oracle evidence carries the
+  resolution documents each record needs. [WORLD_SCHEMA.md](docs/benchmarks/cat40-hard/WORLD_SCHEMA.md) states the
+  rules for the sealed generator.
+- **Difficulty proxy.** `bun eval/runner/cat40/hard-proxy.ts` reports, without a model call, how often the oracle's
+  records name the asked account. On the 50k calibration world it falls from 91% with round-2 knobs to 14% with
+  round-3 knobs; code and nickname searches together still reach 76%, so the manager form carries most of the added
+  difficulty ([calibration.md](docs/benchmarks/cat40-hard/calibration.md)).
+- **Calibration at 50k.** `scripts/cat40-hard.sh step calibrate` builds the 50k world from round 3 on (`SCALE=large`,
+  `SCALE=v1` for the 4k world). Projections use measured cells at the step's scale when there are any and add the pg
+  arm's one-time corpus embedding when the world is known (about $2.70 at 50k). The pg store now checkpoints PGlite while it builds; without that, the 50k Hard build ran out of memory and hung. Appended 50k accounts have their own
+  account managers, so 4k records keep their meaning inside the 50k world.
+- **H1 set sizes.** H1 keys are computed over the 4k accounts so they match at both scales; the 261-account
+  population supports at most 25 to 34 members per predicate, so round 3 keeps 10 to 40.
+
+### Cat 40 Hard: the harness for tasks that measure the edge of frontier models
+
+Cat 40 no longer separates the models people use most: on the development world gbrain master finished 239 of 250
+frontier-model runs. The Hard tier asks harder memory questions, and this release builds everything it needs. No paid
+cell ran; calibration and the held-out runs follow the [runbook](docs/benchmarks/cat40-hard/RUNBOOK.md) under Garry's
+2026-10-05 gate decisions (16 turns with the cap as the last knob, tier A, a $4,350 authorization, the Hard ledger at
+$1,794).
+
+- **Generator.** `bun eval/generators/model-ladder-gen.ts --mode hard` writes a ledger-first world of about 4,000
+  documents with five families: H1 sets and counts over 10 to 40 accounts, H2 attribute histories with reversals,
+  backdated corrections and effective dates, H3 look-alike, renamed and merged accounts, H4 conflicts decided by
+  authority with long deciding documents, and H5 five-session memory. `--knobs` takes a validated knob file;
+  `--scale large --base-world` appends accounts and non-deciding documents to about 50,000 documents and refuses
+  unless every H1 key recomputed over the full ledger equals the 4k key and every H3 disambiguation stays unique.
+  Dates, corrections, user statements and names follow one written semantics (`eval/generators/hard/semantics.ts`),
+  and one predicate evaluator computes and checks every H1 key. Each family and the background draw from their own
+  seeded streams, so a knob change moves only the family it controls.
+- **World contract.** `eval/generators/hard/schema.ts` and `validate.ts` hold the world, task and answer types, the
+  knob schema and the invariants, separate from the renderers, so the sealed validation variant can be written against
+  [WORLD_SCHEMA.md](docs/benchmarks/cat40-hard/WORLD_SCHEMA.md) alone.
+- **Runner.** Hard worlds carry their identity (seed, scale, mode, knobs) and turn cap (16; `--max-turns` overrides
+  and changes the experiment identity). H5 cells run five sessions with a fresh session between them on every arm.
+  Hard runs refuse a missing judge, gpt-5.4-mini and unpriced models, write v2 records to `attempts.jsonl`, retry only
+  harness errors (at most twice), score a context-length error as its own stop kind, quarantine a gbrain slot whose
+  restore fails, and exit 3 with a stable code for every refusal and stop. `--preflight` lists keys, prices, identity,
+  cells, slots, the roster-checked ledger and the step projection without a paid call. v1 runs are unchanged.
+- **Scoring and judge.** `eval/runner/cat40/score-hard.ts` scores sets, counts and values (wrong values anywhere in the
+  answer fail; unreadable sets are reported apart), importing `score.ts` unchanged. `judge-hard.ts` (`--judge
+  gpt-6.1-sol`) treats H5 user messages as evidence, caps H1 near misses, persists requests and re-judges failures.
+- **Fairness and cost.** pg embeds long documents in chunks on Hard; grep returns every match with full lines and a
+  total and runs in a Worker with a time limit; pg pages with offsets and totals; restores run asynchronously; every
+  embedding request is charged to setup or to its cell.
+- **Analysis.** `analyze.ts`, `rescore.ts`, `latency-replay.ts` and `holdout_stats.py` read v1 and v2 records. New:
+  the freeze-rule analyzer (`--freeze-rule --round N`), Hard report tables, offline Hard rescoring, and
+  `holdout_stats.py --hard-comparator`, `--hard-headline` (primary endpoint, simultaneous intervals against every
+  simple arm, weakest-family rule, cost per extra correct answer) and `--hard-mdd`.
+- **Operator tools and paperwork.** `scripts/cat40-hard.sh hello|status|preflight|step`, the runbook, the
+  preregistration template, the calibration record, the program ledger roster, the cost basis, a report template and
+  the `model-ladder-hard` registry row (tier P, report-only).
+- **Regression contract.** Tests pin the v1 world, the large manifest digest, the `score.ts` hash, v1 tool limits and
+  a v1 scripted run's scores against a fixture recorded from the previous runner.
+- **After calibration round 1 (2026-10-05).** Both oracle models missed the same account on two H1 tasks: a renamed
+  account's ticket written after the rename still used the old name, and the H1 evidence lacked the rename notice.
+  Records written on or after a rename now use the new name, H1 evidence carries rename and merger notices, a merged
+  account's tickets count for the account it merged into, and H1 predicates that turn on a date boundary are not
+  drawn ([calibration.md](docs/benchmarks/cat40-hard/calibration.md)). Projections now go per model, arm and family
+  from round 1's measured Hard costs (2 to 5 times v1 per cell) plus the measured judge cost; a resumed step opens a
+  new budget run (`--new-budget-run`) sized to the cells still missing. `knobs.round-2.json` makes H2 and H3 harder.
+
+- **Version.** Main is at 0.10.73, so this release is 0.10.74.
+
+## [0.10.73] - 2026-10-11
+
+### Contributor fix wave: Bash 3.2 resume args and non-finite judge scores
+
+- **`scripts/run-shootout-phase1.sh` runs on macOS Bash 3.2.** Under `set -u`, Bash before 4.4 treats an empty
+  `"${resume_args[@]}"` as unbound, so a first run with no output file to resume from exited before calling gbrain.
+  The expansion is now guarded the way `CAP_CMD` already was, as is the same pattern in
+  `eval/runner/longmemeval-batch.sh`. A repo-wide structural test (`test/eval/shell-nounset-arrays.test.ts`) fails
+  on any unguarded expansion of an array a `set -u` script declares empty. Reproduced in the official `bash:3.2`
+  image: the script exits 1 with `resume_args[@]: unbound variable` before the fix and reaches gbrain for both
+  no-reranker cells after it. Contributed by @armandovargash (supersedes #30).
+- **The shared judge rejects non-finite scores.** `parseCriterionScores` clamped every number to 0-5, so an
+  overflowing JSON score (`1e309` parses to `Infinity`) became 5/5 with no corrective retry, and `NaN` could reach
+  the overall score. A non-finite score is now malformed output: one corrective retry naming the criterion, then
+  `judge_failed`; Cat 29's pairwise judge uses the same parser and its existing `JudgeFailure` path. Finite
+  out-of-range scores still clamp. Published scores and receipts are not regenerated. Contributed by @BichengWang
+  (supersedes #128).
+
+## [0.10.72] - 2026-10-11
+
+### Memory proof wave: sealed BEAM results for gbrain #6066
+
+The preregistered comparison of gbrain against a memory-bank server with background extraction and reflection
+([report](docs/benchmarks/2026-10-09-memory-proof-wave-sealed-results.md), preregistration
+`docs/benchmarks/2026-10-05-memory-proof-wave-preregistration.md` and its addenda). The measured build was frozen at
+gbrain `d7467d1cf`, and its retrieval was checked equivalent at `d7d7686de`. The defaults it supports shipped in
+gbrain #6066 (v0.60.164.0).
+
+- **Accuracy: `ahead`.** On sealed BEAM 100k + 500k + 1M (1,080 questions), gbrain's combined lane (pages plus facts)
+  answered 67.0% against the comparator's 64.4%: +2.64 points, one-sided 95% bounds +0.90 and +4.41, with the
+  preregistered 3.5-point margin. By size: +6.03 at 100k, +2.20 at 500k, +1.13 at 1M.
+- **Cost: an edge at low read volume only.** Cost per correct answer was 0.63 of the comparator's at 20 reads per
+  stored conversation and 1.01 at 200 reads (no edge). gbrain's ingest was cheaper ($20 against $47), and its reads
+  cost slightly more ($20 against $17), so reads dominate at high volume.
+- **Pages-only lane: inconclusive** at 62.3%.
+- **Descriptive rows.** LongMemEval-S (400 questions): combined 69.8%, pages-only 80.3%, comparator 84.5%. LoCoMo10
+  (1,218): 93.3%, 85.0% and 83.3%. The comparator exceeded the 8,800-token context gate on both (p95 9,373 and
+  8,855). On LongMemEval-S, the combined lane trails the pages-only lane by 10.5 points.
+- **Custody.** The private per-question receipts were lost with a machine. The verdict stands on the published
+  aggregates, and the addenda record the custody as final.
+- **Harness.** The repository adds the wave's harness, power and grouping tools, and workload suites.
+
+## [0.10.71] - 2026-10-10
+
+### Budgeted delivery H1 results: `depth_first` fails on held-out questions; `cap_only` stays the explicit-budget default
+
+Release decision 2 of sealed confirmation v2 (`sealed-v2-decision-2-2026-10-10:depth-first-vs-cap-only`), run by the
+custodian on main `9b200886` (v0.10.70) at gbrain `8a3eedeac`
+([report](docs/benchmarks/2026-10-10-gbrain-budgeted-delivery-h1.md), aggregates in
+`docs/benchmarks/2026-10-10-gbrain-budgeted-delivery-h1/results/`). Spend $46.89 of the $145 cap.
+
+- **Verdict `fail`.** With an explicit 5,500-token budget and Sonnet 5.5, `depth_first` answered 122 of 200 and
+  `cap_only` 145: −11.5 points (95% persona-clustered interval −18.0 to −4.5), 14 wins and 37 losses, exact McNemar
+  p = 0.0018. Guard 7 found a clear loss in multi-session (40 → 15 of 80; 5 wins, 30 losses, one-sided p = 1.1e-5).
+  Temporal rose 26 → 32, knowledge update fell 39 → 35 (p = 0.11), abstention was 40 of 40 in both. Opus 5.5
+  (138 → 122) and gpt-6.1-sol (144 → 121) agree. References: `off` 142, `off` on the first five hits 150 (+2.5 over
+  `cap_only`, not distinguishable).
+- **Why.** `depth_first` fit about 3 whole conversations and delivered every gold chat for 76 of 160 answerable
+  questions (16 of 80 multi-session); `cap_only` reached pieces of about 10 and covered 159. Sealed v2's
+  multi-session and knowledge-update questions need three or four chats months apart. The run landed beyond the
+  preregistered "multi-session rewards breadth" power scenario (P(pass) 5.5%).
+- **Every evidence guard held** before any label read: guard 1 (no-budget bytes identical) on 200 of 200, guards 3, 4
+  and 5 on 200 of 200, and all 1,600 reader contexts re-rendered to the bytes the readers got.
+- **Custody.** One freeze resume after an embedding-cache lock at startup (lease $0.64; the freeze cost $0.86 over 2
+  leases), no label read before it. The access log went from 6 to 35 lines, all 29 new lines under this decision,
+  with 8 label reads, all after the final gate.
+- **What it means.** `cap_only` stays gbrain's explicit-budget default; `depth_first` stays opt-in, is not tested on
+  sealed v2 again and is not tuned on it. Sealed v2 has one opening left. The protocol's Openings record, the H1
+  preregistration and the docs index row are updated.
+
+## [0.10.70] - 2026-10-10
+
+### Budgeted delivery H1: preregistered held-out test of `depth_first` against the shipped `cap_only`
+
+A preregistration, not a result ([doc](docs/benchmarks/2026-10-10-gbrain-budgeted-delivery-h1-preregistration.md),
+[decision directory](docs/benchmarks/2026-10-10-gbrain-budgeted-delivery-h1/)). Decision
+`sealed-v2-decision-2-2026-10-10:depth-first-vs-cap-only`, the second of sealed confirmation v2's three openings, at
+gbrain `8a3eedeac` (v0.60.126.0, the pin): `depth_first` against `cap_only` at a 5,500-token gbrain budget for an
+8,000-token reader budget, one frozen 25-hit list per question, E2's pseudo-session renderer, read by Sonnet 5.5 and
+judged by gpt-4o-2024-08-06 over all 200 questions. Pass needs a persona-clustered 95% interval above zero, exact
+McNemar p < 0.05 and guards 1, 3, 4, 6, 7 and 8. No paid call and no sealed file were used.
+
+- **Why the pin and not E2's `ca2c447bd`.** Only `src/core/chunkers/token-estimate.ts` changed among the files that
+  feed retrieval, packing or token counting; a counting change is disclosed and measured at the pin. The keyless dry
+  run froze the same lists and delivered byte-identical evidence at both commits on the invented fixture.
+- **Guard 7, changed before custody (Garry, 2026-10-10).** A kind fails only on a clear loss: an exact one-sided
+  McNemar test on that kind's discordant pairs, p < 0.05. It replaced the plan's point rule (no kind down by more
+  than max(1 question, 2% of the kind)) after a pre-custody sensitivity analysis of five kind guards
+  (`scripts/guard7-sensitivity.ts`, `guard7-sensitivity.json`): P(pass) is bounded by superiority under all of them,
+  and the point rule mainly turned noise into `fail`.
+- **Power.** Simulated from E2's paired Sonnet rows with the committed rule: P(pass) 69% if E2's per-kind effects carry
+  over, 39% if multi-session gains nothing, 26% if multi-session truly loses 5 points, 5.5% if it behaves like E2's
+  `breadth_capped` pairs, and 1.3% with no effect. The limit is superiority, and no kind guard reliably catches a true
+  5-point multi-session loss at 80 questions.
+- **Budget.** Estimate $47, cap $145 (about 3x), five local lease cells in one campaign ledger.
+- **Custody chain** (`eval/runner/budgeted-delivery/h1-run.sh`, `h1.ts`): custody check of the files and the access
+  log, a label-free corpus, the gates on frozen evidence before any label read, answers files, scoring through the
+  sealed runner, the rule, an export scanned for every corpus id, and the access log returned. The keyless dry run
+  (`h1-dry-run.sh`, `h1-fixture.ts`; receipts committed) passed every gate, read the labels once per arm after the
+  final gate, refused all nine refusal probes without a label read, and left no fixture text outside the custody root.
+- **Harness.** `deliver_set=h1` in the gbrain-query system; reader-only arms (`judge: "none"`) in memory-qa; the
+  custody corpus hash on memory-qa's custody open line; `sealed-confirmation.ts score --custody-root` and
+  `GBRAIN_EVALS_CUSTODY_LOG` for its access log; `OPENAI_BASE_URL` in the sealed runner's judge client;
+  `SHOOTOUT_KEYLESS_UPSTREAM` for local lease cells; the stub proxy's `/responses` route and `--vary`. Tests in
+  `test/eval/budgeted-delivery-h1.test.ts` and the E2 real-PGLite test.
+
+## [0.10.69] - 2026-10-10
+
+### T0b generator v2, scorer t0b-score-v2 and the custodian-sealed confirmation preregistration (no paid cells)
+
+Prepares the program primary's held-out test: the shipped stack (Candidate 1 plus garrytan/gbrain#6271's short-code
+alias rule) against frozen gbrain v0.60.106.0, on 32 personas minted on the maintainer's Mac.
+
+- **Generator v2** (`V2_KNOBS`): every company's short code is unique within a brain and never a word-like code
+  (`CODE_STOPWORDS`); namesake promises match only their distinctive phrase (`NAMESAKE_STRICT`); mail ids are keyed by
+  company. Version 1 worlds are byte-identical (baseline digest pinned in a test).
+- **Custodian mode**: `--mint-sealed --personas N --custodian-out <dir>` writes seeds to a 0600 file outside the
+  repository and prints only their commitment; `--custodian-seeds` renders a seedless world (`sealed-01`...) and its
+  digest; the T0b runner reads it with `--world --expect-digest` and refuses a world inside the repository.
+- **Scorer t0b-score-v2**: a line carrying a namesake value is the namesake's when it names the namesake (last name,
+  company or code) and not the contact, or carries a disambiguation cue; the cue list adds the phrases the namesake
+  diagnostic found missing. The 25 audited lines score as the diagnostic read them (v1 flags 11), and 576 mutation
+  lines restating a namesake value as the contact's all fail.
+- **Preregistration amendment 5** ([doc](docs/benchmarks/2026-10-08-program-primary-hard-preregistration.md)): arms,
+  size (32 personas: P(`10x`) 0.82 at a true factor of 20), claims, validity mutants, gates, custody chain and a $265
+  ledger cap. It runs once #6271 merges.
+
 ## [0.10.68] - 2026-10-10
 
 ### T0b namesake diagnostic: all 11 namesake flags left after the alias fix are scorer false positives

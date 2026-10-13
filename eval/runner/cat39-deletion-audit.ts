@@ -418,9 +418,9 @@ async function sqlQuoteProbe(sut: TrustSut, cols: TableCols[], phrase: string): 
   return items;
 }
 
-/** Turn any read-op result into slug-tagged text items. */
+/** Turn any read-op result into slug-tagged text items. A `query` fact row (gbrain v0.60.164.0+) names its page in `page_slug`. */
 export function itemsOf(value: unknown): ProbeItem[] {
-  const one = (x: Record<string, unknown>): ProbeItem => ({ slug: typeof x.slug === 'string' ? x.slug : typeof x.entity_slug === 'string' ? x.entity_slug : null, text: JSON.stringify(x) });
+  const one = (x: Record<string, unknown>): ProbeItem => ({ slug: typeof x.slug === 'string' ? x.slug : typeof x.entity_slug === 'string' ? x.entity_slug : typeof x.page_slug === 'string' ? x.page_slug : null, text: JSON.stringify(x) });
   if (Array.isArray(value)) return value.filter(v => v && typeof v === 'object').map(v => one(v as Record<string, unknown>));
   if (value && typeof value === 'object') {
     const v = value as Record<string, unknown>;

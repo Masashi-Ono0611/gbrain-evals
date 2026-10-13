@@ -360,18 +360,17 @@ describe('model arm helpers', () => {
 });
 
 describe('end to end against the pinned gbrain', () => {
-  test('small world: completes, reports every missing trust feature as a gap, scores every probe', async () => {
+  test('small world: completes, scores every probe, and reports missing trust features as gaps on a build without them', async () => {
     const gut = resolveGbrainUnderTest(null);
     const small = generateCat38World({ seed: 7, sequences: 24 });
     const r = await withHermeticEnv('cat38-test', () => runArm(gut, small, 'default'));
     expect(r.harness_error).toBe(null);
     for (const p of r.presence) expect([p.name, p.ok]).toEqual([p.name, true]);
-    expect(r.capabilities.trust_tiers).toBe(false);
     expect(r.observations).toHaveLength(small.probes.length);
     const s = scoreArm(small, r.observations, r.violations);
     expect(s.metrics.probes).toBe(24);
     expect(Number.isFinite(s.metrics.current_fact_accuracy)).toBe(true);
-    expect(s.metrics.label_accuracy).toBe(0);
+    expect(s.metrics.label_accuracy).toBe(r.capabilities.trust_tiers ? 1 : 0);
     expect(s.exploratory.negative_control_accuracy).toBe(1);
     expect(findingsFrom(s, r.violations, r.capabilities, 'repro')).toEqual([]);
   }, 180_000);
