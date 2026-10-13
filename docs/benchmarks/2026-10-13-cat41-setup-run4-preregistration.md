@@ -1,7 +1,8 @@
 # Cat 41 setup TTHW, fourth measurement (redesigned first-push item and scoring): preregistration
 
-Written 2026-10-13, before any paid session of this run. **Status: draft. No paid cell runs until Garry approves
-it** (GBRA-40 relays the decision). Plan: "Build the 10x memory advantage" (GBRA-60), D8's proof column. This file and
+Written 2026-10-13, before any paid session of this run. **Approved by Garry on 2026-10-13** ("yeah approve all",
+relayed by GBRA-40) after the draft at `de76d033`. This approval note and the model-freshness rerun below are the only
+changes since then, and both are committed before the first paid cell. Plan: "Build the 10x memory advantage" (GBRA-60), D8's proof column. This file and
 its order-check entry (`docs/benchmarks/preregistrations.d/cat41-setup-run4.json`) are committed and pushed before
 the first paid cell, and the runner attests it (`--preregistration`) into every pass's `meta.json`.
 
@@ -164,3 +165,9 @@ For D, the report also gives each run's saved visibility and the hook output, so
 
 A harness crash is retried up to twice and otherwise reported inconclusive. A failed or partial run is published with
 the rest, and nothing is rerun to get a better time.
+
+## Amendment 1 (2026-10-13, before any paid cell)
+
+- **Model freshness, rerun** (`bun scripts/model-freshness.ts --models claude-opus-5-5`): newest Opus
+  `claude-opus-5-5`, Sonnet `claude-sonnet-5-5`, GPT `gpt-6.1-sol`; blocking: none. The model list is unchanged.
+- **Push trust:** unchanged. The run measures gbrain v0.60.208.0's push as released, world-visible facts only.
