@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.86 (`VERSION`) |
+| This repository | gbrain-evals v0.10.88 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except two: the Cat 40 Hard row's, which shipped after it
@@ -302,6 +302,13 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-13: W1 guidance smoke; repository row names v0.10.88
+
+gbrain-evals v0.10.88 adds the W1 guidance smoke (A12g): with the gbrain plugin installed natively, Opus 5.5 passed 2 of
+5 sessions and Fable 5.1 5 of 5, so the `recall` `question` guidance stays parked
+([report](docs/benchmarks/2026-10-13-w1-guidance-smoke.md)). No result row on this page changes. The repository row
+names v0.10.88 (was v0.10.86; v0.10.87 did not update it).
 
 ### 2026-10-13: Cat 41 setup re-measure; repository row names v0.10.86
 
