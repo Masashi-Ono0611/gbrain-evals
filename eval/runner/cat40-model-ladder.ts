@@ -415,7 +415,7 @@ export function incompleteSlotCoverage(dir: string, n: number): { problems: stri
 
 /** Flags the runner accepts; anything else is refused before anything is written (DX-F3). */
 export const VALUE_FLAGS = ['--arms', '--models', '--families', '--tasks', '--repeat', '--concurrency', '--slots', '--gbrain-repo', '--gbrain-ref', '--gbrain-root', '--gbrain-label', '--judge', '--world', '--out',
-  '--max-tool-chars', '--order', '--slot-ref', '--surface', '--gbrain-instructions-file', '--gbrain-tool-descriptions-file', '--gbrain-drop-tools', '--gbrain-config', '--gbrain-build-config', '--slot-build-allowance-usd',
+  '--max-tool-chars', '--order', '--slot-ref', '--surface', '--gbrain-instructions-file', '--gbrain-tool-descriptions-file', '--gbrain-drop-tools', '--gbrain-config', '--gbrain-build-config', '--build-slot-ids', '--slot-build-allowance-usd',
   '--budget-usd', '--estimate-usd', '--budget-run-id', '--budget-ledger', '--program-cap-usd', '--max-turns', '--per-family', '--hard-tool-limits', '--accept-freeze-drift', '--step',
   '--gbrain', '--advertised', '--world-templates-file', '--decision-id', '--purpose', '--retire-models'];
 export const BOOLEAN_FLAGS = ['--scripted', '--keyless-slots', '--build-slots', '--rebuild', '--no-pglite-analyze', '--transcripts', '--preflight', '--help', '--new-budget-run'];
@@ -642,7 +642,10 @@ export async function main(argv = process.argv.slice(2)) {
       ctx.proxy = new MeteringProxy();
       ctx.proxy.start();
       const surface = flag(argv, '--surface') ?? 'starter';
-      const slots = Array.from({ length: nSlots }, (_, i) => new GbrainSlot(`slot${i}`, slotDir!, gbrainBuild!.dir, ctx.proxy!.port, surface, flag(argv, '--advertised') ?? null, keyless));
+      // --build-slot-ids 0,1: this build process builds and probes only those slots, so disjoint processes can build one family side by side.
+      const ids = buildSlots && flag(argv, '--build-slot-ids') ? flag(argv, '--build-slot-ids')!.split(',').map(Number) : Array.from({ length: nSlots }, (_, i) => i);
+      if (ids.some(i => !Number.isInteger(i) || i < 0 || i >= nSlots)) throw new UsageError(`--build-slot-ids takes slot numbers from 0 to ${nSlots - 1}`);
+      const slots = ids.map(i => new GbrainSlot(`slot${i}`, slotDir!, gbrainBuild!.dir, ctx.proxy!.port, surface, flag(argv, '--advertised') ?? null, keyless));
       for (const s of slots) { s.config = gbrainConfig; s.buildConfig = buildConfig; }
       if (buildSlots) {
         // One build at a time: each holds a small ledger allowance (a build sends one provider request per page).
