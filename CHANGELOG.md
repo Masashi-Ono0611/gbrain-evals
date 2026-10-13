@@ -2,6 +2,26 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.86] - 2026-10-13
+
+### Cat 41 setup re-measure on gbrain v0.60.203.0: three of four targets still missed
+
+The preregistered re-measure of `gbrain setup claude-code` on gbrain v0.60.203.0 (`449483cc7`, with gbrain#6562 and
+#6572), scorer v7, Opus 5.5 on Claude Code, n = 3 per cell, against the same frozen targets
+([report](docs/benchmarks/2026-10-13-cat41-setup-remeasure.md); Amendment 1 pushed before the first paid cell).
+
+- **Wired recall missed:** 3/3 correct, 67.8 s mean against 60 s (first run 83.8 s); no install session ended on a
+  question.
+- **First push missed, 0/3:** two agents saved the item with `gbrain capture` (a page) because `remember` is missing
+  from `gbrain --help`; in the third the fact was saved and the SessionStart hook still printed nothing.
+- **Faster setup met as scored, not on reading:** 26.5% lower median than by hand as scored; 19% on reading, because
+  the frozen date rule rejected one correct by-hand answer written day-first ("14 November 2026"). The claim is not
+  made.
+- **Consent missed:** 2 of 3 runs sent an unbilled `GET /v1/models` from a `gbrain doctor` run before setup recorded
+  the provider decline; doctor runs after the decline sent nothing.
+- Descriptive cell F (the comparator's own prompt): 56.2 s mean; all three agents chose `setup` unprompted. Spend
+  $6.65 of a $25 cap.
+
 ## [0.10.85] - 2026-10-13
 
 ### Memory proof wave 2: question-ranked combined recall passes its gates; adaptive W5 ships on at 1.50

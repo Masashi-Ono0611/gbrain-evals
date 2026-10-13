@@ -119,3 +119,22 @@ With n = 3, a target met or missed is reported as such, beside the first run's r
 A harness crash is retried up to twice and otherwise reported inconclusive (it counts against the 3/3 targets). A
 failed or partial run is published with the rest; nothing is rerun to get a better time. Every brain is keyless and
 reranking is off, as in the first run.
+
+## Amendment 1 (2026-10-13, before any paid cell)
+
+- **gbrain under test:** `449483cc7e55bc36afbb388a8cab8346b0022c5b`, gbrain v0.60.203.0 on `master`, the merge of
+  garrytan/gbrain#6572 (lane 31's fix: "first-run settings relayed in the install reply, not a trailing question").
+  It contains the merge of garrytan/gbrain#6562 (`0a9813ff1`, shipped in v0.60.197.0). It is the first master
+  release containing both. Neither fix changed scope from what this preregistration describes, so targets, cells,
+  models and n are unchanged.
+- **Model freshness** (`bun scripts/model-freshness.ts --models claude-opus-5-5`, 2026-10-13): newest Opus
+  `claude-opus-5-5`, Sonnet `claude-sonnet-5-5`, GPT `gpt-6.1-sol`; blocking: none. The two warnings (Sonnet and GPT
+  not in this run) stand as designed: setup supports only Claude Code and this run keeps the first run's model. The
+  model list does not change.
+- **$0 checks on this build:** the five scenarios' setups, downloads and probes run clean in the image with no
+  harness key; a direct `gbrain setup claude-code` there exits 0, wires Claude Code and closes with "Nothing needs
+  an answer now; tell me any time if you want to change any of these".
+- **A known edge of the frozen trigger, recorded before data:** an agent that relays that line as its own sentence
+  ("Tell me any time if you want to change…") triggers a scripted reply, because the conditional-offer exception
+  matches only "tell me if you…". The rule is not changed; it applies the same in every arm, and the report lists
+  every scripted reply with the closing line that triggered it.
