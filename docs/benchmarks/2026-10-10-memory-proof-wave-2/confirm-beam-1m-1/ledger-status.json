@@ -3,15 +3,15 @@
   "state": "sqlite",
   "totals": {
     "program_cap_usd": 56.5,
-    "committed_usd": 17.973930395,
-    "reconciled_usd": 17.973930395,
+    "committed_usd": 26.958904135,
+    "reconciled_usd": 26.958904135,
     "open_reservations_usd": 0,
-    "remaining_usd": 38.526069605,
-    "requests": 59828,
-    "overshoot_usd": 0.02720254999999997
+    "remaining_usd": 29.541095865,
+    "requests": 61623,
+    "overshoot_usd": 0.028973049999999972
   },
   "run": null,
-  "runs": 1,
+  "runs": 2,
   "open_runs": 0,
   "last_cap_change": {
     "program_cap_usd": 56.5,
@@ -20,8 +20,8 @@
     "by": "ubi@vms33vnj",
     "at": "2026-10-12T20:14:05.399Z"
   },
-  "size_bytes": 27422720,
-  "read_ms": 14.98,
+  "size_bytes": 28209152,
+  "read_ms": 34.48,
   "hints": [
     "both files present: a real legacy ledger.json beside the SQLite ledger is an interrupted migration; if the totals match run `migrate --finish`, otherwise stop and ask the user",
     "cap mismatch: unset --program-cap-usd / BRAINBENCH_PROGRAM_CAP_USD to use the recorded cap; run `set-cap` only with the user's authorization"
