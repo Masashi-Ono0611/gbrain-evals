@@ -2,6 +2,18 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.97] - 2026-10-14
+
+### messy-company-v1: a frozen messy-company dataset with gold for 9 lanes
+
+New reusable dataset [`eval/data/messy-company-v1`](eval/data/messy-company-v1/README.md): a fictional company
+knowledge base of 226 pages (118 dev, 108 held-out, split by account cluster) with gold labels for owner phrases,
+entity mentions, aliases, ownership windows, governing records, document status, timelines, changes and agent tasks.
+`gpt-6.1-sol` and `gemini-4-argon` wrote the pages, each checked by the other model. 91 of 1,740 labeled items
+disagreed (5.2%), and every disagreement was adjudicated by reading the page. Gold comes from the world plan's oracle,
+never from a model. `validate-data` now fails if any data file drifts from the frozen manifest (dataset hash
+`4a6bd099…4568`). It adds a loader, nine scorers and tests. Model spend was $4.45.
+
 ## [0.10.96] - 2026-10-14
 
 ### Cat 41 fifth-run report: reading times corrected

@@ -143,7 +143,7 @@ labels were dropped because the written text doesn't support them:
 
 ```bash
 bun eval/runner/messy-company/load.ts --split dev          # import the dev pages into an in-memory gbrain brain
-bun eval/runner/messy-company/load.ts --split heldout --db /tmp/mc-heldout --public-only
+bun eval/runner/messy-company/load.ts --split heldout --db ./mc-heldout-brain --public-only
 bun eval/runner/messy-company/score-owner-phrases.ts --split dev --system out.json   # one scorer per lane
 bun eval/generators/messy-company/manifest.ts check         # confirm the data matches the frozen manifest
 bun test test/eval/messy-company.test.ts                    # integrity, oracle checks, scorers, loader
