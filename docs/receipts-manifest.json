@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "description": "Map from published claims to their saved evidence. The manifest test checks artifact paths, SHA-256 hashes, and declared JSON-pointer values. It does not parse report prose or independently validate every scorer. Separate golden tests and recount scripts are named where available. Entries marked disclosed-gap identify missing evidence; a fresh run cannot restore a missing historical receipt.",
-  "updated": "2026-10-12",
+  "updated": "2026-10-14",
   "entries": [
     {
       "claim_id": "lifecycle-2026-09-29-primary",
@@ -5160,6 +5160,42 @@
         "/cells/A/wall_s/mean": 60.2
       },
       "note": "The four frozen targets applied to scores.jsonl by eval/runner/cat41/tthw-verdict.ts."
+    },
+    {
+      "claim_id": "d5-brief-smoke-measures",
+      "readme_anchor": "docs/benchmarks/2026-10-14-d5-brief-smoke.md: The finding",
+      "artifact_path": "docs/benchmarks/2026-10-14-d5-brief-smoke/measures.json",
+      "artifact_sha256": "29b27672c11204920b7ac66d21023547c58231daf7a6522381c35745ef98df50",
+      "status": "covered",
+      "expected": {
+        "/checks/pairs_run": 3,
+        "/checks/R1": true,
+        "/checks/R1_totals/master": 29,
+        "/checks/R1_totals/d5": 30,
+        "/checks/R2": true,
+        "/checks/M_misuse_count": 0,
+        "/checks/L2_output_leak": 0,
+        "/checks/L2_unsafe_write": 0,
+        "/by_model/claude-opus-5-5/master/success": 9,
+        "/by_model/claude-opus-5-5/master/tool_calls_without_E01": 36,
+        "/by_model/claude-opus-5-5/master/brief_param_calls": 0,
+        "/by_model/claude-opus-5-5/d5/success": 10,
+        "/by_model/claude-opus-5-5/d5/tool_calls_without_E01": 38,
+        "/by_model/claude-opus-5-5/d5/brief_param_calls": 0,
+        "/by_model/claude-sonnet-5-5/master/success": 10,
+        "/by_model/claude-sonnet-5-5/master/tool_calls_without_E01": 46,
+        "/by_model/claude-sonnet-5-5/master/brief_param_calls": 0,
+        "/by_model/claude-sonnet-5-5/d5/success": 10,
+        "/by_model/claude-sonnet-5-5/d5/tool_calls_without_E01": 45,
+        "/by_model/claude-sonnet-5-5/d5/brief_param_calls": 0,
+        "/by_model/gpt-6.1-sol/master/success": 10,
+        "/by_model/gpt-6.1-sol/master/tool_calls_without_E01": 44,
+        "/by_model/gpt-6.1-sol/master/brief_param_calls": 0,
+        "/by_model/gpt-6.1-sol/d5/success": 10,
+        "/by_model/gpt-6.1-sol/d5/tool_calls_without_E01": 53,
+        "/by_model/gpt-6.1-sol/d5/brief_param_calls": 0
+      },
+      "note": "Per-model success, tool calls and brief-parameter calls on master 14ea3e2e and gbrain #6703 head e6575894, rebuilt by score.py from the per-cell results and transcripts."
     }
   ]
 }

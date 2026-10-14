@@ -2,6 +2,22 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.100] - 2026-10-14
+
+### D5 brief parameters: Cat 40 smoke on gbrain #6703
+
+gbrain #6703 adds `counterparty` and `intent` to `context_pack`. A preregistered Cat 40 smoke compared master
+`14ea3e2e` with the PR head `e6575894` on Opus 5.5, Sonnet 5.5 and gpt-6.1-sol (10 tasks per model per build, callable
+`full`, advertised `starter`). Success was 29/30 on master and 30/30 on the head. Tool calls stayed within the frozen
+limit for every model, and no cell passed `counterparty` or `intent`.
+
+An N6 fuzz with a new `counterparty` variant found 0 leaks in `context_pack`'s 540 probes, including the pulled brief.
+The frozen verdict is "regresses, on L1 only". Both builds show the same 4 existence findings in
+`list_write_conflicts` (#6643, already on master), where the op echoes a foreign `source_id` and returns no rows.
+
+Spend was $6.78 of a new $10 ledger. See the [summary](docs/benchmarks/2026-10-14-d5-brief-smoke.md) and the
+[verdict](docs/benchmarks/2026-10-14-d5-brief-smoke/VERDICT.md).
+
 ## [0.10.99] - 2026-10-14
 
 ### Query expansion latency: no expansion on `tokenmax` keeps quality at a ninth of the latency
