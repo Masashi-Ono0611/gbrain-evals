@@ -2105,6 +2105,90 @@
       "fixing_commit": "48ed5e8233f617479df989998560840747af0425"
     },
     {
+      "id": "N14-1",
+      "category": "large-page-fidelity",
+      "classification": "feature-gap",
+      "status": "open",
+      "gbrain_sha": "c71fe7436e673db819c1be4532504b861e14ad50",
+      "contract": "gbrain does not claim search over pages above content_sanity.bytes_block (500 KB default, src/core/content-sanity.ts DEFAULT_BYTES_BLOCK); such a page lands with frontmatter embed_skip and is never chunked",
+      "surface": "put_page -> content sanity (embed_skip, PAGE_OVERSIZED)",
+      "repro": "bun eval/runner/n14-large-page-fidelity.ts --tier 2mb --arms single-page --gbrain <gbrain checkout>@c71fe7436e673db819c1be4532504b861e14ad50",
+      "expected": "a stored page is keyword-searchable: a query for a planted needle returns the chunk that holds it",
+      "actual": "the conversation document (2mb) is stored with embed_skip=oversized and 0 chunks; keyword needle recall@10 0/40 while every needle is in the stored body (40/40)",
+      "review": {
+        "date": "2026-10-14",
+        "gbrain_sha": "c71fe7436e673db819c1be4532504b861e14ad50",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/2mb/receipt.json"
+        ],
+        "note": "found by this run"
+      }
+    },
+    {
+      "id": "N14-2",
+      "category": "large-page-fidelity",
+      "classification": "feature-gap",
+      "status": "open",
+      "gbrain_sha": "c71fe7436e673db819c1be4532504b861e14ad50",
+      "contract": "gbrain documents a 5 MB per-page write limit (MAX_FILE_SIZE, src/core/import-screen.ts; file_too_large / request_too_large in src/core/error-registry.ts) and tells the user to split the file",
+      "surface": "put_page -> persistence preparation (request_too_large)",
+      "repro": "bun eval/runner/n14-large-page-fidelity.ts --tier 20mb --arms single-page --gbrain <gbrain checkout>@c71fe7436e673db819c1be4532504b861e14ad50",
+      "expected": "one large document can be written as one page",
+      "actual": "put_page of the 20mb conversation refused with request_too_large; keyword recall 0/40",
+      "review": {
+        "date": "2026-10-14",
+        "gbrain_sha": "c71fe7436e673db819c1be4532504b861e14ad50",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/20mb/receipt.json"
+        ],
+        "note": "found by this run"
+      }
+    },
+    {
+      "id": "N14-3",
+      "category": "large-page-fidelity",
+      "classification": "feature-gap",
+      "status": "open",
+      "gbrain_sha": "c71fe7436e673db819c1be4532504b861e14ad50",
+      "contract": "get_page has no windowed read and no response budget at this commit (params slug, include_content, content_only; src/core/ops/pages.ts get_page); nothing claims a bounded response",
+      "surface": "get_page (default parameters)",
+      "repro": "bun eval/runner/n14-large-page-fidelity.ts --tier 2mb --arms single-page --gbrain <gbrain checkout>@c71fe7436e673db819c1be4532504b861e14ad50",
+      "expected": "a read of a large page returns a bounded window (frame at most 1048576 bytes) with a way to page",
+      "actual": "a default get_page of the stored 2mb conversation page returns a 2042154-byte frame (1.9x the 1 MiB cap)",
+      "review": {
+        "date": "2026-10-14",
+        "gbrain_sha": "c71fe7436e673db819c1be4532504b861e14ad50",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/2mb/receipt.json"
+        ],
+        "note": "found by this run"
+      }
+    },
+    {
+      "id": "N14-4",
+      "category": "large-page-fidelity",
+      "classification": "bug",
+      "status": "open",
+      "gbrain_sha": "c71fe7436e673db819c1be4532504b861e14ad50",
+      "contract": "src/core/error-registry.ts registers queue_capacity as retryable (\"The bounded queue is full; existing requests keep their place\"); a page over MAX_FILE_SIZE is refused with request_too_large and split advice (src/core/persistence/page-prepare.ts)",
+      "surface": "put_page -> persistence admission (src/core/persistence/journal.ts intent-bytes check against persistence.limits principalIntentBytes, 32 MiB default)",
+      "repro": "bun eval/runner/n14-large-page-fidelity.ts --tier 200mb --arms single-page --gbrain <gbrain checkout>@c71fe7436e673db819c1be4532504b861e14ad50",
+      "expected": "a single page larger than the per-request intent-byte cap is refused as too large (request_too_large, not retryable), as the 20 MB page is",
+      "actual": "put_page of the 200mb conversation on an empty brain returned queue_capacity (write capacity exhausted), a retryable code for a request no amount of waiting can admit; keyword recall 0/40",
+      "review": {
+        "date": "2026-10-14",
+        "gbrain_sha": "c71fe7436e673db819c1be4532504b861e14ad50",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/200mb/receipt.json"
+        ],
+        "note": "found by this run"
+      }
+    },
+    {
       "id": "Cat7-1",
       "category": "pglite-latency",
       "classification": "bug",
