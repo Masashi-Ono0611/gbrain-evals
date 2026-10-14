@@ -522,6 +522,7 @@ export class GbrainAdapter implements N14Adapter {
   #embedder: Embedder;
   #embedCount: EmbedCount = { inputs: 0, tokens: 0 };
   #gatewayReady = false;
+  #countingModel: { embedding_model: string; embedding_dimensions: number } | null = null;
   #ledger!: N14DocLedger;
   #raw = '';
   #rev = new Map<string, string>();
@@ -644,7 +645,8 @@ export class GbrainAdapter implements N14Adapter {
       const model = cfg.get('embedding_model') ?? 'voyage:voyage-4';
       const dims = Number(cfg.get('embedding_dimensions') ?? 1024);
       const provider = model.split(':')[0].toUpperCase().replace(/[^A-Z0-9]/g, '_');
-      this.#gw.configureGateway({ embedding_model: model, embedding_dimensions: dims, env: { [`${provider}_API_KEY`]: 'n14-counting-embedder-no-network' } });
+      this.#countingModel = { embedding_model: model, embedding_dimensions: dims };
+      this.#gw.configureGateway({ ...this.#countingModel, env: { [`${provider}_API_KEY`]: 'n14-counting-embedder-no-network' } });
       this.#gw.__setEmbedTransportForTests(async (p: { values: string[] }) => {
         this.#embedCount.inputs += p.values.length;
         for (const v of p.values) this.#embedCount.tokens += estTokens(v);
@@ -661,7 +663,16 @@ export class GbrainAdapter implements N14Adapter {
     if (this.#embedder.kind === 'none') return null;
     await this.#ensureGateway();
     const before = { ...this.#embedCount };
-    await this.#runEmbedCore(this.#engine, { stale: true, catchUp: true });
+    try {
+      await this.#runEmbedCore(this.#engine, { stale: true, catchUp: true });
+    } finally {
+      if (this.#embedder.kind === 'counting') {
+        // Back to keyless, so later searches take the same keyword path as the needle probes instead of hybrid over hash vectors.
+        this.#gw.configureGateway({ ...this.#countingModel, env: {} });
+        this.#gw.__setEmbedTransportForTests(null);
+        this.#gatewayReady = false;
+      }
+    }
     return { inputs: this.#embedCount.inputs - before.inputs, tokens: this.#embedCount.tokens - before.tokens };
   }
 
