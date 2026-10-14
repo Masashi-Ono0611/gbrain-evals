@@ -129,7 +129,7 @@ export function targetTitle(ledger: Pick<N6Ledger, 'pages'>, target: N6Target, p
 export function synthesizeParams(
   params: Record<string, ParamDef>,
   target: N6Target | null,
-  opts: { scope?: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; title?: string } = {},
+  opts: { scope?: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean; title?: string } = {},
 ): Synthesized | Unsupported {
   const out: Record<string, unknown> = {};
   for (const [name, def] of Object.entries(params)) {
@@ -137,6 +137,7 @@ export function synthesizeParams(
     if (target) {
       if (name === 'window' && opts.title) value = namingWindow(opts.title);
       else if (name === 'question' && !def.required) value = opts.ranked ? target.query : undefined;
+      else if (name === 'counterparty' && !def.required) value = opts.counterparty ? target.slug : undefined;
       else if (SLUG_PARAMS.has(name)) value = target.slug;
       else if (QUERY_PARAMS.has(name)) value = target.query;
       else if (ENTITY_PARAMS.has(name)) value = target.slug;
@@ -173,15 +174,18 @@ export function isTargeted(params: Record<string, ParamDef>): boolean {
 /**
  * Variants for one op: the base call, one per enum value, one per scope override, and for an optional `question`
  * a ranked call that passes it without the widening flags (recall refuses `question` with `include_expired` or
- * `supersessions`); the base call leaves an optional `question` out.
+ * `supersessions`); the base call leaves an optional `question` out. An optional `counterparty` gets its own call
+ * naming the target (context_pack's pulled brief, gbrain #6703); the base call leaves it out, so a filter never
+ * narrows the base probe.
  */
-export function variantsFor(params: Record<string, ParamDef>): Array<{ id: string; scope: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean }> {
-  const out: Array<{ id: string; scope: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean }> = [{ id: 'base', scope: 'ambient' }];
+export function variantsFor(params: Record<string, ParamDef>): Array<{ id: string; scope: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean }> {
+  const out: Array<{ id: string; scope: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean }> = [{ id: 'base', scope: 'ambient' }];
   for (const [name, def] of Object.entries(params)) {
     if (!def.enum) continue;
     for (const value of def.enum.slice(0, 8)) out.push({ id: `${name}=${value}`, scope: 'ambient', enumOverride: [name, value] });
   }
   if (params.question && !params.question.required) out.push({ id: 'question', scope: 'ambient', ranked: true });
+  if (params.counterparty && !params.counterparty.required) out.push({ id: 'counterparty', scope: 'ambient', counterparty: true });
   if ('source_id' in params) {
     out.push({ id: 'source_id=beta', scope: 'foreign' });
     out.push({ id: 'source_id=__all__', scope: 'all' });
