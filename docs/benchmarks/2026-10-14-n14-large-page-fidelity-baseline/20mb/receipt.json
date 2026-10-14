@@ -23,10 +23,10 @@
   "gbrain_pin": "github:garrytan/gbrain#77cf8e1116e9af67c1983adcbb3223b96f0991a5",
   "execution": {
     "source_tree": {
-      "sha256": "0559e5e7d0e00da98637211c6d2772d0a8891b46ec83caa76cd5ed67b210020d",
+      "sha256": "c42fc0d341df545aec9fed506fc7f663fcbe25b5d2531036e1d78601e4177d19",
       "scheme": "git-index-blob-v1",
       "files": 12871,
-      "git_head": "eb45cf765476f7cdd660b7639c5c5c7cd042dcd7",
+      "git_head": "28c12a27326404b968f5dd65b02cf01feb48508d",
       "dirty": true
     },
     "product": {
@@ -100,13 +100,13 @@
       },
       "copied_not_symlinked": true
     },
-    "hermetic_wall_ms": 185629
+    "hermetic_wall_ms": 185940
   },
   "hashes": {
     "ledger_sha256": "aa3db34222b7e3bbf4978f34286f5e8818c0b7d908b5627caf108e5573364bb3"
   },
-  "started_at": "2026-10-14T18:47:00.218Z",
-  "finished_at": "2026-10-14T18:50:07.577Z",
+  "started_at": "2026-10-14T18:57:20.758Z",
+  "finished_at": "2026-10-14T19:00:28.428Z",
   "data": {
     "safety": {
       "crashes": 0,
@@ -242,9 +242,9 @@
           "chunks": 0,
           "pages": 0,
           "embed_skip": null,
-          "wall_ms": 2957,
-          "rss_peak_mb": 2247,
-          "rss_over_baseline_mb": 1568
+          "wall_ms": 2984,
+          "rss_peak_mb": 1980,
+          "rss_over_baseline_mb": 1274
         },
         "stored_needles": {
           "hits": 0,
@@ -327,7 +327,7 @@
         "append": {
           "status": "refused",
           "code": "request_too_large",
-          "wall_ms": 2566,
+          "wall_ms": 2508,
           "embed_inputs": 0,
           "embed_tokens": 0,
           "appended_tokens": 258,
@@ -340,7 +340,7 @@
         "embed_initial": {
           "inputs": 2,
           "tokens": 1089,
-          "wall_ms": 46,
+          "wall_ms": 43,
           "tokens_per_mb": 54
         },
         "roundtrip": "not_stored",
@@ -356,9 +356,9 @@
           "chunks": 8695,
           "pages": 1030,
           "embed_skip": null,
-          "wall_ms": 41565,
-          "rss_peak_mb": 1127,
-          "rss_over_baseline_mb": 473
+          "wall_ms": 39891,
+          "rss_peak_mb": 1193,
+          "rss_over_baseline_mb": 529
         },
         "stored_needles": {
           "hits": 40,
@@ -440,7 +440,7 @@
         "responses_over_cap": 0,
         "append": {
           "status": "ok",
-          "wall_ms": 591,
+          "wall_ms": 647,
           "embed_inputs": 4,
           "embed_tokens": 3038,
           "appended_tokens": 258,
@@ -453,7 +453,7 @@
         "embed_initial": {
           "inputs": 8697,
           "tokens": 5789726,
-          "wall_ms": 132424,
+          "wall_ms": 134511,
           "tokens_per_mb": 289486
         },
         "roundtrip": "match",
@@ -465,8 +465,8 @@
         "tier": "20mb",
         "doc": "conversation",
         "arm": "single-page",
-        "wall_ms": 9456,
-        "rss_peak_mb": 2183,
+        "wall_ms": 9244,
+        "rss_peak_mb": 2332,
         "crash": null,
         "control": {
           "hits": 4,
@@ -478,8 +478,8 @@
         "tier": "20mb",
         "doc": "conversation",
         "arm": "managed-parts",
-        "wall_ms": 183020,
-        "rss_peak_mb": 2249,
+        "wall_ms": 183359,
+        "rss_peak_mb": 2257,
         "crash": null,
         "control": {
           "hits": 4,
@@ -1208,7 +1208,7 @@
           "chunks_rewritten": 0,
           "chunks_deleted": 0,
           "path": "put_page (whole page rewrite)",
-          "wall_ms": 2566,
+          "wall_ms": 2508,
           "embed": {
             "inputs": 0,
             "tokens": 0
@@ -1241,32 +1241,32 @@
           {
             "phase": "start",
             "t_ms": 1,
-            "rss_mb": 679,
-            "max_rss_mb": 1070
+            "rss_mb": 706,
+            "max_rss_mb": 1013
           },
           {
             "phase": "ingest",
-            "t_ms": 2958,
-            "rss_mb": 2247,
-            "max_rss_mb": 2247
+            "t_ms": 2986,
+            "rss_mb": 1980,
+            "max_rss_mb": 1980
           },
           {
             "phase": "reads",
-            "t_ms": 3380,
-            "rss_mb": 936,
-            "max_rss_mb": 2248
+            "t_ms": 3404,
+            "rss_mb": 1154,
+            "max_rss_mb": 1981
           },
           {
             "phase": "append",
-            "t_ms": 6021,
-            "rss_mb": 1955,
-            "max_rss_mb": 2248
+            "t_ms": 5978,
+            "rss_mb": 2332,
+            "max_rss_mb": 2332
           },
           {
             "phase": "export",
-            "t_ms": 6046,
-            "rss_mb": 1884,
-            "max_rss_mb": 2248
+            "t_ms": 5995,
+            "rss_mb": 2326,
+            "max_rss_mb": 2333
           }
         ],
         "ingest": {
@@ -1277,7 +1277,7 @@
           "chunks": 0,
           "embed_skip": null,
           "write_errors": 1,
-          "wall_ms": 2957
+          "wall_ms": 2984
         },
         "direct_read": {
           "bytes": null,
@@ -1286,7 +1286,7 @@
         "embed_initial": {
           "inputs": 2,
           "tokens": 1089,
-          "wall_ms": 45.92353899999944
+          "wall_ms": 42.90772199999992
         },
         "embed_error": null
       },
@@ -1945,7 +1945,7 @@
           "chunks_rewritten": 4,
           "chunks_deleted": 3,
           "path": "put_page new part + hub index update",
-          "wall_ms": 591,
+          "wall_ms": 647,
           "embed": {
             "inputs": 4,
             "tokens": 3038
@@ -1985,32 +1985,32 @@
           {
             "phase": "start",
             "t_ms": 1,
-            "rss_mb": 654,
-            "max_rss_mb": 1019
+            "rss_mb": 664,
+            "max_rss_mb": 952
           },
           {
             "phase": "ingest",
-            "t_ms": 41566,
-            "rss_mb": 1027,
-            "max_rss_mb": 1127
+            "t_ms": 39892,
+            "rss_mb": 1095,
+            "max_rss_mb": 1193
           },
           {
             "phase": "reads",
-            "t_ms": 44463,
-            "rss_mb": 1034,
-            "max_rss_mb": 1127
+            "t_ms": 42708,
+            "rss_mb": 1084,
+            "max_rss_mb": 1193
           },
           {
             "phase": "append",
-            "t_ms": 177991,
-            "rss_mb": 1781,
-            "max_rss_mb": 2249
+            "t_ms": 178443,
+            "rss_mb": 1776,
+            "max_rss_mb": 2257
           },
           {
             "phase": "export",
-            "t_ms": 179742,
-            "rss_mb": 2151,
-            "max_rss_mb": 2249
+            "t_ms": 180185,
+            "rss_mb": 2129,
+            "max_rss_mb": 2257
           }
         ],
         "ingest": {
@@ -2019,7 +2019,7 @@
           "chunks": 8695,
           "embed_skip": null,
           "write_errors": 0,
-          "wall_ms": 41565
+          "wall_ms": 39891
         },
         "direct_read": {
           "bytes": 65071
@@ -2027,7 +2027,7 @@
         "embed_initial": {
           "inputs": 8697,
           "tokens": 5789726,
-          "wall_ms": 132424.253859
+          "wall_ms": 134510.733481
         },
         "embed_error": null
       }

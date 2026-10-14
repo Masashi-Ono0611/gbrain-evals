@@ -5165,7 +5165,7 @@
       "claim_id": "n14-large-page-baseline-2mb-c71fe74",
       "readme_anchor": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md: 2 MB single-page stored with embed_skip oversized, 0/40 recall per document, 2,042,154-byte default read; managed parts 40/40 on all three documents; 3 responses over 1 MiB",
       "artifact_path": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/2mb/receipt.json",
-      "artifact_sha256": "8f4cf0cef617279412ae0f71f9dbce5e8d44e27332566dc7cacc29b90a51bb4c",
+      "artifact_sha256": "5bbe575ce3f4794d018ff68187afbe6f2ff8cd33b42999f2c30196eac9885afd",
       "expected": {
         "/run_status": "completed",
         "/data/safety/responses_over_cap": 3,
@@ -5182,13 +5182,13 @@
       },
       "golden_test": "test/eval/n14-large-page-fidelity.test.ts: pinned 2 MB ledger hash, scorer and mutation suite",
       "status": "covered",
-      "note": "N14 hermetic baseline, 2mb tier, gbrain master c71fe74 (v0.60.225.0) through --gbrain, gbrain-evals eb45cf7, keyword search and a counting embedder, $0."
+      "note": "N14 hermetic baseline, 2mb tier, gbrain master c71fe74 (v0.60.225.0) through --gbrain, gbrain-evals b654b38, keyword search and a counting embedder, $0."
     },
     {
       "claim_id": "n14-large-page-baseline-20mb-c71fe74",
       "readme_anchor": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md: 20 MB single-page refused with request_too_large; managed parts 40/40, 8,695 chunks, append ratio 11.78",
       "artifact_path": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/20mb/receipt.json",
-      "artifact_sha256": "3de5c12e9c5d6290b155e3a5b9dbbb1345fa9550dec267bb0bb9c2891f73f2f8",
+      "artifact_sha256": "3614f6e4dfc76e1070575ecb326e30418c6a1f0ef8f6bd62d1d06acb16ab5058",
       "expected": {
         "/run_status": "completed",
         "/data/arms/1/ingest/code": "request_too_large",
@@ -5200,13 +5200,13 @@
       },
       "golden_test": "test/eval/n14-large-page-fidelity.test.ts: pinned 2 MB ledger hash, scorer and mutation suite",
       "status": "covered",
-      "note": "N14 hermetic baseline, 20mb tier, gbrain master c71fe74 (v0.60.225.0) through --gbrain, gbrain-evals eb45cf7, keyword search and a counting embedder, $0."
+      "note": "N14 hermetic baseline, 20mb tier, gbrain master c71fe74 (v0.60.225.0) through --gbrain, gbrain-evals b654b38, keyword search and a counting embedder, $0."
     },
     {
       "claim_id": "n14-large-page-baseline-200mb-c71fe74",
       "readme_anchor": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md: 200 MB single-page refused with retryable queue_capacity (N14-4); managed parts 40/40, 88,720 chunks, largest response 181,011 bytes, no crash",
       "artifact_path": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/200mb/receipt.json",
-      "artifact_sha256": "2d0a8075b61e43f887779c690259c55c15fdf2cc01a71419f22dd5021782dbbc",
+      "artifact_sha256": "78bf0bb992e2cee15749148c0887b004e177405c8f532caa141b9895abd9dac3",
       "expected": {
         "/run_status": "completed",
         "/data/arms/1/ingest/code": "queue_capacity",
@@ -5218,7 +5218,7 @@
       },
       "golden_test": "test/eval/n14-large-page-fidelity.test.ts: pinned 2 MB ledger hash, scorer and mutation suite",
       "status": "covered",
-      "note": "N14 hermetic baseline, 200mb tier, gbrain master c71fe74 (v0.60.225.0) through --gbrain, gbrain-evals eb45cf7, keyword search and a counting embedder, $0."
+      "note": "N14 hermetic baseline, 200mb tier, gbrain master c71fe74 (v0.60.225.0) through --gbrain, gbrain-evals b654b38, keyword search and a counting embedder, $0."
     }
   ]
 }

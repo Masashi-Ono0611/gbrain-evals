@@ -23,10 +23,10 @@
   "gbrain_pin": "github:garrytan/gbrain#77cf8e1116e9af67c1983adcbb3223b96f0991a5",
   "execution": {
     "source_tree": {
-      "sha256": "0fe825ee17a94de2c20a2de91f98ca2fae75c61bc00e8897d7098fbec1fbc997",
+      "sha256": "843702c82ebd6b416a79eae6a9658980513771d18fae3932ece9279fc518d8e4",
       "scheme": "git-index-blob-v1",
       "files": 12871,
-      "git_head": "eb45cf765476f7cdd660b7639c5c5c7cd042dcd7",
+      "git_head": "28c12a27326404b968f5dd65b02cf01feb48508d",
       "dirty": true
     },
     "product": {
@@ -102,13 +102,13 @@
       },
       "copied_not_symlinked": true
     },
-    "hermetic_wall_ms": 48553
+    "hermetic_wall_ms": 45091
   },
   "hashes": {
     "ledger_sha256": "c09ed85562906f0fd9d959eed907d85743c544085711d31ff5e0490ece1fb436"
   },
-  "started_at": "2026-10-14T18:46:09.776Z",
-  "finished_at": "2026-10-14T18:47:00.122Z",
+  "started_at": "2026-10-14T18:56:33.661Z",
+  "finished_at": "2026-10-14T18:57:20.683Z",
   "data": {
     "safety": {
       "crashes": 0,
@@ -438,9 +438,9 @@
           "chunks": 0,
           "pages": 1,
           "embed_skip": "oversized",
-          "wall_ms": 1036,
-          "rss_peak_mb": 1020,
-          "rss_over_baseline_mb": 410
+          "wall_ms": 1029,
+          "rss_peak_mb": 1045,
+          "rss_over_baseline_mb": 13
         },
         "stored_needles": {
           "hits": 40,
@@ -522,7 +522,7 @@
         "responses_over_cap": 1,
         "append": {
           "status": "ok",
-          "wall_ms": 768,
+          "wall_ms": 866,
           "embed_inputs": 0,
           "embed_tokens": 0,
           "appended_tokens": 261,
@@ -535,7 +535,7 @@
         "embed_initial": {
           "inputs": 2,
           "tokens": 1076,
-          "wall_ms": 47,
+          "wall_ms": 75,
           "tokens_per_mb": 538
         },
         "roundtrip": "match",
@@ -551,9 +551,9 @@
           "chunks": 754,
           "pages": 366,
           "embed_skip": null,
-          "wall_ms": 13909,
-          "rss_peak_mb": 955,
-          "rss_over_baseline_mb": 341
+          "wall_ms": 12754,
+          "rss_peak_mb": 982,
+          "rss_over_baseline_mb": 7
         },
         "stored_needles": {
           "hits": 40,
@@ -635,7 +635,7 @@
         "responses_over_cap": 0,
         "append": {
           "status": "ok",
-          "wall_ms": 276,
+          "wall_ms": 295,
           "embed_inputs": 2,
           "embed_tokens": 558,
           "appended_tokens": 261,
@@ -648,7 +648,7 @@
         "embed_initial": {
           "inputs": 756,
           "tokens": 552504,
-          "wall_ms": 8629,
+          "wall_ms": 8183,
           "tokens_per_mb": 276237
         },
         "roundtrip": "match",
@@ -664,9 +664,9 @@
           "chunks": 0,
           "pages": 1,
           "embed_skip": "oversized",
-          "wall_ms": 1072,
-          "rss_peak_mb": 955,
-          "rss_over_baseline_mb": 342
+          "wall_ms": 939,
+          "rss_peak_mb": 1064,
+          "rss_over_baseline_mb": 430
         },
         "stored_needles": {
           "hits": 40,
@@ -748,7 +748,7 @@
         "responses_over_cap": 1,
         "append": {
           "status": "ok",
-          "wall_ms": 817,
+          "wall_ms": 826,
           "embed_inputs": 0,
           "embed_tokens": 0,
           "appended_tokens": 250,
@@ -761,7 +761,7 @@
         "embed_initial": {
           "inputs": 2,
           "tokens": 1041,
-          "wall_ms": 52,
+          "wall_ms": 61,
           "tokens_per_mb": 520
         },
         "roundtrip": "match",
@@ -777,9 +777,9 @@
           "chunks": 824,
           "pages": 366,
           "embed_skip": null,
-          "wall_ms": 13804,
-          "rss_peak_mb": 1024,
-          "rss_over_baseline_mb": 410
+          "wall_ms": 12520,
+          "rss_peak_mb": 992,
+          "rss_over_baseline_mb": 363
         },
         "stored_needles": {
           "hits": 40,
@@ -861,7 +861,7 @@
         "responses_over_cap": 0,
         "append": {
           "status": "ok",
-          "wall_ms": 291,
+          "wall_ms": 250,
           "embed_inputs": 4,
           "embed_tokens": 1390,
           "appended_tokens": 250,
@@ -874,7 +874,7 @@
         "embed_initial": {
           "inputs": 826,
           "tokens": 551019,
-          "wall_ms": 9819,
+          "wall_ms": 8915,
           "tokens_per_mb": 275449
         },
         "roundtrip": "match",
@@ -890,9 +890,9 @@
           "chunks": 0,
           "pages": 1,
           "embed_skip": "oversized",
-          "wall_ms": 764,
-          "rss_peak_mb": 1102,
-          "rss_over_baseline_mb": 271
+          "wall_ms": 727,
+          "rss_peak_mb": 1055,
+          "rss_over_baseline_mb": 458
         },
         "stored_needles": {
           "hits": 40,
@@ -974,7 +974,7 @@
         "responses_over_cap": 1,
         "append": {
           "status": "ok",
-          "wall_ms": 583,
+          "wall_ms": 603,
           "embed_inputs": 0,
           "embed_tokens": 0,
           "appended_tokens": 268,
@@ -987,7 +987,7 @@
         "embed_initial": {
           "inputs": 2,
           "tokens": 1106,
-          "wall_ms": 74,
+          "wall_ms": 48,
           "tokens_per_mb": 737
         },
         "roundtrip": "match",
@@ -1003,9 +1003,9 @@
           "chunks": 667,
           "pages": 42,
           "embed_skip": null,
-          "wall_ms": 3113,
-          "rss_peak_mb": 1046,
-          "rss_over_baseline_mb": 412
+          "wall_ms": 2765,
+          "rss_peak_mb": 1162,
+          "rss_over_baseline_mb": 324
         },
         "stored_needles": {
           "hits": 40,
@@ -1087,7 +1087,7 @@
         "responses_over_cap": 0,
         "append": {
           "status": "ok",
-          "wall_ms": 249,
+          "wall_ms": 213,
           "embed_inputs": 2,
           "embed_tokens": 744,
           "appended_tokens": 268,
@@ -1100,7 +1100,7 @@
         "embed_initial": {
           "inputs": 669,
           "tokens": 434820,
-          "wall_ms": 5719,
+          "wall_ms": 5503,
           "tokens_per_mb": 289779
         },
         "roundtrip": "match",
@@ -1112,8 +1112,8 @@
         "tier": "2mb",
         "doc": "conversation",
         "arm": "single-page",
-        "wall_ms": 6365,
-        "rss_peak_mb": 1166,
+        "wall_ms": 6065,
+        "rss_peak_mb": 1184,
         "crash": null,
         "control": {
           "hits": 4,
@@ -1125,8 +1125,8 @@
         "tier": "2mb",
         "doc": "conversation",
         "arm": "managed-parts",
-        "wall_ms": 28712,
-        "rss_peak_mb": 1386,
+        "wall_ms": 26386,
+        "rss_peak_mb": 1470,
         "crash": null,
         "control": {
           "hits": 4,
@@ -1138,8 +1138,8 @@
         "tier": "2mb",
         "doc": "project-log",
         "arm": "single-page",
-        "wall_ms": 6055,
-        "rss_peak_mb": 1174,
+        "wall_ms": 5457,
+        "rss_peak_mb": 1194,
         "crash": null,
         "control": {
           "hits": 4,
@@ -1151,8 +1151,8 @@
         "tier": "2mb",
         "doc": "project-log",
         "arm": "managed-parts",
-        "wall_ms": 29283,
-        "rss_peak_mb": 1429,
+        "wall_ms": 26291,
+        "rss_peak_mb": 1406,
         "crash": null,
         "control": {
           "hits": 4,
@@ -1164,8 +1164,8 @@
         "tier": "2mb",
         "doc": "book",
         "arm": "single-page",
-        "wall_ms": 5158,
-        "rss_peak_mb": 1135,
+        "wall_ms": 4814,
+        "rss_peak_mb": 994,
         "crash": null,
         "control": {
           "hits": 4,
@@ -1177,8 +1177,8 @@
         "tier": "2mb",
         "doc": "book",
         "arm": "managed-parts",
-        "wall_ms": 13673,
-        "rss_peak_mb": 1111,
+        "wall_ms": 12848,
+        "rss_peak_mb": 1137,
         "crash": null,
         "control": {
           "hits": 4,
@@ -2021,7 +2021,7 @@
           "chunks_rewritten": 0,
           "chunks_deleted": 0,
           "path": "put_page (whole page rewrite)",
-          "wall_ms": 768,
+          "wall_ms": 866,
           "embed": {
             "inputs": 0,
             "tokens": 0
@@ -2061,32 +2061,32 @@
           {
             "phase": "start",
             "t_ms": 1,
-            "rss_mb": 610,
-            "max_rss_mb": 1020
+            "rss_mb": 1032,
+            "max_rss_mb": 1032
           },
           {
             "phase": "ingest",
-            "t_ms": 1037,
-            "rss_mb": 903,
-            "max_rss_mb": 1020
+            "t_ms": 1030,
+            "rss_mb": 934,
+            "max_rss_mb": 1045
           },
           {
             "phase": "reads",
-            "t_ms": 1647,
-            "rss_mb": 811,
-            "max_rss_mb": 1020
+            "t_ms": 1681,
+            "rss_mb": 790,
+            "max_rss_mb": 1045
           },
           {
             "phase": "append",
-            "t_ms": 2481,
-            "rss_mb": 1165,
-            "max_rss_mb": 1167
+            "t_ms": 2644,
+            "rss_mb": 1184,
+            "max_rss_mb": 1185
           },
           {
             "phase": "export",
-            "t_ms": 2534,
-            "rss_mb": 1206,
-            "max_rss_mb": 1206
+            "t_ms": 2693,
+            "rss_mb": 1227,
+            "max_rss_mb": 1227
           }
         ],
         "ingest": {
@@ -2095,7 +2095,7 @@
           "chunks": 0,
           "embed_skip": "oversized",
           "write_errors": 0,
-          "wall_ms": 1036
+          "wall_ms": 1029
         },
         "direct_read": {
           "bytes": 2042154
@@ -2103,7 +2103,7 @@
         "embed_initial": {
           "inputs": 2,
           "tokens": 1076,
-          "wall_ms": 47.09982000000036
+          "wall_ms": 75.3486899999998
         },
         "embed_error": null
       },
@@ -2762,7 +2762,7 @@
           "chunks_rewritten": 2,
           "chunks_deleted": 1,
           "path": "put_page new part + hub index update",
-          "wall_ms": 276,
+          "wall_ms": 295,
           "embed": {
             "inputs": 2,
             "tokens": 558
@@ -2802,32 +2802,32 @@
           {
             "phase": "start",
             "t_ms": 1,
-            "rss_mb": 614,
-            "max_rss_mb": 955
+            "rss_mb": 975,
+            "max_rss_mb": 975
           },
           {
             "phase": "ingest",
-            "t_ms": 13911,
-            "rss_mb": 770,
-            "max_rss_mb": 955
+            "t_ms": 12755,
+            "rss_mb": 768,
+            "max_rss_mb": 982
           },
           {
             "phase": "reads",
-            "t_ms": 15383,
-            "rss_mb": 818,
-            "max_rss_mb": 955
+            "t_ms": 14092,
+            "rss_mb": 852,
+            "max_rss_mb": 982
           },
           {
             "phase": "append",
-            "t_ms": 24436,
-            "rss_mb": 1196,
-            "max_rss_mb": 1386
+            "t_ms": 22686,
+            "rss_mb": 1260,
+            "max_rss_mb": 1470
           },
           {
             "phase": "export",
-            "t_ms": 24917,
-            "rss_mb": 1192,
-            "max_rss_mb": 1386
+            "t_ms": 23160,
+            "rss_mb": 1272,
+            "max_rss_mb": 1470
           }
         ],
         "ingest": {
@@ -2836,7 +2836,7 @@
           "chunks": 754,
           "embed_skip": null,
           "write_errors": 0,
-          "wall_ms": 13909
+          "wall_ms": 12754
         },
         "direct_read": {
           "bytes": 23901
@@ -2844,7 +2844,7 @@
         "embed_initial": {
           "inputs": 756,
           "tokens": 552504,
-          "wall_ms": 8628.892608999999
+          "wall_ms": 8182.8643090000005
         },
         "embed_error": null
       },
@@ -3503,7 +3503,7 @@
           "chunks_rewritten": 0,
           "chunks_deleted": 0,
           "path": "put_page (whole page rewrite)",
-          "wall_ms": 817,
+          "wall_ms": 826,
           "embed": {
             "inputs": 0,
             "tokens": 0
@@ -3543,32 +3543,32 @@
           {
             "phase": "start",
             "t_ms": 1,
-            "rss_mb": 613,
-            "max_rss_mb": 955
+            "rss_mb": 634,
+            "max_rss_mb": 1064
           },
           {
             "phase": "ingest",
-            "t_ms": 1073,
-            "rss_mb": 894,
-            "max_rss_mb": 955
+            "t_ms": 940,
+            "rss_mb": 928,
+            "max_rss_mb": 1064
           },
           {
             "phase": "reads",
-            "t_ms": 1845,
-            "rss_mb": 794,
-            "max_rss_mb": 955
+            "t_ms": 1674,
+            "rss_mb": 892,
+            "max_rss_mb": 1064
           },
           {
             "phase": "append",
-            "t_ms": 2733,
-            "rss_mb": 1121,
-            "max_rss_mb": 1121
+            "t_ms": 2579,
+            "rss_mb": 1155,
+            "max_rss_mb": 1155
           },
           {
             "phase": "export",
-            "t_ms": 2781,
-            "rss_mb": 1164,
-            "max_rss_mb": 1164
+            "t_ms": 2624,
+            "rss_mb": 1198,
+            "max_rss_mb": 1198
           }
         ],
         "ingest": {
@@ -3577,7 +3577,7 @@
           "chunks": 0,
           "embed_skip": "oversized",
           "write_errors": 0,
-          "wall_ms": 1072
+          "wall_ms": 939
         },
         "direct_read": {
           "bytes": 2049651
@@ -3585,7 +3585,7 @@
         "embed_initial": {
           "inputs": 2,
           "tokens": 1041,
-          "wall_ms": 52.324665999999525
+          "wall_ms": 61.223572999999305
         },
         "embed_error": null
       },
@@ -4244,7 +4244,7 @@
           "chunks_rewritten": 4,
           "chunks_deleted": 2,
           "path": "put_page new part + hub index update",
-          "wall_ms": 291,
+          "wall_ms": 250,
           "embed": {
             "inputs": 4,
             "tokens": 1390
@@ -4284,32 +4284,32 @@
           {
             "phase": "start",
             "t_ms": 1,
-            "rss_mb": 614,
-            "max_rss_mb": 1024
+            "rss_mb": 629,
+            "max_rss_mb": 992
           },
           {
             "phase": "ingest",
-            "t_ms": 13805,
-            "rss_mb": 785,
-            "max_rss_mb": 1024
+            "t_ms": 12521,
+            "rss_mb": 793,
+            "max_rss_mb": 992
           },
           {
             "phase": "reads",
-            "t_ms": 15112,
-            "rss_mb": 792,
-            "max_rss_mb": 1024
+            "t_ms": 13743,
+            "rss_mb": 787,
+            "max_rss_mb": 992
           },
           {
             "phase": "append",
-            "t_ms": 25370,
-            "rss_mb": 1251,
-            "max_rss_mb": 1429
+            "t_ms": 23043,
+            "rss_mb": 1149,
+            "max_rss_mb": 1407
           },
           {
             "phase": "export",
-            "t_ms": 25901,
-            "rss_mb": 1270,
-            "max_rss_mb": 1429
+            "t_ms": 23498,
+            "rss_mb": 1145,
+            "max_rss_mb": 1407
           }
         ],
         "ingest": {
@@ -4318,7 +4318,7 @@
           "chunks": 824,
           "embed_skip": null,
           "write_errors": 0,
-          "wall_ms": 13804
+          "wall_ms": 12520
         },
         "direct_read": {
           "bytes": 18020
@@ -4326,7 +4326,7 @@
         "embed_initial": {
           "inputs": 826,
           "tokens": 551019,
-          "wall_ms": 9818.660428000003
+          "wall_ms": 8915.171522
         },
         "embed_error": null
       },
@@ -4985,7 +4985,7 @@
           "chunks_rewritten": 0,
           "chunks_deleted": 0,
           "path": "put_page (whole page rewrite)",
-          "wall_ms": 583,
+          "wall_ms": 603,
           "embed": {
             "inputs": 0,
             "tokens": 0
@@ -5025,32 +5025,32 @@
           {
             "phase": "start",
             "t_ms": 1,
-            "rss_mb": 831,
-            "max_rss_mb": 1063
+            "rss_mb": 597,
+            "max_rss_mb": 1055
           },
           {
             "phase": "ingest",
-            "t_ms": 765,
-            "rss_mb": 1102,
-            "max_rss_mb": 1102
+            "t_ms": 729,
+            "rss_mb": 806,
+            "max_rss_mb": 1055
           },
           {
             "phase": "reads",
-            "t_ms": 1374,
-            "rss_mb": 836,
-            "max_rss_mb": 1102
+            "t_ms": 1259,
+            "rss_mb": 684,
+            "max_rss_mb": 1055
           },
           {
             "phase": "append",
-            "t_ms": 2064,
-            "rss_mb": 1077,
-            "max_rss_mb": 1102
+            "t_ms": 1936,
+            "rss_mb": 970,
+            "max_rss_mb": 1055
           },
           {
             "phase": "export",
-            "t_ms": 2117,
-            "rss_mb": 1117,
-            "max_rss_mb": 1117
+            "t_ms": 1975,
+            "rss_mb": 1004,
+            "max_rss_mb": 1055
           }
         ],
         "ingest": {
@@ -5059,7 +5059,7 @@
           "chunks": 0,
           "embed_skip": "oversized",
           "write_errors": 0,
-          "wall_ms": 764
+          "wall_ms": 727
         },
         "direct_read": {
           "bytes": 1510597
@@ -5067,7 +5067,7 @@
         "embed_initial": {
           "inputs": 2,
           "tokens": 1106,
-          "wall_ms": 74.25624600000083
+          "wall_ms": 47.717315999999755
         },
         "embed_error": null
       },
@@ -5726,7 +5726,7 @@
           "chunks_rewritten": 2,
           "chunks_deleted": 1,
           "path": "put_page new part + hub index update",
-          "wall_ms": 249,
+          "wall_ms": 213,
           "embed": {
             "inputs": 2,
             "tokens": 744
@@ -5766,32 +5766,32 @@
           {
             "phase": "start",
             "t_ms": 1,
-            "rss_mb": 634,
-            "max_rss_mb": 1046
+            "rss_mb": 838,
+            "max_rss_mb": 1162
           },
           {
             "phase": "ingest",
-            "t_ms": 3114,
-            "rss_mb": 718,
-            "max_rss_mb": 1046
+            "t_ms": 2766,
+            "rss_mb": 717,
+            "max_rss_mb": 1162
           },
           {
             "phase": "reads",
-            "t_ms": 4547,
-            "rss_mb": 793,
-            "max_rss_mb": 1046
+            "t_ms": 3890,
+            "rss_mb": 784,
+            "max_rss_mb": 1162
           },
           {
             "phase": "append",
-            "t_ms": 10644,
-            "rss_mb": 921,
-            "max_rss_mb": 1117
+            "t_ms": 9718,
+            "rss_mb": 910,
+            "max_rss_mb": 1162
           },
           {
             "phase": "export",
-            "t_ms": 10743,
-            "rss_mb": 932,
-            "max_rss_mb": 1117
+            "t_ms": 9842,
+            "rss_mb": 925,
+            "max_rss_mb": 1162
           }
         ],
         "ingest": {
@@ -5800,7 +5800,7 @@
           "chunks": 667,
           "embed_skip": null,
           "write_errors": 0,
-          "wall_ms": 3113
+          "wall_ms": 2765
         },
         "direct_read": {
           "bytes": 2943
@@ -5808,7 +5808,7 @@
         "embed_initial": {
           "inputs": 669,
           "tokens": 434820,
-          "wall_ms": 5719.341055000001
+          "wall_ms": 5503.457579
         },
         "embed_error": null
       }

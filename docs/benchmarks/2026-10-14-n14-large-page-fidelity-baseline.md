@@ -25,7 +25,7 @@ Split into 365 day pages plus a hub, the same chat gives 754 chunks. All 40 fact
 
 **Build.** The corpus comes from `eval/generators/n14-large-page-gen.ts` (version `n14-large-page-gen/v1`, seed 14). The 2 MB tier holds a 2,000,112-byte chat, a 2,000,437-byte project log and a 1,500,522-byte novel (ledger SHA-256 `c09ed85562906f0fd9d959eed907d85743c544085711d31ff5e0490ece1fb436`, pinned in `test/eval/n14-large-page-fidelity.test.ts`). The chat is also generated at 20,000,039 bytes (ledger `aa3db342…`) and 200,000,076 bytes (ledger `3b390e29…`). Each document has 40 needles, four per decile (a number, a date, a surname and a colour), and each needle has a distractor five deciles away. Each document also has a fixed 1 KB append holding one more needle. Presence checks rescanned the raw bytes before scoring and passed on all five documents. Each brain also found 4 of 4 needles on its small control page.
 
-**Run.** The runner is `eval/runner/n14-large-page-fidelity.ts` at gbrain-evals `eb45cf7`. gbrain is master `c71fe7436e673db819c1be4532504b861e14ad50` (v0.60.225.0), loaded as an overlay with `--gbrain`. The runner used Bun 1.4.2, because gbrain master's export path needs Bun 1.4 or newer. Each (document, arm) pair ran in a fresh in-memory PGLite brain, in its own child process, inside a `systemd-run` scope with `MemoryMax=6G` on a 4-core machine. The 200 MB tier ran one child at a time.
+**Run.** The runner is `eval/runner/n14-large-page-fidelity.ts` at gbrain-evals `b654b38`; the receipts record `git_head` `28c12a2`, which adds only documentation on top of it. gbrain is master `c71fe7436e673db819c1be4532504b861e14ad50` (v0.60.225.0), loaded as an overlay with `--gbrain`. The runner used Bun 1.4.2, because gbrain master's export path needs Bun 1.4 or newer. Each (document, arm) pair ran in a fresh in-memory PGLite brain, in its own child process, inside a `systemd-run` scope with `MemoryMax=6G` on a 4-core machine. The 200 MB tier ran one child at a time.
 
 ```
 bun eval/runner/n14-large-page-fidelity.ts --tier 2mb   --gbrain <checkout>@c71fe74… --output docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/2mb   --record-bugs
@@ -33,7 +33,7 @@ bun eval/runner/n14-large-page-fidelity.ts --tier 20mb  --gbrain <checkout>@c71f
 bun eval/runner/n14-large-page-fidelity.ts --tier 200mb --concurrency 1 --gbrain <checkout>@c71fe74… --output …/200mb --record-bugs
 ```
 
-All three receipts have `run_status: completed` and no errors. Refusals are scored as misses, not as harness errors. The receipts record the source tree as dirty. The only uncommitted changes during the runs were the receipts themselves (replacing an earlier run of the same code paths whose receipts carried a machine-local path) and the bug-ledger entries the runs wrote; the code was the committed `eb45cf7`. The run was hermetic and cost $0: provider keys were stripped, search ran on the keyword path, and the append-cost embedder was an in-process counter.
+All three receipts have `run_status: completed` and no errors. Refusals are scored as misses, not as harness errors. The receipts record the source tree as dirty. The only uncommitted changes during the runs were the receipts themselves, which replace an earlier run of the same code with identical counts, and wording in this report and the receipts manifest. The bug-ledger entries come from that earlier run with `--record-bugs` (2026-10-14, same commit for gbrain); every count in this report is identical across the two runs. The run was hermetic and cost $0: provider keys were stripped, search ran on the keyword path, and the append-cost embedder was an in-process counter.
 
 **Recall, reads and storage.** The native arm was capability absent in every cell. Recall is keyword needle recall@10 over the 40 needles of each document.
 
@@ -81,21 +81,21 @@ The append writes two pages, the new part and the hub. Embedding inputs equal ch
 
 | Tier | Document | Arm | Ingest (s) | Embed pass, counted (s) | Child wall (s) | Child peak RSS (MB) |
 |---|---|---|---:|---:|---:|---:|
-| 2 MB | chat | single-page | 1.0 | – | 6.4 | 1,166 |
-| 2 MB | chat | managed-parts | 13.9 | 8.6 | 28.7 | 1,386 |
-| 2 MB | novel | managed-parts | 3.1 | 5.7 | 13.7 | 1,111 |
-| 20 MB | chat | single-page (refused) | 3.0 | – | 9.5 | 2,183 |
-| 20 MB | chat | managed-parts | 41.6 | 132.4 | 183.0 | 2,249 |
-| 200 MB | chat | single-page (refused) | 2.8 | – | 9.6 | 4,355 |
-| 200 MB | chat | managed-parts | 233.3 | – | 267.5 | 4,918 |
+| 2 MB | chat | single-page | 1.0 | – | 6.1 | 1,184 |
+| 2 MB | chat | managed-parts | 12.8 | 8.2 | 26.4 | 1,470 |
+| 2 MB | novel | managed-parts | 2.8 | 5.5 | 12.8 | 1,137 |
+| 20 MB | chat | single-page (refused) | 3.0 | – | 9.2 | 2,332 |
+| 20 MB | chat | managed-parts | 39.9 | 134.5 | 183.4 | 2,257 |
+| 200 MB | chat | single-page (refused) | 2.8 | – | 9.4 | 4,007 |
+| 200 MB | chat | managed-parts | 228.4 | – | 261.1 | 4,910 |
 
-The 2 MB tier, which is the CI tier, ran in 48.6 s of hermetic arm time (45.2 s in an identical earlier run) against the preregistered 60 s target. Managed parts embedded about 276,000 to 290,000 estimated tokens per MB on every document.
+The 2 MB tier, which is the CI tier, ran in 45.1 s of hermetic arm time against the preregistered 60 s target. Managed parts embedded about 276,000 to 290,000 estimated tokens per MB on every document.
 
 **Harness fixes after the preregistration commit.** Three runner changes landed before these receipts, and none changes a rule, threshold, arm or model.
 
 - `08c4888` adds finding N14-4.
 - `686f541` returns gbrain's AI gateway to keyless after each counting embed pass. Before this fix, the counting embedder's placeholder key stayed installed. The post-append searches then ran gbrain's default cheap-hybrid over hash vectors instead of the keyword path every other probe uses, and at 20 MB that pushed the appended needle out of the top 10. It also let writes after the first pass embed at write time, outside the counted pass. That is why earlier smoke runs showed append ratios of 1.07 to 4.50 at 2 MB, against 2.14 to 5.56 here: the earlier counts missed the inline embeds. After the fix, embedding inputs equal chunks rewritten in every cell.
-- `eb45cf7` scrubs home and temp paths from the receipt (the `--gbrain` checkout path leaked) and makes `--record-bugs` write a dated rerun review naming the receipt for each finding.
+- `b654b38` scrubs home and temp paths from the receipt (the `--gbrain` checkout path leaked) and makes `--record-bugs` write a dated rerun review naming the receipt for each finding.
 
 ## gbrain bugs found
 
