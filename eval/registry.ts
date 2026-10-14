@@ -895,6 +895,38 @@ export const REGISTRY: readonly CategoryEntry[] = [
     contract: 'Imports a vendored, hash-checked snapshot of one small MIT-licensed TypeScript repository (unjs/pathe at a pinned commit) into in-memory PGLite with gbrain\'s importCodeFile, keyless, then calls code_def, code_refs, code_callers, code_callees, code_blast and code_flow through the trusted local operation path (remote code reads are suspended at the pinned commit, so remote callers are checked only for refusal). It reports what each op returns, how fast, and whether it is ready, with narrow sanity checks against definitions and references from the TypeScript compiler (pinned devDependency), which is independent of gbrain. It records the documented limits: code_refs is a substring match, symbol resolution stays within one file, blast and flow cover TypeScript, TSX, JavaScript and Python only. It is not a quality study: no metric gates, and broad caller, blast and flow quality waits for independent call and flow gold. A gbrain exception is recorded per op; a failed hash check or an empty import is a harness error.',
   },
   {
+    id: 'large-page-fidelity', legacy_alias: 'N14', name: 'Large-page fidelity: find, read and append inside one very large document (single page, managed parts, native large page)',
+    family: 'ingestion', tier: 'H', script: 'eval/runner/n14-large-page-fidelity.ts', run: { kind: 'dispatched', outputFlag: '--output', timeoutMs: 600_000, exclusive: true },
+    cost_estimate: FREE, receipt_path: 'eval/reports/n14-large-page-fidelity/<output>/receipt.json',
+    headline: { metric: 'keyword needle recall@10 by decile, read correctness inside the 1 MiB egress cap, largest response frame, embedding inputs for a 1 KB append, byte-exact export round trip, ingest time and peak RSS, per arm (single page as-is, managed parts, native large page)', denominator: 'seed 14, tier 2mb: three generated documents (a 2.0 MB iMessage-style group chat, a 2.0 MB project log, a 1.5 MB novel), 40 planted needles each (4 per decile) with one distractor per needle, plus one 1 KB append needle and a 4-needle control page per brain; tiers 20mb and 200mb (the chat only) run manually, 1gb is listed' },
+    gate: 'report-only', evidence_maturity: 'synthetic-production-path',
+    promotion: {
+      preregistered: '2026-10-14',
+      basis: 'docs/benchmarks/2026-10-14-n14-large-page-fidelity-preregistration.md, frozen in the same commit as this row and the runner, before any counted run. Safety contracts restate the large-pages plan invariants (no crash or OOM up to 200 MB, no response frame over the 1 MiB egress cap, no byte loss on export, presence assertions pass); the native keyword recall floor is the utility floor that makes a refuse-everything system fail. Quality thresholds: embedding inputs for a 1 KB append at most 3x the appended tokens, native recall within 2 points of managed parts. The paid-arm threshold (hybrid needle recall@10 >= 0.95 at every decile for 2 MB and 20 MB) is preregistered in the same document and gates the paid receipt (data.paid.gates), not this hermetic row. Held until the large-pages Wave A capability reaches the pinned gbrain',
+      safety_contracts: [
+        zero('no-crash-or-oom', 'data.safety.crashes', 'no (document, arm) process crashes, is killed at the RSS ceiling (6 GiB) or exits without a result, at every size run up to 200 MB'),
+        zero('no-response-over-egress-cap', 'data.safety.responses_over_cap', 'no operation result frame (the JSON-RPC text frame that would carry it over MCP) exceeds 1 MiB, in any arm'),
+        zero('no-roundtrip-byte-loss', 'data.safety.roundtrip_byte_loss', 'every document an arm stored exports byte-identical (sha256, after gbrain\'s documented body trim and framing) to the source plus the append'),
+        zero('presence-assertions-pass', 'data.safety.presence_failures', 'the raw-byte oracle finds every needle, distractor, append and control answer exactly once at its ledger offset and decile, and every brain finds its control page'),
+      ],
+      quality_thresholds: [
+        { id: 'native-keyword-recall-floor', path: 'data.floor.native_keyword_recall_2mb', op: '>=', value: 0.9, description: 'utility floor: the native large-page arm finds at least 90% of the 2 MB tier needles with keyword search (a system that refuses or skips large pages scores 0)' },
+        { id: 'append-embed-cost', path: 'data.quality.native_append_embed_ratio_max', op: '<=', value: 3, description: 'embedding inputs for a 1 KB append on the native arm are at most 3x the appended tokens (both as UTF-8 bytes / 4), worst document; null when the page has no chunks' },
+        { id: 'native-not-worse-than-parts', path: 'data.quality.native_recall_gap_points_max', op: '<=', value: 2, description: 'native keyword needle recall is not worse than the managed-parts arm by more than 2 percentage points on any document and tier' },
+      ],
+      exploratory: [
+        'data.arms[].keyword_recall_by_decile and delivered_recall for every arm (the single-page and managed-parts arms are comparators)',
+        'data.arms[].ingest wall_ms, rss_peak_mb and rss_over_baseline_mb by size and arm (time and RSS curves)',
+        'data.arms[].embed_initial tokens_per_mb (embedding cost per MB at a model price)',
+        'data.arms[].append (chunks rewritten, wall time, embed ratio for every arm)',
+        'data.arms[].distractor_preferred (one-detail distractor ranked above the needle)',
+        '200 MB tier recall and resource use (manual tier)',
+      ],
+      held: { since: '2026-10-14', reason: 'the native large-page capability (get_page body modes with a window; large-pages plan Wave A) is absent at the pinned gbrain and at master c71fe743; the rules are reported, not gated, until a re-pin brings it' },
+    },
+    contract: 'Generates one very large Markdown document per kind (an iMessage-style group chat in the imessage-slack line shape at 2 MB, 20 MB or 200 MB; a project log; a novel), each with four planted needles per decile and a one-detail distractor per needle, and writes it into a fresh in-memory PGLite brain per arm through gbrain\'s operation handlers (trusted local caller), in a child process under an RSS watchdog. Arms: the whole document as one page with default reads (gbrain as it is), the managed-parts split (a hub page plus one page per `## ` section, the conversation-archive and imessage-daily design), and the native large page, run only when a capability probe of the operation registry finds get_page body modes with a window. Scores keyword needle recall@10 by decile against ledger gold (a hit is a stored chunk holding the answer as a whole token), read correctness inside the egress cap, the largest response frame, append cost with a counting fake embedder, the export round trip and ingest time and RSS. It does not measure real embeddings, vector or hybrid recall or agent QA (the paid arm, behind --paid --budget-run-id), the git layout, sync, transports other than in-process operations, or Postgres. A refused or unsearchable page is a scored miss; a gbrain exception where an answer is expected is a scored miss; a crashed arm process is a safety failure with its probes scored as misses; a failed presence assertion or a brain that cannot find its control page is a harness error and voids the run.',
+  },
+  {
     id: 'open-loops-email', legacy_alias: 'N7', name: 'Open loops on Gmail-shaped threads: turn-flip detection, closure, manual close and mute',
     family: 'agent', tier: 'H', script: 'eval/runner/n7-open-loops-email.ts', run: { kind: 'dispatched' },
     cost_estimate: FREE, receipt_path: receipt('n7-open-loops-email'),

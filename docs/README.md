@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.99, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.100, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -123,6 +123,7 @@ gap does not isolate the effect of a graph alone.
 | Does the Jev answerability signal (S4) make a reader abstain on unanswerable questions without refusing answerable ones? | [October 6 A4 with S4 on](benchmarks/2026-10-06-a4-s4-on.md) ([preregistration](benchmarks/2026-10-06-a4-s4-on-preregistration.md)) |
 | When the same conversation arrives as a Claude Code, Codex, ChatGPT or WhatsApp export (any of the 27 formats gbrain registers), does gbrain keep who said what and when, and admit what it cannot parse? Does a meeting page tell attendees from people only mentioned? (gates since 2026-10-02, when gbrain's fix for N12-1 was verified) | [October 1 ingestion format fidelity (N12)](benchmarks/2026-10-01-n12-format-fidelity.md) |
 | Are gbrain's six code-intelligence operations ready to use on a real TypeScript repository, and where do their documented limits show? | [October 1 code-intelligence readiness scout (N13)](benchmarks/2026-10-01-n13-code-intelligence.md) |
+| If I put one very large document in gbrain (a 2 MB chat, a novel, a 20 MB or 200 MB export), can an agent find and read what is deep inside it, and does keeping it up to date stay cheap? (report-only, held until gbrain ships a large-page API) | [October 14 large-page fidelity baseline (N14)](benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md) ([preregistration](benchmarks/2026-10-14-n14-large-page-fidelity-preregistration.md)) |
 | Does "who is waiting on me" open, close and mute Gmail loops the way the guide says, and where does a reply closing a loop differ from the work being done? | [October 1 open loops on Gmail-shaped threads (N7)](benchmarks/2026-10-01-n7-open-loops-email.md) |
 | Does the brain volunteer the right page when someone is mentioned, without false alarms, and does it keep private pages out of what it pushes? (report-only) | [October 1 unsolicited recall at final delivery (N8)](benchmarks/2026-10-01-n8-proactive-recall.md) |
 | Does relationship retrieval help questions that chain two or three relations, in wording the parser never saw, and does it still help reworded one-hop questions at the current pin? | [October 1 multi-hop check (N9)](benchmarks/2026-10-01-n9-multi-hop.md), [multi-relation planner preregistration](benchmarks/2026-10-04-p7-multi-hop-planner-preregistration.md) |
@@ -212,6 +213,10 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-14: N14 large-page fidelity row
+
+Adds the N14 large-page fidelity baseline and preregistration (gbrain-evals v0.10.100). The index header names v0.10.100 (was v0.10.99).
 
 ### 2026-10-14: expansion latency row
 

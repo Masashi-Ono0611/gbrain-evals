@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.99 (`VERSION`) |
+| This repository | gbrain-evals v0.10.100 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except two: the Cat 40 Hard row's, which shipped after it
@@ -302,6 +302,12 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-14: Repository row names v0.10.100
+
+gbrain-evals v0.10.100 adds BrainBench N14, large-page fidelity, and its hermetic baseline on gbrain master `c71fe74`.
+The category is report-only and held until gbrain ships a large-page API. No result row on this page changes. The
+repository row names v0.10.100 (was v0.10.99).
 
 ### 2026-10-14: Repository row names v0.10.99
 
