@@ -452,3 +452,17 @@ ledger rate of 1.108:
   2026-10-10, migrated on the copy only, and its data migration did not fully converge), and the sampler refused with
   exit 3 for fewer than 22 links (16,365 pages, 91 windows, population 0, 125 unresolved). That attempt does not
   count as a precision result; a run on the production brain is queued. The ship condition for F5 stands.
+
+## Run record (appended after cells; values only, no changes above)
+
+- **Public worlds P1, P2** (2026-10-13 22:00 to 2026-10-14 11:11 UTC): VM `ubirun-gbra39pub-1791928207-96180a31`,
+  harness `06a46d95` detached, ledger `.budget/cat40-next-confirm-public.sqlite` ($1,700 cap, $1,316.96 committed).
+  All 8 arm runs completed 300 canonical cells with 0 harness errors; ledger run ids in
+  `docs/benchmarks/2026-10-14-cat40-next-confirm-public/ledger-runs.json`. Oracle P1 298/300, P2 295/300. Model
+  freshness rerun 2026-10-14, exit 0. A first slot-build attempt (all 20 builds at once) hit the OpenAI embedding rate
+  limit and stopped before any counted cell ($12.91 from the reserve); the relaunch built at most 5 at a time. Record
+  and results: `docs/benchmarks/2026-10-14-cat40-next-confirm-public/`.
+  - **Primary, public:** wave − fs +12.50 pp [+9.17, +15.83] ("ahead"); P1 +11.33, P2 +13.67.
+  - **Secondary, public only:** wave − baseline success +4.00 [+1.33, +6.83]; wrong values −3.50 [−5.67, −1.33]. The
+    D3 test is pooled over four worlds and waits for S1, S2. Sol watch not flagged (2 vs 2).
+- **Sealed worlds S1, S2:** not run. Waiting on GBRA-40's staging step 3.
