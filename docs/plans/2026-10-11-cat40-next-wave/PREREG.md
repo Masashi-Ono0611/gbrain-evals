@@ -491,3 +491,37 @@ ledger rate of 1.108:
   seed 1; `next_confirm_analysis.py --wave gbrain-next-baseline`). Public: **+8.50 pp [+4.83, +12.33]** (475 vs 424
   of 600); P1 +9.67 [+4.33, +14.67], P2 +7.33 [+2.0, +13.0]. Sealed: pending. File:
   `docs/benchmarks/2026-10-14-cat40-next-confirm-public/public-baseline-vs-fs.json`.
+
+## Amendment 1 (2026-10-14, after the public results and before any S1/S2 counted cell)
+
+**Approved by:** Garry, 2026-10-14: "yes", relayed by GBRA-39's parent in answer to the sealed amendment proposal. This changes the preregistered sealed arm and analysis after
+the public results were seen.
+
+**Why.** On both sealed worlds, every F5-on wave slot (gbrain `4e10136b4`, `mentions.owner_phrases=true`) built
+cleanly but holds 0 owner-phrase links (S1: 670 windows per slot), so gate 3's zero-link refusal stopped the wave
+arm before any cell. On P1 and P2 the same build gives about 18,000 links per slot. Separately, F5 failed its ship
+condition on `messy-company-v1` (6 of 22 links), so the shipped Part 1 excludes F5. A 0-link F5-on slot is not the
+no-F5 configuration, because its windows can still put `known_as` rows on cards.
+
+**Change to the sealed wave arm (S1, S2 only).** gbrain `4e10136b4`, `--gbrain-config` as the all-on list under
+"Arm configs", and **no `--gbrain-build-config`** (F5 off), on a new F5-off slot family built from `4e10136b4` under
+`/home/ubi/cat40/next-confirm-wave`. This is development round 3's configuration and the behavior of the shipped
+build. Gate 3 for these slots: 0 owner-phrase links, as for baseline. The step argv is `next-confirm.ts plan`'s
+`slots-wave` and `cells-wave` argv with the `--gbrain-build-config mentions.owner_phrases=true` pair removed.
+There is no harness code change. Baseline, fs, oracle, caps, ledgers and the public arms are unchanged. The F5-on S
+slots stay on disk, unused.
+
+**Change to the analysis.** Each generator is reported separately, and each describes a different build:
+
+- **Public (P1, P2): the build with F5,** as preregistered. Primary wave − fs, D3 and every secondary as written.
+- **Sealed (S1, S2): the build without F5.** Same primary procedure (wave − fs, nested bootstrap, 10,000
+  resamples, seed 1) and the same secondaries, per world and pooled over S1 and S2.
+- **General claim.** "Both generators pass" no longer describes one build, so no single general claim is made.
+  Each build's result is reported with the preregistered wording (parity, ahead, not distinguishable), and it is
+  stated plainly that no build was tested on both generators.
+- **D3 (wrong values, wave − baseline)** is reported per generator, with the −2.0 pp and upper-bound-below-0 test
+  applied to each generator's two worlds, instead of pooling all four.
+- **Descriptive baseline − fs** is reported per generator, as for public.
+
+**Budget.** Unchanged. The new F5-off wave slots cost about $42 for the two worlds (10 × about $4.21). The unused
+F5-on S wave slots (about $42) come out of the retry reserve. Sealed ledger committed before this amendment: $139.27 (both oracles and all 20 slot builds).
