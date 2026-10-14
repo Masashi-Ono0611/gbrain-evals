@@ -2,6 +2,23 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.95] - 2026-10-14
+
+### Cat 41 setup, fifth run: first push met on v0.60.219.0
+
+The fourth run's preregistered design, unchanged except the gbrain version (scorer `cat41-score-v8`,
+[preregistration](docs/benchmarks/2026-10-14-cat41-setup-run5-preregistration.md) at `b2e32ccb`, approved by GBRA-40
+before any paid cell). On v0.60.219.0, with `claude-opus-5-5`, 3 runs per cell and the frozen targets:
+- First push: met, 3/3. The SessionStart hook printed the preference into every fresh session, and no agent also
+  saved it to Claude Code's own memory.
+- Wired recall: missed, 60.2 s against 60 s.
+- Consent: met, 0 provider requests.
+- Faster setup: missed, 2.8% (the same on reading).
+
+No `setup` run ran `gbrain apply-migrations` by hand, and a positional `gbrain recall "<question>"` returned the saved
+fact in all 3 D runs. The fourth run's verdicts stand. $6.56 of a $10 ledger cap
+([result](docs/benchmarks/2026-10-14-cat41-setup-run5.md)).
+
 ## [0.10.94] - 2026-10-13
 
 ### Vector side alongside the keyword arms: about 150 ms faster per search on a 20,000-page Postgres brain

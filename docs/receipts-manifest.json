@@ -5110,6 +5110,56 @@
         "/cells/A/wall_s/mean": 55.5
       },
       "note": "The four frozen targets applied to scores.jsonl by eval/runner/cat41/tthw-verdict.ts."
+    },
+    {
+      "claim_id": "cat41-setup-run5-4ba34fa",
+      "readme_anchor": "docs/benchmarks/2026-10-14-cat41-setup-run5.md: The finding",
+      "artifact_path": "docs/benchmarks/2026-10-14-cat41-setup-run5/setup-run5-4ba34fa/summary.json",
+      "artifact_sha256": "80102060656316f95528571d0afe796f68a4590c97351d2dec99c695bcdac24e",
+      "status": "covered",
+      "expected": {
+        "/gbrain/commit": "4ba34fa7ed65be2e83823dfcfa24a1285839b669",
+        "/totals/runs": 18,
+        "/totals/successes": 18,
+        "/totals/consent_violations": 0,
+        "/cells/0/scenario": "fresh_install_to_wired_recall",
+        "/cells/0/mean_wall_s": 67.1,
+        "/cells/0/successes": 3,
+        "/cells/1/scenario": "setup_to_wired_recall",
+        "/cells/1/mean_wall_s": 60.2,
+        "/cells/1/successes": 3,
+        "/cells/2/scenario": "manual_import_to_recall",
+        "/cells/2/mean_wall_s": 85.6,
+        "/cells/2/successes": 3,
+        "/cells/3/scenario": "setup_import_to_recall",
+        "/cells/3/mean_wall_s": 84.8,
+        "/cells/3/successes": 3,
+        "/cells/4/scenario": "fresh_install_to_first_push_pref",
+        "/cells/4/mean_wall_s": 34.8,
+        "/cells/4/successes": 3,
+        "/cells/5/scenario": "setup_consent_negative",
+        "/cells/5/mean_wall_s": 78,
+        "/cells/5/successes": 3
+      },
+      "note": "Preregistered (b2e32ccb, approved by GBRA-40) fifth Cat 41 setup run on gbrain 4ba34fa7e (v0.60.219.0), Claude Code with claude-opus-5-5, three runs per cell, scorer cat41-score-v8, the fourth run design unchanged; verdict.json beside it applies the frozen targets."
+    },
+    {
+      "claim_id": "cat41-setup-run5-verdict",
+      "readme_anchor": "docs/benchmarks/2026-10-14-cat41-setup-run5.md: The finding",
+      "artifact_path": "docs/benchmarks/2026-10-14-cat41-setup-run5/verdict.json",
+      "artifact_sha256": "f3f09a894b4744e01b974b9ca854fdfbd2b58e3acbef815a0223b119ab213ab7",
+      "status": "covered",
+      "expected": {
+        "/verdict/wired_recall/pass": false,
+        "/verdict/first_push/pass": true,
+        "/verdict/first_push/runs_meeting": 3,
+        "/verdict/faster_setup/claim": false,
+        "/verdict/faster_setup/b_median_s": 86.2,
+        "/verdict/faster_setup/c_median_s": 83.8,
+        "/verdict/consent_negative/pass": true,
+        "/cells/A/wall_s/mean": 60.2
+      },
+      "note": "The four frozen targets applied to scores.jsonl by eval/runner/cat41/tthw-verdict.ts."
     }
   ]
 }
