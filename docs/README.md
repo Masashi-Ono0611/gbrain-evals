@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.98, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.99, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -118,6 +118,7 @@ gap does not isolate the effect of a graph alone.
 | Can an agent-facing caller read private pages, held Takes, private Facts or another source through any read operation? | [September 30 visibility leak fuzz (N6)](benchmarks/2026-09-30-n6-visibility-fuzz.md), [October 6 on Postgres over the real HTTP transport](benchmarks/2026-10-06-n6-postgres-http.md) ([preregistration](benchmarks/2026-10-06-n6-postgres-http-preregistration.md)) |
 | Does proactive recall keep private pages away from remote callers and the turn block, as a CI gate? | [October 6 N8 privacy gate](benchmarks/2026-10-06-n8-privacy-gate.md) ([preregistration](benchmarks/2026-10-06-n8-privacy-gate-preregistration.md)) |
 | Which models can gbrain's contradiction judge run on, and what is the cheapest that passes N2? | [October 6 N2 judges on current models](benchmarks/2026-10-06-n2-judges.md) ([preregistration](benchmarks/2026-10-06-n2-judges-preregistration.md)) |
+| Does F5 turn owner phrases like "Dana's freight account" into the right account links, precisely enough to ship? | [October 14 F5 on messy-company-v1](benchmarks/2026-10-14-f5-messy-company/README.md): FAIL, 6 of 6 links correct but too few to pass (Wilson [0.610, 1.000]; recall 6 of 124) |
 | Does "who attended" work when meetings list attendees the way gbrain documents? | [October 6 attendance world](benchmarks/2026-10-06-attendance-world.md) ([preregistration](benchmarks/2026-10-06-attendance-world-preregistration.md)) |
 | Does the Jev answerability signal (S4) make a reader abstain on unanswerable questions without refusing answerable ones? | [October 6 A4 with S4 on](benchmarks/2026-10-06-a4-s4-on.md) ([preregistration](benchmarks/2026-10-06-a4-s4-on-preregistration.md)) |
 | When the same conversation arrives as a Claude Code, Codex, ChatGPT or WhatsApp export (any of the 27 formats gbrain registers), does gbrain keep who said what and when, and admit what it cannot parse? Does a meeting page tell attendees from people only mentioned? (gates since 2026-10-02, when gbrain's fix for N12-1 was verified) | [October 1 ingestion format fidelity (N12)](benchmarks/2026-10-01-n12-format-fidelity.md) |
@@ -214,7 +215,13 @@ procedure with documented missing pieces; it is not the current refresh command.
 
 ### 2026-10-14: expansion latency row
 
-Adds the GBRA-94 query-expansion latency result (gbrain-evals v0.10.98). The index header names v0.10.98.
+Adds the GBRA-94 query-expansion latency result (gbrain-evals v0.10.99). The index header names v0.10.99 (was v0.10.98).
+
+### 2026-10-14: F5 owner-phrase row
+
+Correctness and access checks gains a row for [F5 on messy-company-v1](benchmarks/2026-10-14-f5-messy-company/README.md):
+FAIL on gbrain `4e10136b`, with 6 of 6 links correct, but below the 22-link minimum and the 0.85 Wilson bar.
+gbrain-evals v0.10.98 (the opening names it; was v0.10.97).
 
 ### 2026-10-14: messy-company-v1 dataset row
 
