@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.95, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.96, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -205,6 +205,12 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-14: Cat 41 fifth-run report corrected
+
+gbrain-evals v0.10.96 (the opening names it; was v0.10.95). The [fifth Cat 41 setup report](benchmarks/2026-10-14-cat41-setup-run5.md)
+now measures install-guide reading the same way in both runs and has a descriptive appendix. Its row here is
+unchanged, because no verdict changed.
 
 ### 2026-10-14: Cat 41 setup fifth-run results
 
