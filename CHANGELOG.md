@@ -18,10 +18,10 @@ frozen at the proxy so that only expansion varied ([preregistration and results]
 - **Skipping expansion on pasted passages (≥30 words)** changes no score; a short-keyword rule fires on 1 query on this
   set.
 - Spend about $4.71 of a $5 cap. This recommends a setting; it does not change gbrain's default.
-- **Test flake fix:** the Cat 40 Hard 50k ledger test (`test/eval/cat40-hard.test.ts`) builds two 50k ledgers per seed
-  in about 4 s, against bun's 5 s default timeout, and timed out on a busy CI runner. It now has a 60 s budget, like the
-  file's other heavy test; no assertion changed. Probe: on one contended CPU it timed out at 5 s before and passed in
-  10.4 s after.
+- **Test flake fix:** the Cat 40 Hard 50k ledger test (`test/eval/cat40-hard.test.ts`) generates two 50k ledgers per
+  seed, CPU-bound, and timed out at bun's 5 s default on a busy CI runner (5.6 s). It now has a 60 s test timeout, like
+  the file's other heavy test; no assertion changed. Measured on a 4 vCPU cloud machine, Bun 1.4.3, one run each: 3.9 s
+  idle; pinned to one CPU shared with two busy loops, it timed out at 5 s before the change and passed in 10.4 s after.
 
 ## [0.10.98] - 2026-10-14
 
