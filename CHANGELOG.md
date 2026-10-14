@@ -2,6 +2,23 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.98] - 2026-10-14
+
+### Query expansion latency: no expansion on `tokenmax` keeps quality at a ninth of the latency
+
+GBRA-94 compared gbrain's `query` expansion setups on 300 LongMemEval-S questions, with embeddings and the reranker
+frozen at the proxy so that only expansion varied ([preregistration and results](docs/benchmarks/2026-10-14-expansion-latency-preregistration.md)).
+
+- **No expansion passes the preregistered rule and is fastest:** strict recall@10 299 → 298 (the reference's own re-run
+  also scored 298), strict@5 287 → 285, nDCG@10 +0.0008, and end-to-end query time 2,022 → 227 ms p50 (2,292 → 384 ms
+  p95). No expanding arm answered a question that the no-expansion arm missed.
+- **Faster expansion models don't close the gap.** `claude-haiku-5-5` is 7% faster at p50 and 6x cheaper, but slower at
+  p95. `gpt-6-luna` and `gemini-3.8-flash` are slower than Haiku 4.5 at their default reasoning, and Gemini fails nDCG
+  on its 90-question screen.
+- **Skipping expansion on pasted passages (≥30 words)** changes no score; a short-keyword rule fires on 1 query on this
+  set.
+- Spend about $4.71 of a $5 cap. This recommends a setting; it does not change gbrain's default.
+
 ## [0.10.97] - 2026-10-14
 
 ### messy-company-v1: a frozen messy-company dataset with gold for 9 lanes

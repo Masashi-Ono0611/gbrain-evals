@@ -1,6 +1,6 @@
 # Query expansion latency on LongMemEval-S: preregistration (GBRA-94)
 
-**Status, 2026-10-14: preregistered; no counted arm has run.** Written before any of the 300 counted brains was built
+**Status, 2026-10-14: final; results below.** Preregistered 2026-10-14 in commit 9f15c45a, before any of the 300 counted brains was built
 and before any counted query ran. A 3-haystack pilot on questions outside the subset (below) checked the harness and
 the cost; its rows are not scored and are not published as results. The owner (Efficiency captain) runs this with
 Sina's approval and a hard cap of $5 in provider spend.
@@ -175,3 +175,62 @@ questions. Spend figures are estimates from the providers' usage counts at list 
 
 One recommended expansion setting, with its latency and cost against today's default. It does not change gbrain's
 defaults or search ranking.
+
+## Results (2026-10-14)
+
+**Recommendation under the rule: B, no expansion on `query`.** It keeps retrieval quality within every margin and cuts
+end-to-end query time from 2,022 to 227 ms p50 (2,292 to 384 ms p95), about 9x faster. Expansion bought no question in
+this run: no expanding arm got a question right that B missed.
+
+All 300 questions were built and every arm ran on all 300 (600 queries per arm; the Gemini screen on its 90). Every
+read was clean under the pinned classifier, no query errored, and every expanding query applied its expansion.
+Machine-readable aggregates: `2026-10-14-expansion-latency/results/` (`verdict.json`, `spend.json`); `harness/score.ts`
+evaluates the rule.
+
+| arm | n | strict@10 | arm-only / A1-only | strict@5 | nDCG@10 | max type loss | skipped | expansion p50 / p95 ms | end-to-end p50 / p95 ms | real-query e2e p50 / p95 ms | expansion $ per 1k queries | acceptable |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **A1** reference (Haiku 4.5) | 300 | **299** | | **287** | **0.9569** | | 0% | 1,543 / 1,760 | 2,022 / 2,292 | 1,997 / 2,265 | 0.631 | ref |
+| A2 noise re-run | 300 | 298 | 0 / 1 | 287 | 0.9582 | 1 | 0% | 1,550 / 1,792 | 1,963 / 2,260 | 1,917 / 2,239 | 0.632 | yes |
+| **B** no expansion | 300 | 298 | 0 / 1 | 285 | 0.9577 | 1 | 100% | 0 / 0 | **227 / 384** | 208 / 352 | 0 | **yes** |
+| C `claude-haiku-5-5` | 300 | 298 | 0 / 1 | 287 | 0.9589 | 1 | 0% | 1,398 / 2,358 | 1,853 / 2,863 | 1,837 / 3,085 | 0.098 | yes |
+| C `gpt-6-luna` | 300 | 298 | 0 / 1 | 285 | 0.9581 | 1 | 0% | 2,523 / 3,885 | 3,333 / 5,006 | 3,577 / 5,124 | 0.077 | yes |
+| C `gemini-3.8-flash` (screen; A1 on the same 90: 90, 0.9622, 2,013 ms) | 90 | 88 | 0 / 2 | 84 | 0.9570 | 1 | 0% | 4,615 / 6,459 | 5,133 / 7,004 | 5,619 / 7,344 | 1.554 | no: nDCG |
+| D-short | 300 | 299 | 0 / 0 | 287 | 0.9569 | 0 | 0.2% | 1,543 / 1,760 | 2,022 / 2,292 | 1,996 / 2,265 | 0.630 | yes |
+| D-long | 300 | 299 | 0 / 0 | 287 | 0.9569 | 0 | 52.7% | 0 / 1,695 | 401 / 2,191 | 1,984 / 2,254 | 0.280 | yes |
+| D-short+long | 300 | 299 | 0 / 0 | 287 | 0.9569 | 0 | 52.8% | 0 / 1,695 | 401 / 2,191 | 1,977 / 2,254 | 0.279 | yes |
+
+Clean reads were 300/300 (real) and 300/300 (probe) in every 300-question arm and 90/90 in the screen, and the probe
+found its session in every query. Latencies are over all 600 queries of an arm (real queries and probes); the
+end-to-end figure excludes upstream embedding and rerank time, which the proxy answered from cache (live calls measured
+on cache misses: embeddings p50 130 / p95 161 ms, rerank p50 167 / p95 491 ms, the same in every arm).
+
+What the table says:
+
+- **Every acceptable arm lands within one question of A1, and so does A1's own re-run.** A2 loses the same single
+  knowledge-update question as B and the C arms (McNemar p = 1). One question is the noise floor here; no arm is
+  distinguishable from the reference on strict@10.
+- **B is the only large latency win.** It removes the expansion call (1.5 s p50) and the variant embeddings behind it.
+  strict@5 drops 2 (287 → 285), under the 3-question callout threshold; nDCG@10 rises 0.0008.
+- **A faster expansion model barely helps.** `claude-haiku-5-5` is 145 ms faster at p50 (−7%) and 6x cheaper, but its
+  p95 is 570 ms slower. `gpt-6-luna` and `gemini-3.8-flash` are slower than Haiku 4.5 at their default reasoning
+  (gbrain's expansion call sets none). Gemini also fails nDCG on its screen (−0.0052 against A1 on the same 90).
+- **The skip heuristics cost nothing on quality, but only help pasted-passage queries.** D-long skips 296 of 300
+  probes and 20 of 300 questions. Its arm p50 drops to 401 ms because half the arm's queries are probes; real questions
+  stay at 1,984 ms. D-short fires on 1 query: LongMemEval questions are full sentences, so this set can't show what it
+  would do on keyword-style traffic.
+- **On real questions, D-long skips 20 of 300 with no quality change,** so long-passage queries are a safe skip, but B
+  is faster and also passes.
+
+Caveats: this is development data (LongMemEval-S, conversation memory) where the reference is near ceiling (299/300
+strict@10), so a recall benefit from expansion could exist on harder or keyword-heavy corpora that this set can't show.
+With eight compared arms, one passing by luck is more likely than for one arm. The October 12 wave saw the same
+direction on `balanced` (451 vs 448 of 470 without expansion).
+
+Deviations and notes:
+
+- **Brains:** 303 state files were built (the 300 plus the 3 pilot haystacks, which are not scored). 7 sessions across
+  the haystacks were refused as duplicate session ids (HTTP 409), as in #141; identical in every arm.
+- **Spend** (`results/spend.json`): an estimated $4.71 of the $5 cap, including the pilot: $2.36 building 300 brains
+  (voyage-4), $1.19 reranking (frozen pair cache, shared by all arms and warm-ups), $0.76 Haiku 4.5 expansion (A1 + A2),
+  $0.29 Gemini screen, $0.06 Haiku 5.5, $0.05 GPT-6 Luna. Estimates from providers' usage counts at list price, not
+  metered invoices.

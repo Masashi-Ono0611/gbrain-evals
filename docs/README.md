@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.97, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.98, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -52,6 +52,7 @@ describe current behavior first, then the older work behind a decision.
 | Does starting the query embed alongside the keyword arms make search faster? | [October 13 vector side alongside the keyword arms](benchmarks/2026-10-13-vector-side-early.md) (gbrain v0.60.214.0): median warm `search` 575 → 415 ms and `query` 565 → 440 ms on a 20,000-page Postgres brain with Voyage; 13 to 15 ms on a 400-page PGLite brain; results unchanged |
 | Should new installs default to `balanced`, and should `query` expand on every mode? | [October 12 low-hanging-fruit wave gates](benchmarks/2026-10-12-lhf-wave.md) ([preregistration](benchmarks/2026-10-12-lhf-wave-preregistration.md); gbrain `f77f1418c`): `query` without expansion on `balanced` keeps 451 vs 448 of 470 LongMemEval-S questions at a sixth of the latency, so expansion follows the mode; `balanced` ties `tokenmax` 451 vs 451 on LongMemEval-S, but the Cat 40 Hard 25-row rerank pool is inconclusive (−0.93 points, lower bound −1.55), so `tokenmax` stays the new-install default |
 | Can gbrain's reranker run cheaper (fewer candidates, shorter documents, the lite model) without losing recall? | [October 13 reranker settings, GBRA-86](benchmarks/2026-10-12-rerank-settings-preregistration.md): no; every cheaper cell of 18 loses at least 3 of 300 questions on strict recall@10, so the shipped 50 × 1,400 `rerank-2.5` stays; a 768-token document cap saves only 1% |
+| Can `gbrain query` on `tokenmax` skip or speed up query expansion without losing recall? | [October 14 expansion latency, GBRA-94](benchmarks/2026-10-14-expansion-latency-preregistration.md): yes; no expansion keeps 298 of 300 questions on strict recall@10 against the default's 299 (the default's own re-run also got 298) and cuts end-to-end query time 2,022 → 227 ms p50; Haiku 5.5, GPT-6 Luna and Gemini 3.8 Flash expansion are no faster than Haiku 4.5 at p95 |
 | Do Voyage's newer rerankers make gbrain's rerank cheaper or faster without losing recall? | [October 13 reranker addendum, GBRA-86](benchmarks/2026-10-13-rerank3-addendum-preregistration.md): `rerank-3-lite` at the shipped 50 × 1,400 shape passes and cuts rerank cost 60% with about the same latency; fewer candidates is faster but loses recall |
 | Why did the last-session verbatim probe miss, and does the fix change recall? | [October 9 verbatim-probe paired verdict, gbrain #6391 (`f05943e65`)](benchmarks/2026-10-09-verbatim-probe-preregistration.md): the misses were reads the probe classified as degraded; after the fix all 500 probes read clean (was 429), strict recall@10 unchanged at 496 of 500 |
 | How well does scoped vector search hold up at 1M to 2M chunks, and what fixes it? | [October 9 HNSW scale mirror, from gbrain #6380 (`2e84d234e`)](benchmarks/2026-10-09-hnsw-scale.md): pooled attempts that scan 20,000 tuples lift random 10% scope recall@50 from 0.52 to 0.77 to 0.96 to 0.99 at +16 to 36 ms p50; chunk statistics refreshed after bulk writes keep the HNSW plan; topic-coherent selective sources remain a gap |
@@ -210,6 +211,10 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-14: expansion latency row
+
+Adds the GBRA-94 query-expansion latency result (gbrain-evals v0.10.98). The index header names v0.10.98.
 
 ### 2026-10-14: messy-company-v1 dataset row
 
