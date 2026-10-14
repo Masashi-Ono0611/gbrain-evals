@@ -164,6 +164,11 @@ a mapping from a question to the documents considered relevant.
 - [System One datasets](../eval/data/system-one-v1/README.md): what each
   label is made from (generator, benchmark annotation or LLM) and which files
   are rebuilt instead of stored.
+- [messy-company-v1](../eval/data/messy-company-v1/README.md): a frozen, messy
+  fictional company knowledge base (226 pages, dev and held-out splits by account
+  cluster) with gold for 9 lanes, from owner phrases and look-alike names to the
+  governing contract as of a date. [USES.md](../eval/data/messy-company-v1/USES.md)
+  maps lanes to categories.
 - [Source-swamp fixture](../eval/data/source-swamp-v1/_README.md),
   [multimodal fixture](../eval/data/multimodal/README.md),
   [calibration fixture](../eval/data/cat14-calibration/README.md), and
@@ -205,6 +210,11 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-14: messy-company-v1 dataset row
+
+Data and methods lists the new [messy-company-v1](../eval/data/messy-company-v1/README.md) dataset, a reusable
+fictional company knowledge base with gold for 9 lanes, frozen by its manifest. No result changed.
 
 ### 2026-10-14: Cat 41 fifth-run report corrected
 
