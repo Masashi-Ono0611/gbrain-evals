@@ -163,6 +163,13 @@ describe('N6 parameter synthesis', () => {
     expect(synthesizeParams(think, target).params).toEqual({ question: target.query });
   });
 
+  test('an optional counterparty gets its own call naming the target; the base call leaves it out', () => {
+    const pack: Record<string, ParamDef> = { entities: { type: 'string' }, counterparty: { type: 'string' }, intent: { type: 'string', enum: ['meeting', 'reply'] } };
+    expect(variantsFor(pack).map(v => v.id)).toEqual(['base', 'intent=meeting', 'intent=reply', 'counterparty']);
+    expect(synthesizeParams(pack, target).params).toEqual({ entities: target.slug });
+    expect(synthesizeParams(pack, target, { counterparty: true }).params).toEqual({ entities: target.slug, counterparty: target.slug });
+  });
+
   test('a hits array names the target with its source', () => {
     const foreign = ledger.classes.find(c => c.class === 'foreign_source')!.protected;
     expect(synthesizeParams({ hits: { type: 'array', required: true } }, foreign).params).toEqual({ hits: [{ source_id: 'beta', slug: foreign.slug, chunk_id: 0 }] });

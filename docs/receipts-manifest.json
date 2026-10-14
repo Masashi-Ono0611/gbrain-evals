@@ -5222,6 +5222,42 @@
       "golden_test": "test/eval/n14-large-page-fidelity.test.ts: pinned 2 MB ledger hash, scorer and mutation suite",
       "status": "covered",
       "note": "N14 hermetic baseline, 200mb tier, gbrain master c71fe74 (v0.60.225.0) through --gbrain, gbrain-evals b654b38, keyword search and a counting embedder, $0. After the run, resolved_config.gbrain_overlay.requested was rewritten from the local checkout path to gbrain@<sha> (the only byte change); the runner now records it that way."
+    },
+    {
+      "claim_id": "d5-brief-smoke-measures",
+      "readme_anchor": "docs/benchmarks/2026-10-14-d5-brief-smoke.md: The finding",
+      "artifact_path": "docs/benchmarks/2026-10-14-d5-brief-smoke/measures.json",
+      "artifact_sha256": "29b27672c11204920b7ac66d21023547c58231daf7a6522381c35745ef98df50",
+      "status": "covered",
+      "expected": {
+        "/checks/pairs_run": 3,
+        "/checks/R1": true,
+        "/checks/R1_totals/master": 29,
+        "/checks/R1_totals/d5": 30,
+        "/checks/R2": true,
+        "/checks/M_misuse_count": 0,
+        "/checks/L2_output_leak": 0,
+        "/checks/L2_unsafe_write": 0,
+        "/by_model/claude-opus-5-5/master/success": 9,
+        "/by_model/claude-opus-5-5/master/tool_calls_without_E01": 36,
+        "/by_model/claude-opus-5-5/master/brief_param_calls": 0,
+        "/by_model/claude-opus-5-5/d5/success": 10,
+        "/by_model/claude-opus-5-5/d5/tool_calls_without_E01": 38,
+        "/by_model/claude-opus-5-5/d5/brief_param_calls": 0,
+        "/by_model/claude-sonnet-5-5/master/success": 10,
+        "/by_model/claude-sonnet-5-5/master/tool_calls_without_E01": 46,
+        "/by_model/claude-sonnet-5-5/master/brief_param_calls": 0,
+        "/by_model/claude-sonnet-5-5/d5/success": 10,
+        "/by_model/claude-sonnet-5-5/d5/tool_calls_without_E01": 45,
+        "/by_model/claude-sonnet-5-5/d5/brief_param_calls": 0,
+        "/by_model/gpt-6.1-sol/master/success": 10,
+        "/by_model/gpt-6.1-sol/master/tool_calls_without_E01": 44,
+        "/by_model/gpt-6.1-sol/master/brief_param_calls": 0,
+        "/by_model/gpt-6.1-sol/d5/success": 10,
+        "/by_model/gpt-6.1-sol/d5/tool_calls_without_E01": 53,
+        "/by_model/gpt-6.1-sol/d5/brief_param_calls": 0
+      },
+      "note": "Per-model success, tool calls and brief-parameter calls on master 14ea3e2e and gbrain #6703 head e6575894, rebuilt by score.py from the per-cell results and transcripts."
     }
   ]
 }
