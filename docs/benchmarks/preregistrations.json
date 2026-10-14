@@ -18,6 +18,14 @@
         "docs/benchmarks/2026-10-12-beam-1m-s1-fixes/**",
         "docs/benchmarks/2026-10-12-beam-1m-s1-fixes.md"
       ]
+    },
+    {
+      "id": "n14-large-page-fidelity",
+      "preregistration": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-preregistration.md",
+      "results": [
+        "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/**",
+        "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md"
+      ]
     }
   ]
 }

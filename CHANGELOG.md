@@ -2,7 +2,7 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
-## [0.10.100] - 2026-10-14
+## [0.10.101] - 2026-10-14
 
 ### D5 brief parameters: Cat 40 smoke on gbrain #6703
 
@@ -17,6 +17,20 @@ The frozen verdict is "regresses, on L1 only". Both builds show the same 4 exist
 
 Spend was $6.78 of a new $10 ledger. See the [summary](docs/benchmarks/2026-10-14-d5-brief-smoke.md) and the
 [verdict](docs/benchmarks/2026-10-14-d5-brief-smoke/VERDICT.md).
+
+## [0.10.100] - 2026-10-14
+
+### N14 large-page fidelity: preregistered category and master baseline
+
+New category N14 `large-page-fidelity` asks whether an agent can find and read what's deep inside one very large
+document, and whether keeping it up to date stays cheap. The preregistration landed before any counted run. On gbrain
+master `c71fe74` (v0.60.225.0), hermetic and at $0, each 2 MB document is stored but unsearchable (keyword recall@10
+0 of 120 needles, all present in the stored body), `get_page` returns 1.5 to 2.0 MB, a 20 MB write is refused and a
+200 MB write gets a retryable `queue_capacity` it can never pass (bug N14-4). The managed-parts arm (hub plus day
+pages) finds 40 of 40 needles in every decile at 2, 20 and 200 MB, but a 1 KB append re-embeds 2.1 to 11.8 times the
+appended text. The native arm reports "capability absent" until gbrain ships large-page reads. See the
+[baseline report](docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md). Receipts now record a `--gbrain`
+overlay as `gbrain@<ref>`, never a checkout path.
 
 ## [0.10.99] - 2026-10-14
 

@@ -5162,6 +5162,68 @@
       "note": "The four frozen targets applied to scores.jsonl by eval/runner/cat41/tthw-verdict.ts."
     },
     {
+      "claim_id": "n14-large-page-baseline-2mb-c71fe74",
+      "readme_anchor": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md: 2 MB single-page stored with embed_skip oversized, 0/40 recall per document, 2,042,154-byte default read; managed parts 40/40 on all three documents; 3 responses over 1 MiB",
+      "artifact_path": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/2mb/receipt.json",
+      "artifact_sha256": "faa85595599fc0d4796b88896ce8e9128e934beffaee9267f7ce7c8406f3287f",
+      "expected": {
+        "/run_status": "completed",
+        "/data/safety/responses_over_cap": 3,
+        "/data/safety/crashes": 0,
+        "/data/safety/roundtrip_byte_loss": 0,
+        "/data/arms/3/keyword_recall/hits": 0,
+        "/data/arms/3/ingest/embed_skip": "oversized",
+        "/data/arms/3/direct_read_bytes": 2042154,
+        "/data/arms/4/keyword_recall/hits": 40,
+        "/data/arms/6/keyword_recall/hits": 40,
+        "/data/arms/8/keyword_recall/hits": 40,
+        "/data/arms/6/append/embed_ratio": 5.56,
+        "/hashes/ledger_sha256": "c09ed85562906f0fd9d959eed907d85743c544085711d31ff5e0490ece1fb436",
+        "/resolved_config/gbrain_overlay/requested": "gbrain@c71fe7436e673db819c1be4532504b861e14ad50"
+      },
+      "golden_test": "test/eval/n14-large-page-fidelity.test.ts: pinned 2 MB ledger hash, scorer and mutation suite",
+      "status": "covered",
+      "note": "N14 hermetic baseline, 2mb tier, gbrain master c71fe74 (v0.60.225.0) through --gbrain, gbrain-evals b654b38, keyword search and a counting embedder, $0. After the run, resolved_config.gbrain_overlay.requested was rewritten from the local checkout path to gbrain@<sha> (the only byte change); the runner now records it that way."
+    },
+    {
+      "claim_id": "n14-large-page-baseline-20mb-c71fe74",
+      "readme_anchor": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md: 20 MB single-page refused with request_too_large; managed parts 40/40, 8,695 chunks, append ratio 11.78",
+      "artifact_path": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/20mb/receipt.json",
+      "artifact_sha256": "fe8cb30792d0b689d292510973e45eb130b3cf0bcbfbcdc42e96164524b3389f",
+      "expected": {
+        "/run_status": "completed",
+        "/data/arms/1/ingest/code": "request_too_large",
+        "/data/arms/1/keyword_recall/hits": 0,
+        "/data/arms/2/keyword_recall/hits": 40,
+        "/data/arms/2/ingest/chunks": 8695,
+        "/data/arms/2/append/embed_ratio": 11.775,
+        "/data/safety/roundtrip_byte_loss": 0,
+        "/resolved_config/gbrain_overlay/requested": "gbrain@c71fe7436e673db819c1be4532504b861e14ad50"
+      },
+      "golden_test": "test/eval/n14-large-page-fidelity.test.ts: pinned 2 MB ledger hash, scorer and mutation suite",
+      "status": "covered",
+      "note": "N14 hermetic baseline, 20mb tier, gbrain master c71fe74 (v0.60.225.0) through --gbrain, gbrain-evals b654b38, keyword search and a counting embedder, $0. After the run, resolved_config.gbrain_overlay.requested was rewritten from the local checkout path to gbrain@<sha> (the only byte change); the runner now records it that way."
+    },
+    {
+      "claim_id": "n14-large-page-baseline-200mb-c71fe74",
+      "readme_anchor": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md: 200 MB single-page refused with retryable queue_capacity (N14-4); managed parts 40/40, 88,720 chunks, largest response 181,011 bytes, no crash",
+      "artifact_path": "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/200mb/receipt.json",
+      "artifact_sha256": "985a633f53c8866ac450d5cdd0656523f8d9dda30426a03b500ebc1dab7ec468",
+      "expected": {
+        "/run_status": "completed",
+        "/data/arms/1/ingest/code": "queue_capacity",
+        "/data/arms/1/keyword_recall/hits": 0,
+        "/data/arms/2/keyword_recall/hits": 40,
+        "/data/arms/2/ingest/chunks": 88720,
+        "/data/arms/2/max_frame_bytes": 181011,
+        "/data/safety/crashes": 0,
+        "/resolved_config/gbrain_overlay/requested": "gbrain@c71fe7436e673db819c1be4532504b861e14ad50"
+      },
+      "golden_test": "test/eval/n14-large-page-fidelity.test.ts: pinned 2 MB ledger hash, scorer and mutation suite",
+      "status": "covered",
+      "note": "N14 hermetic baseline, 200mb tier, gbrain master c71fe74 (v0.60.225.0) through --gbrain, gbrain-evals b654b38, keyword search and a counting embedder, $0. After the run, resolved_config.gbrain_overlay.requested was rewritten from the local checkout path to gbrain@<sha> (the only byte change); the runner now records it that way."
+    },
+    {
       "claim_id": "d5-brief-smoke-measures",
       "readme_anchor": "docs/benchmarks/2026-10-14-d5-brief-smoke.md: The finding",
       "artifact_path": "docs/benchmarks/2026-10-14-d5-brief-smoke/measures.json",
