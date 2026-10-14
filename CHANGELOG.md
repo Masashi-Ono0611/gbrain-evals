@@ -2,6 +2,17 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.98] - 2026-10-14
+
+### F5 owner-phrase precision on messy-company-v1: FAIL
+
+gbrain's F5 owner-phrase linking at gbrain `4e10136b` derived 6 links across both splits of messy-company-v1. All 6
+were correct, but 6 is below the 22-link minimum, and the Wilson 95% lower bound of 0.610 is below the 0.85 bar, so
+the ship condition fails. Recall was 2 of 66 should-link phrases on dev and 4 of 58 on held-out, with 0 links on
+should-not-link rows. The [run record](docs/benchmarks/2026-10-14-f5-messy-company/README.md) has the decision rule
+(sha256 `6ca46ba4…0b11`), the scores and the scripts as run. The dataset's [USES.md](eval/data/messy-company-v1/USES.md)
+now lists the run and records that the owner-phrases held-out split has been used once.
+
 ## [0.10.97] - 2026-10-14
 
 ### messy-company-v1: a frozen messy-company dataset with gold for 9 lanes

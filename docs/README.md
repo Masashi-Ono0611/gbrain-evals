@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.97, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.98, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -216,6 +216,7 @@ procedure with documented missing pieces; it is not the current refresh command.
 
 Correctness and access checks gains a row for [F5 on messy-company-v1](benchmarks/2026-10-14-f5-messy-company/README.md):
 FAIL on gbrain `4e10136b`, with 6 of 6 links correct, but below the 22-link minimum and the 0.85 Wilson bar.
+gbrain-evals v0.10.98 (the opening names it; was v0.10.97).
 
 ### 2026-10-14: messy-company-v1 dataset row
 
