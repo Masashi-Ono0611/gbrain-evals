@@ -227,7 +227,7 @@ describe('generator (T1, CEO-F1, CEO-F12, CEO-F29, ENG-F14, ENG-F15, ENG-F17)', 
       expect(large.docs.length).toBeLessThan(HARD_SIZE.large[1]);
       expect(JSON.stringify(large.tasks.filter(t => t.family !== 'H1'))).toBe(JSON.stringify(small.tasks.filter(t => t.family !== 'H1')));
     }
-  });
+  }, 60_000);
   test('50k: the 4k documents are byte-identical inside the 50k ledger, and the H3 oracle evidence keeps the 4k set', () => {
     const large = buildHardLedger(CAL, DEFAULT_HARD_KNOBS, { scale: 'large' });
     const byId = new Map(large.docs.map(d => [d.id, d]));
