@@ -57,19 +57,19 @@
   "slot_builds": [
     {
       "slot": "slot0",
-      "dir": "~/.capy/work/cat40/gbrain-d5/slots-e657589458cc-79094a8a/slot0",
+      "dir": "<slots>/gbrain-d5/slots-e657589458cc-79094a8a/slot0",
       "steps": [
         {
           "step": "init",
           "code": 0,
           "ms": 3286,
-          "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n[models] OpenAI account offers gpt-6.1-sol but src/core/model-pricing.ts has no row for it — staying on the newest PRICED family so budget caps keep working. Add the pricing row to adopt it.\n  Setting up brain schema (v243)...\n  238 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: ~/.capy/work/cat40/gbrain-d5/slots-e657589458cc-79094a8a/slot0/home/.gbrain/content/c30fa79e-4170-4db3-99ec-3a1ae69ecb75/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+          "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n[models] OpenAI account offers gpt-6.1-sol but src/core/model-pricing.ts has no row for it — staying on the newest PRICED family so budget caps keep working. Add the pricing row to adopt it.\n  Setting up brain schema (v243)...\n  238 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <slots>/gbrain-d5/slots-e657589458cc-79094a8a/slot0/home/.gbrain/content/c30fa79e-4170-4db3-99ec-3a1ae69ecb75/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
         },
         {
           "step": "sources-add",
           "code": 0,
           "ms": 437,
-          "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"~/.capy/work/cat40/gbrain-d5/slots-e657589458cc-79094a8a/slot0/vault\",\n  \"source_incarnation\": \"d23369d6-1fd2-43b6-8f7e-57980dcecdb4\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"086ef34c-7864-43ec-a723-b0a73b59a104\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+          "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<slots>/gbrain-d5/slots-e657589458cc-79094a8a/slot0/vault\",\n  \"source_incarnation\": \"d23369d6-1fd2-43b6-8f7e-57980dcecdb4\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"086ef34c-7864-43ec-a723-b0a73b59a104\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
         },
         {
           "step": "sources-default",
@@ -182,9 +182,9 @@
   "argv": [
     "--build-slots",
     "--gbrain",
-    "~/.capy/work/gbrain@e657589458cc3ab05d54df439495839c5aed7d19",
+    "gbrain@e657589458cc3ab05d54df439495839c5aed7d19",
     "--gbrain-root",
-    "~/.capy/work/cat40/gbrain-d5",
+    "<slots>/gbrain-d5",
     "--world",
     "eval/data/model-ladder-wide-dev/world.json",
     "--slots",
@@ -219,7 +219,7 @@
     "input_tokens": 1613503,
     "output_tokens": 0,
     "basis": "budget ledger cat40-slot-build-2026-10-14T20-12-38-804Z-909375af: 4 paid requests, 0 charged at their reservation because usage was unavailable",
-    "ledger": "/workspace/gbrain-evals/.budget/d5-brief-smoke.sqlite",
+    "ledger": ".budget/d5-brief-smoke.sqlite",
     "program_cap_usd": 10,
     "overshoot_usd": 0,
     "event_loop_lag_ms": {

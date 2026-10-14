@@ -18,6 +18,14 @@ The frozen verdict is "regresses, on L1 only". Both builds show the same 4 exist
 Spend was $6.78 of a new $10 ledger. See the [summary](docs/benchmarks/2026-10-14-d5-brief-smoke.md) and the
 [verdict](docs/benchmarks/2026-10-14-d5-brief-smoke/VERDICT.md).
 
+### Machine paths in committed receipts
+
+The D5 record's receipts and experiment files now name builds as `gbrain@<sha>`, slot roots as `<slots>/…` and the
+ledger as `.budget/d5-brief-smoke.sqlite`. The receipt machine-path test also now rejects Capy checkout and scratch
+paths (`/workspace/…`, `~/.capy/…`, `$HOME/.capy/…`), which home scrubbing leaves in a form the old pattern accepted.
+The 404 earlier receipts that contain them are frozen by hash in
+`test/eval/fixtures/historical-capy-local-paths.json`.
+
 ## [0.10.100] - 2026-10-14
 
 ### N14 large-page fidelity: preregistered category and master baseline

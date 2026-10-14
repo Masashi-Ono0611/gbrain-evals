@@ -10,8 +10,8 @@
   "label": "gbrain",
   "flags": {
     "--build-slots": true,
-    "--gbrain": "~/.capy/work/gbrain@e657589458cc3ab05d54df439495839c5aed7d19",
-    "--gbrain-root": "~/.capy/work/cat40/gbrain-d5",
+    "--gbrain": "gbrain@e657589458cc3ab05d54df439495839c5aed7d19",
+    "--gbrain-root": "<slots>/gbrain-d5",
     "--world": "eval/data/model-ladder-wide-dev/world.json",
     "--slots": "1",
     "--slot-build-allowance-usd": "0.5",

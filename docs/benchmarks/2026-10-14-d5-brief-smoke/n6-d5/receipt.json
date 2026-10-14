@@ -87,7 +87,7 @@
     "call_timeout_ms": 10000,
     "only": null,
     "gbrain_overlay": {
-      "requested": "~/.capy/work/gbrain@e657589458cc3ab05d54df439495839c5aed7d19",
+      "requested": "gbrain@e657589458cc3ab05d54df439495839c5aed7d19",
       "ref": "e657589458cc3ab05d54df439495839c5aed7d19",
       "commit": "e657589458cc3ab05d54df439495839c5aed7d19",
       "tree": "c7aae1d41069dbe57fb351501e069330d002ca1e",
