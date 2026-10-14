@@ -60,3 +60,19 @@ from more non-answers (non-submission is level).
 
 VM: `ubirun-gbra39pub-1791928207-96180a31` (eu-central-h1, standard-60, owner tag `gbra39pub`), destroyed after the
 outputs were copied.
+
+## Added 2026-10-14: F5 will not ship, and what that means for these numbers
+
+F5's ship condition failed on `messy-company-v1` (6 links, all correct, against the 22 required; Wilson lower bound
+0.610; recall 3.0% dev and 6.9% held-out vs 99.8% on World M). The shipped Part 1 excludes F5, so the wave measured
+here is not the build that ships.
+
+- The wave − baseline gain (+4.0 pp success, −3.5 pp wrong values, concentrated in H4) depends on F5. Development
+  round 3 measured the no-F5 configuration as level with control, and F5's links fire on generator-written ownership
+  text but almost never on independently written prose. So the H4 gain probably does not transfer to real brains.
+- The wave − fs gap for the shipped build is unknown. The closest evidence is round 3 (no-F5 ≈ control) plus the
+  baseline arm's own lead over files.
+
+**Descriptive secondary, not preregistered: baseline − fs** (same cells and procedure,
+`public-baseline-vs-fs.json`): **+8.50 pp [+4.83, +12.33]** (475 vs 424 of 600); P1 +9.67 [+4.33, +14.67], P2 +7.33
+[+2.0, +13.0].

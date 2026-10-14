@@ -477,3 +477,17 @@ ledger rate of 1.108:
   authored synthetic corpus: gbrain-evals `messy-company-v1`, written by non-Claude models and labeled from a frozen
   world plan (being built by Subagent 22). This is a ship condition for the Part 1 merge, not a confirmation
   endpoint. The confirmation runs unchanged.
+- **F5 ship condition failed** (2026-10-14, on `messy-company-v1`, under a rule hashed before the run, sha256
+  `6ca46ba4…0b11`; gbrain `4e10136b`, both splits, all 226 pages). F5 made 6 owner-phrase links, all 6 correct, but
+  the rule needs at least 22: Wilson [0.610, 1.000], below 0.85, so it **fails on volume**. Recall was 3.0% (dev) and
+  6.9% (held-out), against 99.8% on World M, with 0 links where the gold labels say not to link. **The tested wave
+  build will not ship as tested; the shipped Part 1 excludes F5.**
+  - The confirmation's wave − baseline gain depends on F5: development round 3 measured the configuration without
+    F5 as level with control. F5's links fire on the generators' ownership text and almost never on independently
+    written prose, so the H4 gain probably does not transfer to real brains.
+  - The wave − fs gap for the build that ships is unknown. The closest measurements are round 3 (no-F5 ≈ control)
+    and the baseline arm's own lead over files.
+- **Descriptive secondary, not preregistered: baseline − fs** (same cells, same nested bootstrap, 10,000 resamples,
+  seed 1; `next_confirm_analysis.py --wave gbrain-next-baseline`). Public: **+8.50 pp [+4.83, +12.33]** (475 vs 424
+  of 600); P1 +9.67 [+4.33, +14.67], P2 +7.33 [+2.0, +13.0]. Sealed: pending. File:
+  `docs/benchmarks/2026-10-14-cat40-next-confirm-public/public-baseline-vs-fs.json`.
