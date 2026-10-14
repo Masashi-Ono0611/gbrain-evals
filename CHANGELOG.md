@@ -2,6 +2,17 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.96] - 2026-10-14
+
+### Cat 41 fifth-run report: reading times corrected
+
+The [fifth setup report](docs/benchmarks/2026-10-14-cat41-setup-run5.md) said C r1 and C r2 spent 26.2 and 15.0 s
+reading the install guide, against 4.5 and 4.6 s in the fourth run. Those numbers came from tables built two
+different ways. Measured the same way, the guide reads took 14.4, 16.9 and 10.2 s against 14.5, 6.9 and 8.2 s. Only C
+r2 read for longer, after its own `ls` exited 2 and cut its first fetch short. The report has a dated correction note
+and a rebuilt "Where the time went" table. A new descriptive appendix gives the C runs' path through gbrain's docs,
+and a phase split of the wired-recall runs against the fourth run. No verdict, score or results artifact changed.
+
 ## [0.10.95] - 2026-10-14
 
 ### Cat 41 setup, fifth run: first push met on v0.60.219.0
