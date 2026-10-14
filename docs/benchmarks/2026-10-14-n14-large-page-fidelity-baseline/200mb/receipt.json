@@ -84,7 +84,7 @@
       "hybrid_recall_min_decile": 0.95
     },
     "gbrain_overlay": {
-      "requested": "~/.capy/work/gbrain-master@c71fe7436e673db819c1be4532504b861e14ad50",
+      "requested": "gbrain@c71fe7436e673db819c1be4532504b861e14ad50",
       "ref": "c71fe7436e673db819c1be4532504b861e14ad50",
       "commit": "c71fe7436e673db819c1be4532504b861e14ad50",
       "tree": "5ca3b272b2968676ec0c715acbe2a560193d2087",

@@ -20,7 +20,8 @@ import {
   n14Findings, n14Verdict, probeNativeCapability, scoreQa, splitIntoParts, summarize, summarizeArm,
   type AppendOutcome, type Arm, type CallFrame, type EmbedCount, type IngestOutcome, type N14Adapter, type N14RunResult, type NativeCapability, type SearchHit,
 } from '../../eval/runner/n14-large-page-fidelity.ts';
-import type { GbrainUnderTest } from '../../eval/runner/gbrain-under-test.ts';
+import { overlaySummary, type GbrainUnderTest } from '../../eval/runner/gbrain-under-test.ts';
+import { MACHINE_LOCAL_PATH } from '../../eval/runner/receipt.ts';
 
 const small = (kind: DocKind, target_bytes = 300_000, seed = N14_DEFAULT_SEED) => renderDocument({ kind, target_bytes, seed });
 
@@ -124,6 +125,17 @@ describe('N14 scorer', () => {
     expect(v.verdict).toBe('fail');
     expect(v.failed).toContain('floor.native_keyword_recall_2mb=0');
     expect(v.failed).toContain('quality.native_append_embed_ratio_max=null');
+  });
+
+  test('the receipt overlay summary names the gbrain ref, never the checkout path', () => {
+    const sha = 'c71fe7436e673db819c1be4532504b861e14ad50';
+    const gut = {
+      root: '/home/alice/evals/.gbrain-overlays/x', version: '0.60.225.0',
+      overlay: { requested: `/home/alice/.capy/work/gbrain-master@${sha}`, checkout: '/home/alice/.capy/work/gbrain-master', ref: sha, checkout_dirty: false, build: { commit: sha, tree: 't', version: '0.60.225.0', verified: {} } },
+    } as unknown as GbrainUnderTest;
+    const summary = overlaySummary(gut)!;
+    expect(summary.requested).toBe(`gbrain@${sha}`);
+    expect(MACHINE_LOCAL_PATH.test(JSON.stringify(summary))).toBe(false);
   });
 
   test('findings: a size refusal is a gap, a retryable capacity code for an oversized page is a bug', () => {

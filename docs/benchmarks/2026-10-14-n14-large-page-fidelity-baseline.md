@@ -96,6 +96,7 @@ The 2 MB tier, which is the CI tier, ran in 45.1 s of hermetic arm time against 
 - `08c4888` adds finding N14-4.
 - `686f541` returns gbrain's AI gateway to keyless after each counting embed pass. Before this fix, the counting embedder's placeholder key stayed installed. The post-append searches then ran gbrain's default cheap-hybrid over hash vectors instead of the keyword path every other probe uses, and at 20 MB that pushed the appended needle out of the top 10. It also let writes after the first pass embed at write time, outside the counted pass. That is why earlier smoke runs showed append ratios of 1.07 to 4.50 at 2 MB, against 2.14 to 5.56 here: the earlier counts missed the inline embeds. After the fix, embedding inputs equal chunks rewritten in every cell.
 - `b654b38` scrubs home and temp paths from the receipt (the `--gbrain` checkout path leaked) and makes `--record-bugs` write a dated rerun review naming the receipt for each finding.
+- After review, `overlaySummary` records `requested` as `gbrain@<ref>` instead of the checkout path. The three committed receipts were edited to match: `resolved_config.gbrain_overlay.requested` changed from a home-relative path to `gbrain@c71fe7436e673db819c1be4532504b861e14ad50`. Nothing else changed.
 
 ## gbrain bugs found
 
