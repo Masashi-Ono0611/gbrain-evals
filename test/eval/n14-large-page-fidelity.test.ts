@@ -17,9 +17,10 @@ import {
 } from '../../eval/generators/n14-large-page-gen.ts';
 import {
   EGRESS_CAP_BYTES, PASSAGE_CAP_BYTES, THRESHOLDS, canonicalBody, crashedSummary, absentSummary, estTokens, evaluateArm, frameBytes, hitRank, hubContent,
-  n14Verdict, probeNativeCapability, scoreQa, splitIntoParts, summarize, summarizeArm,
-  type AppendOutcome, type Arm, type CallFrame, type EmbedCount, type IngestOutcome, type N14Adapter, type NativeCapability, type SearchHit,
+  n14Findings, n14Verdict, probeNativeCapability, scoreQa, splitIntoParts, summarize, summarizeArm,
+  type AppendOutcome, type Arm, type CallFrame, type EmbedCount, type IngestOutcome, type N14Adapter, type N14RunResult, type NativeCapability, type SearchHit,
 } from '../../eval/runner/n14-large-page-fidelity.ts';
+import type { GbrainUnderTest } from '../../eval/runner/gbrain-under-test.ts';
 
 const small = (kind: DocKind, target_bytes = 300_000, seed = N14_DEFAULT_SEED) => renderDocument({ kind, target_bytes, seed });
 
@@ -123,6 +124,26 @@ describe('N14 scorer', () => {
     expect(v.verdict).toBe('fail');
     expect(v.failed).toContain('floor.native_keyword_recall_2mb=0');
     expect(v.failed).toContain('quality.native_append_embed_ratio_max=null');
+  });
+
+  test('findings: a size refusal is a gap, a retryable capacity code for an oversized page is a bug', () => {
+    const { text, ledger } = small('conversation');
+    const sha = 'c71fe7436e673db819c1be4532504b861e14ad50';
+    const gut = { root: '/x', version: 't', overlay: { build: { commit: sha } } } as unknown as GbrainUnderTest;
+    const single = (code: string) => {
+      const s = summarizeArm(fakeRun('single-page', ledger, text, () => false, { refuse: true }), '20mb');
+      return { ...s, ingest: { ...s.ingest, status: code === 'request_too_large' ? 'refused' : 'error', code } };
+    };
+    const ids = (code: string) => {
+      const arms = [single(code)];
+      return n14Findings({ tiers: [], capability: CAPABLE, summary: summarize(arms, 0, CAPABLE), arms } as unknown as N14RunResult, gut);
+    };
+    const tooLarge = ids('request_too_large');
+    expect(tooLarge.map(f => [f.id, f.classification])).toEqual([['N14-2', 'feature-gap']]);
+    const capacity = ids('queue_capacity');
+    expect(capacity.map(f => [f.id, f.classification])).toEqual([['N14-4', 'bug']]);
+    expect(capacity[0].gbrain_sha).toBe(sha);
+    expect(capacity[0].repro).toContain(`--tier 20mb --arms single-page --gbrain <gbrain checkout>@${sha}`);
   });
 
   test('capability absent: the native arm is a reported gap, and the rules fail on missing values', () => {

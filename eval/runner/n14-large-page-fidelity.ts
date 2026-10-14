@@ -972,6 +972,17 @@ export function n14Findings(r: N14RunResult, gut: GbrainUnderTest): BugEntry[] {
       actual: `put_page of the ${refused.tier} ${refused.doc} refused with ${refused.ingest.code}; keyword recall ${refused.keyword_recall.hits}/${refused.keyword_recall.total}`,
     });
   }
+  const capacity = single.find(a => a.ingest.code === 'queue_capacity');
+  if (capacity) {
+    out.push({
+      id: 'N14-4', category: 'large-page-fidelity', classification: 'bug', status: 'open', gbrain_sha: sha,
+      contract: 'src/core/error-registry.ts registers queue_capacity as retryable ("The bounded queue is full; existing requests keep their place"); a page over MAX_FILE_SIZE is refused with request_too_large and split advice (src/core/persistence/page-prepare.ts)',
+      surface: 'put_page -> persistence admission (src/core/persistence/journal.ts intent-bytes check against persistence.limits principalIntentBytes, 32 MiB default)',
+      repro: repro(capacity.tier, 'single-page'),
+      expected: 'a single page larger than the per-request intent-byte cap is refused as too large (request_too_large, not retryable), as the 20 MB page is',
+      actual: `put_page of the ${capacity.tier} ${capacity.doc} on an empty brain returned queue_capacity (write capacity exhausted), a retryable code for a request no amount of waiting can admit; keyword recall ${capacity.keyword_recall.hits}/${capacity.keyword_recall.total}`,
+    });
+  }
   const loud = single.find(a => (a.direct_read_bytes ?? 0) > EGRESS_CAP_BYTES);
   if (loud) {
     out.push({
