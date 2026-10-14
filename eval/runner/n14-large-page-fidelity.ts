@@ -1,0 +1,1215 @@
+/**
+ * BrainBench N14: large-page fidelity.
+ *
+ * Question: if I put one very large document in gbrain, can an agent find and
+ * read what's deep inside it, and does keeping it up to date stay cheap?
+ *
+ * The documents come from eval/generators/n14-large-page-gen.ts: a fictional
+ * iMessage-style group chat (2 MB, 20 MB, 200 MB; 1 GB listed for manual
+ * runs), a long markdown project log and a book-length novel, each with four
+ * planted needles per decile of its bytes and a one-detail distractor for
+ * every needle. Gold is the generator ledger; the presence oracle rescans the
+ * raw bytes before anything is measured.
+ *
+ * Arms, same documents and same questions in every arm:
+ *   single-page    gbrain as it is: the whole document written with put_page,
+ *                  read back with a default get_page, appended to by
+ *                  rewriting the page. A refusal or an unsearchable page is a
+ *                  scored miss, never an error that hides the result.
+ *   managed-parts  the best split design today, the one the
+ *                  conversation-archive skill and `imessage-daily` pages use:
+ *                  a hub page (preamble plus a wikilink index) and one page per
+ *                  `## ` section (a day, or a chapter). An append writes one
+ *                  new part and updates the hub.
+ *   native         the same gbrain through its large-page API, run only when a
+ *                  capability probe finds it (get_page `body` modes with a
+ *                  window, optionally append_page); otherwise the arm is
+ *                  reported as "capability absent", a gap rather than a failure.
+ *
+ * Hermetic arm (default): provider keys stripped, keyword search only. Each
+ * (document, arm) runs in its own child process on in-memory PGLite under an
+ * RSS watchdog, so a crash or an out-of-memory kill is measured instead of
+ * taking the runner down, and peak RSS belongs to one arm. It records ingest
+ * outcome, keyword needle recall@10 by decile (a hit is a top-10 result whose
+ * stored chunk holds the needle's answer as a whole token), read correctness
+ * (the text a read returns holds the needle and its frame fits the egress
+ * cap), the largest response frame of every call, append cost for a 1 KB
+ * append (embedding inputs counted by a fake embedder, chunk rows rewritten),
+ * the byte-exact export round trip, and ingest wall time and peak RSS.
+ *
+ * Paid arm (`--paid --budget-run-id <id> --preregistration <path>`): real
+ * embeddings for vector and hybrid recall@10 by decile, and reader QA over the
+ * deep needles with the preregistered models. Never runs without both flags.
+ *
+ * Usage:
+ *   bun eval/runner/n14-large-page-fidelity.ts [--tier 2mb|20mb|200mb|1gb | --tiers 2mb,20mb]
+ *     [--arms single-page,managed-parts,native] [--docs conversation,project-log,book] [--seed N] [--output <dir>] [--gbrain <checkout>[@ref]]
+ *     [--concurrency N] [--rss-limit-mb N] [--record-bugs] [--json]
+ */
+import { spawn } from 'node:child_process';
+import { createHash, randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { PGLiteEngine as PGLiteEngineType } from 'gbrain/pglite-engine';
+import { WAVE_BUG_LEDGER, upsertBug, type BugEntry } from './bug-ledger.ts';
+import { budgetOptionsFrom, receiptCost, startPaidRun, type RunSummary } from './budget-ledger.ts';
+import { gbrainSpecFrom, importGbrain, overlaySummary, productIdentityFor, resolveGbrainUnderTest, type GbrainUnderTest } from './gbrain-under-test.ts';
+import { gbrainPin } from './gbrain-version.ts';
+import { DECIDE_OFF, withHermeticEnv } from './hermetic-env.ts';
+import { paidRequested, requirePaidArm } from './paid-arm.ts';
+import { attestPreregistration, type Attestation } from './prereg.ts';
+import { ProbeAccounting } from './probe-accounting.ts';
+import { BENCHMARK_VERSION, RECEIPT_SCHEMA_VERSION, noModelSpend, productIdentity, receiptPath, sourceTreeIdentity, writeReceipt, type Receipt } from './receipt.ts';
+import {
+  DECILES, N14_DEFAULT_SEED, N14_GENERATOR_VERSION, NEEDLE_TYPES, TIERS, TIER_IDS, checkPresence, containsToken, ledgerFingerprint, tierSpecs, writeDocument,
+  type DocKind, type N14DocLedger, type Needle, type PresenceCheck, type TierId,
+} from '../generators/n14-large-page-gen.ts';
+
+export const CATEGORY = 'n14-large-page-fidelity';
+export const TOP_K = 10;
+/** Egress cap on one response frame: the plan's `mcp.max_result_bytes` HTTP default. */
+export const EGRESS_CAP_BYTES = 1_048_576;
+/** A retrieved passage counts only up to this size, so "return the whole document" never scores. */
+export const PASSAGE_CAP_BYTES = 65_536;
+export const PARTS_MARKER = '<!-- n14:parts -->';
+export const ARMS = ['single-page', 'managed-parts', 'native'] as const;
+export type Arm = typeof ARMS[number];
+export const DEFAULT_RSS_LIMIT_MB = 6144;
+/** Preregistered values (docs/benchmarks/2026-10-14-n14-large-page-fidelity-preregistration.md); the registry row repeats them. */
+export const THRESHOLDS = {
+  native_keyword_recall_floor: 0.9,
+  append_embed_ratio_max: 3,
+  native_recall_gap_points_max: 2,
+  hybrid_recall_min_decile: 0.95,
+} as const;
+export const PAID_MODELS = ['anthropic:claude-opus-5-5', 'anthropic:claude-sonnet-5-5', 'openai:gpt-6.1-sol'] as const;
+export const PAID_EMBEDDING = { model: 'voyage:voyage-4', dims: 1024 } as const;
+const CONTROL_SLUG = 'notes/n14-control';
+
+/** One token estimate for both sides of the append-cost ratio: UTF-8 bytes / 4, rounded up. */
+export const estTokens = (s: string) => Math.ceil(Buffer.byteLength(s) / 4);
+const errMsg = (e: unknown) => e instanceof Error ? e.message : String(e);
+const errCode = (e: unknown) => (e && typeof e === 'object' && 'code' in e && typeof (e as { code: unknown }).code === 'string') ? (e as { code: string }).code : 'error';
+const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
+
+/** Bytes of the JSON-RPC frame that would carry `result` as MCP tool text. */
+export function frameBytes(result: unknown): number {
+  return Buffer.byteLength(JSON.stringify({ jsonrpc: '2.0', id: 1, result: { content: [{ type: 'text', text: JSON.stringify(result ?? null) }] } }));
+}
+
+// ─── Adapter contract ────────────────────────────────────────────────────
+
+export interface SearchHit {
+  slug: string;
+  chunk_id: number | null;
+  /** The stored passage the hit points at (gbrain: content_chunks.chunk_text by chunk_id). */
+  passage: string;
+  /** The text the agent actually receives in the result row. */
+  delivered: string;
+}
+export interface IngestOutcome { status: 'stored' | 'refused' | 'error'; code?: string; message?: string; pages: number; chunks: number; embed_skip: string | null; write_errors: number }
+export interface AppendOutcome { status: 'ok' | 'refused' | 'error'; code?: string; message?: string; chunks_before: number; chunks_after: number; chunks_rewritten: number; chunks_deleted: number; path: string }
+export interface EmbedCount { inputs: number; tokens: number }
+export interface CallFrame { op: string; bytes: number }
+
+/** What a category arm must do. The gbrain arms implement it in a child process; tests use in-memory adapters. */
+export interface N14Adapter {
+  readonly arm: Arm;
+  readonly frames: CallFrame[];
+  ingest(ledger: N14DocLedger, raw: string): Promise<IngestOutcome>;
+  storedContains(answer: string): Promise<boolean>;
+  search(query: string): Promise<SearchHit[]>;
+  /** Read the page behind a hit the way this arm reads; returns the response text. */
+  read(hit: SearchHit): Promise<string>;
+  /** Read the document's entry page by slug with default parameters. */
+  directRead(): Promise<string>;
+  /** Embed everything stale; null when the adapter has no embedder. */
+  embedPass(): Promise<EmbedCount | null>;
+  append(text: string): Promise<AppendOutcome>;
+  /** Export, then reassemble the document body from the exported files. */
+  exportBody(): Promise<string>;
+  close(): Promise<void>;
+}
+
+export interface ProbeRow { id: string; decile: number; type: string; hit_rank: number | null; delivered_rank: number | null; distractor_rank: number | null; n_results: number; error?: string }
+export interface ReadRow { id: string; attempted: boolean; contains: boolean; bytes: number | null; correct: boolean; error?: string }
+export interface MemMark { phase: string; t_ms: number; rss_mb: number; max_rss_mb: number }
+
+export interface ArmRun {
+  arm: Arm;
+  doc: string;
+  bytes: number;
+  ingest: IngestOutcome & { wall_ms: number };
+  stored: { contains: number; total: number };
+  control: { hits: number; total: number; missed: string[] };
+  probes: ProbeRow[];
+  reads: ReadRow[];
+  direct_read: { bytes: number | null; error?: string };
+  embed_initial: (EmbedCount & { wall_ms: number }) | null;
+  embed_error?: string;
+  append: AppendOutcome & { wall_ms: number; embed: EmbedCount | null; appended_tokens: number; visible_rank: number | null; visible_error?: string };
+  roundtrip: { status: 'match' | 'mismatch' | 'not_stored' | 'error'; expected_sha256: string; actual_sha256?: string; byte_delta?: number; first_diff?: FirstDiff; error?: string };
+  frames: { count: number; max_bytes: number; over_cap: number; by_op: Record<string, { count: number; max_bytes: number; over_cap: number }> };
+  memory: MemMark[];
+}
+
+export interface FirstDiff { offset: number; expected: string; actual: string; differing_lines: number }
+
+/** Where two texts first differ (UTF-16 offset), with a little context, and how many lines differ by position. */
+export function firstDiff(expected: string, actual: string): FirstDiff {
+  let i = 0;
+  while (i < expected.length && i < actual.length && expected.charCodeAt(i) === actual.charCodeAt(i)) i++;
+  const a = expected.split('\n');
+  const b = actual.split('\n');
+  let differing = Math.abs(a.length - b.length);
+  for (let k = 0; k < Math.min(a.length, b.length); k++) if (a[k] !== b[k]) differing++;
+  return { offset: i, expected: JSON.stringify(expected.slice(Math.max(0, i - 40), i + 60)), actual: JSON.stringify(actual.slice(Math.max(0, i - 40), i + 60)), differing_lines: differing };
+}
+
+/** Rank (1-based) of the first hit whose passage holds `token` within the cap; null when none in the top k. */
+export function hitRank(passages: readonly string[], token: string, k = TOP_K): number | null {
+  for (let i = 0; i < Math.min(k, passages.length); i++) {
+    const p = passages[i];
+    if (Buffer.byteLength(p) <= PASSAGE_CAP_BYTES && containsToken(p, token)) return i + 1;
+  }
+  return null;
+}
+
+/** Run one arm over one document through the adapter. Every gbrain exception is recorded, never thrown. */
+export async function evaluateArm(adapter: N14Adapter, ledger: N14DocLedger, raw: string, opts: { embed?: boolean; probeMemory?: (phase: string) => MemMark } = {}): Promise<ArmRun> {
+  const mark = opts.probeMemory ?? ((phase: string) => ({ phase, t_ms: 0, rss_mb: 0, max_rss_mb: 0 }));
+  const memory: MemMark[] = [mark('start')];
+  const t0 = performance.now();
+  let ingest: IngestOutcome;
+  try { ingest = await adapter.ingest(ledger, raw); }
+  catch (e) { ingest = { status: 'error', code: errCode(e), message: errMsg(e).slice(0, 500), pages: 0, chunks: 0, embed_skip: null, write_errors: 1 }; }
+  const ingestMs = performance.now() - t0;
+  memory.push(mark('ingest'));
+
+  let contains = 0;
+  for (const n of ledger.needles) { try { if (await adapter.storedContains(n.answer)) contains++; } catch { /* counted as absent */ } }
+
+  const searchPassages = async (query: string) => {
+    const hits = await adapter.search(query);
+    return { hits, passages: hits.map(h => h.passage), delivered: hits.map(h => h.delivered) };
+  };
+  const control = { hits: 0, total: ledger.control.needles.length, missed: [] as string[] };
+  for (const c of ledger.control.needles) {
+    try { if (hitRank((await searchPassages(c.query)).passages, c.answer) !== null) control.hits++; else control.missed.push(c.id); }
+    catch (e) { control.missed.push(`${c.id}: ${errMsg(e).slice(0, 120)}`); }
+  }
+
+  const probes: ProbeRow[] = [];
+  const reads: ReadRow[] = [];
+  for (const n of ledger.needles) {
+    const row: ProbeRow = { id: n.id, decile: n.decile, type: n.type, hit_rank: null, delivered_rank: null, distractor_rank: null, n_results: 0 };
+    try {
+      const r = await searchPassages(n.query);
+      row.n_results = r.hits.length;
+      row.hit_rank = hitRank(r.passages, n.answer);
+      row.delivered_rank = r.delivered.findIndex(d => containsToken(d, n.answer)) + 1 || null;
+      row.distractor_rank = hitRank(r.passages, n.distractor.answer);
+      if (row.hit_rank !== null) {
+        const hit = r.hits[row.hit_rank - 1];
+        try {
+          const text = await adapter.read(hit);
+          const bytes = adapter.frames.at(-1)?.bytes ?? Buffer.byteLength(text);
+          const has = containsToken(text, n.answer);
+          reads.push({ id: n.id, attempted: true, contains: has, bytes, correct: has && bytes <= EGRESS_CAP_BYTES });
+        } catch (e) { reads.push({ id: n.id, attempted: true, contains: false, bytes: null, correct: false, error: `${errCode(e)}: ${errMsg(e).slice(0, 200)}` }); }
+      } else {
+        reads.push({ id: n.id, attempted: false, contains: false, bytes: null, correct: false });
+      }
+    } catch (e) { row.error = `${errCode(e)}: ${errMsg(e).slice(0, 200)}`; reads.push({ id: n.id, attempted: false, contains: false, bytes: null, correct: false }); }
+    probes.push(row);
+  }
+  let directRead: ArmRun['direct_read'];
+  try { await adapter.directRead(); directRead = { bytes: adapter.frames.at(-1)?.bytes ?? null }; }
+  catch (e) { directRead = { bytes: null, error: `${errCode(e)}: ${errMsg(e).slice(0, 200)}` }; }
+  memory.push(mark('reads'));
+
+  let embedInitial: ArmRun['embed_initial'] = null;
+  let embedError: string | undefined;
+  if (opts.embed !== false) {
+    const te = performance.now();
+    try { const c = await adapter.embedPass(); embedInitial = c ? { ...c, wall_ms: performance.now() - te } : null; }
+    catch (e) { embedError = `${errCode(e)}: ${errMsg(e).slice(0, 300)}`; }
+  }
+  const appendText = ledger.append.text;
+  const ta = performance.now();
+  let app: AppendOutcome;
+  try { app = await adapter.append(appendText); }
+  catch (e) { app = { status: 'error', code: errCode(e), message: errMsg(e).slice(0, 500), chunks_before: 0, chunks_after: 0, chunks_rewritten: 0, chunks_deleted: 0, path: 'unknown' }; }
+  const appendMs = performance.now() - ta;
+  let appendEmbed: EmbedCount | null = null;
+  if (opts.embed !== false && embedInitial) {
+    try { appendEmbed = await adapter.embedPass(); }
+    catch (e) { embedError ??= `append: ${errCode(e)}: ${errMsg(e).slice(0, 300)}`; }
+  }
+  let visibleRank: number | null = null;
+  let visibleError: string | undefined;
+  try { visibleRank = hitRank((await searchPassages(ledger.append.needle.query)).passages, ledger.append.needle.answer); }
+  catch (e) { visibleError = errMsg(e).slice(0, 200); }
+  memory.push(mark('append'));
+
+  const expected = canonicalBody(raw.slice(raw.indexOf('\n---\n', 3) + 5) + (app.status === 'ok' ? appendText : ''));
+  const expectedSha = sha256(expected);
+  let roundtrip: ArmRun['roundtrip'];
+  if (ingest.status !== 'stored') roundtrip = { status: 'not_stored', expected_sha256: expectedSha };
+  else {
+    try {
+      const body = canonicalBody(await adapter.exportBody());
+      const actualSha = sha256(body);
+      roundtrip = { status: actualSha === expectedSha ? 'match' : 'mismatch', expected_sha256: expectedSha, actual_sha256: actualSha, byte_delta: Buffer.byteLength(body) - Buffer.byteLength(expected), ...(actualSha === expectedSha ? {} : { first_diff: firstDiff(expected, body) }) };
+    } catch (e) { roundtrip = { status: 'error', expected_sha256: expectedSha, error: `${errCode(e)}: ${errMsg(e).slice(0, 300)}` }; }
+  }
+  memory.push(mark('export'));
+
+  const byOp: ArmRun['frames']['by_op'] = {};
+  for (const f of adapter.frames) {
+    const o = (byOp[f.op] ??= { count: 0, max_bytes: 0, over_cap: 0 });
+    o.count++;
+    o.max_bytes = Math.max(o.max_bytes, f.bytes);
+    if (f.bytes > EGRESS_CAP_BYTES) o.over_cap++;
+  }
+  return {
+    arm: adapter.arm, doc: ledger.id, bytes: ledger.bytes,
+    ingest: { ...ingest, wall_ms: Math.round(ingestMs) },
+    stored: { contains, total: ledger.needles.length },
+    control, probes, reads, direct_read: directRead,
+    embed_initial: embedInitial,
+    ...(embedError ? { embed_error: embedError } : {}),
+    append: { ...app, wall_ms: Math.round(appendMs), embed: appendEmbed, appended_tokens: estTokens(appendText), visible_rank: visibleRank, ...(visibleError ? { visible_error: visibleError } : {}) },
+    roundtrip,
+    frames: { count: adapter.frames.length, max_bytes: Math.max(0, ...adapter.frames.map(f => f.bytes)), over_cap: adapter.frames.filter(f => f.bytes > EGRESS_CAP_BYTES).length, by_op: byOp },
+    memory,
+  };
+}
+
+// ─── Scoring (pure) ──────────────────────────────────────────────────────
+
+export interface Rate { hits: number; total: number; rate: number }
+const rate = (hits: number, total: number): Rate => ({ hits, total, rate: total ? hits / total : 0 });
+
+export interface ArmSummary {
+  arm: Arm;
+  doc: string;
+  tier: TierId;
+  status: 'ran' | 'crashed' | 'capability_absent';
+  crash?: string;
+  ingest: { status: string; code?: string; chunks: number; pages: number; embed_skip: string | null; wall_ms: number | null; rss_peak_mb: number | null; rss_over_baseline_mb: number | null };
+  stored_needles: Rate;
+  keyword_recall: Rate;
+  keyword_recall_by_decile: Rate[];
+  min_decile_recall: number;
+  delivered_recall: Rate;
+  distractor_preferred: number;
+  reads: { attempted: number; contains: number; correct: number; max_bytes: number | null };
+  direct_read_bytes: number | null;
+  max_frame_bytes: number;
+  responses_over_cap: number;
+  append: { status: string; code?: string; wall_ms: number | null; embed_inputs: number | null; embed_tokens: number | null; appended_tokens: number; embed_ratio: number | null; chunks_rewritten: number; chunks_deleted: number; visible: boolean; path: string } | null;
+  embed_initial: { inputs: number; tokens: number; wall_ms: number; tokens_per_mb: number } | null;
+  roundtrip: string;
+  roundtrip_byte_delta: number | null;
+}
+
+export function summarizeArm(run: ArmRun, tier: TierId): ArmSummary {
+  const byDecile = Array.from({ length: DECILES }, (_, d) => {
+    const rows = run.probes.filter(p => p.decile === d);
+    return rate(rows.filter(p => p.hit_rank !== null).length, rows.length);
+  });
+  const hits = run.probes.filter(p => p.hit_rank !== null).length;
+  const baseline = run.memory.find(m => m.phase === 'start');
+  const afterIngest = run.memory.find(m => m.phase === 'ingest');
+  const chunksAfter = run.append.chunks_after;
+  // Append cost is defined only for a page that is searchable after the append.
+  const ratio = run.append.status === 'ok' && run.append.embed && chunksAfter > 0 ? run.append.embed.tokens / run.append.appended_tokens : null;
+  const attempted = run.reads.filter(r => r.attempted);
+  return {
+    arm: run.arm, doc: run.doc, tier, status: 'ran',
+    ingest: {
+      status: run.ingest.status, ...(run.ingest.code ? { code: run.ingest.code } : {}), chunks: run.ingest.chunks, pages: run.ingest.pages, embed_skip: run.ingest.embed_skip,
+      wall_ms: run.ingest.wall_ms, rss_peak_mb: afterIngest?.max_rss_mb || null,
+      rss_over_baseline_mb: afterIngest && baseline && afterIngest.max_rss_mb ? Math.max(0, Math.round(afterIngest.max_rss_mb - baseline.rss_mb)) : null,
+    },
+    stored_needles: rate(run.stored.contains, run.stored.total),
+    keyword_recall: rate(hits, run.probes.length),
+    keyword_recall_by_decile: byDecile,
+    min_decile_recall: Math.min(...byDecile.map(r => r.rate)),
+    delivered_recall: rate(run.probes.filter(p => p.delivered_rank !== null).length, run.probes.length),
+    distractor_preferred: run.probes.filter(p => p.distractor_rank !== null && (p.hit_rank === null || p.distractor_rank < p.hit_rank)).length,
+    reads: { attempted: attempted.length, contains: attempted.filter(r => r.contains).length, correct: attempted.filter(r => r.correct).length, max_bytes: attempted.length ? Math.max(0, ...attempted.map(r => r.bytes ?? 0)) : null },
+    direct_read_bytes: run.direct_read.bytes,
+    max_frame_bytes: run.frames.max_bytes,
+    responses_over_cap: run.frames.over_cap,
+    append: {
+      status: run.append.status, ...(run.append.code ? { code: run.append.code } : {}), wall_ms: run.append.wall_ms,
+      embed_inputs: run.append.embed?.inputs ?? null, embed_tokens: run.append.embed?.tokens ?? null, appended_tokens: run.append.appended_tokens,
+      embed_ratio: ratio === null ? null : Number(ratio.toFixed(3)), chunks_rewritten: run.append.chunks_rewritten, chunks_deleted: run.append.chunks_deleted,
+      visible: run.append.visible_rank !== null, path: run.append.path,
+    },
+    embed_initial: run.embed_initial ? { inputs: run.embed_initial.inputs, tokens: run.embed_initial.tokens, wall_ms: Math.round(run.embed_initial.wall_ms), tokens_per_mb: Math.round(run.embed_initial.tokens / (run.bytes / 1e6)) } : null,
+    roundtrip: run.roundtrip.status,
+    roundtrip_byte_delta: run.roundtrip.byte_delta ?? null,
+  };
+}
+
+/** A child that died: every probe it owned is a scored miss and the crash counts against safety. */
+export function crashedSummary(arm: Arm, ledger: Pick<N14DocLedger, 'id' | 'needles'>, tier: TierId, crash: string, rssPeakMb: number | null): ArmSummary {
+  const zero = rate(0, ledger.needles.length);
+  return {
+    arm, doc: ledger.id, tier, status: 'crashed', crash,
+    ingest: { status: 'crashed', chunks: 0, pages: 0, embed_skip: null, wall_ms: null, rss_peak_mb: rssPeakMb, rss_over_baseline_mb: null },
+    stored_needles: zero, keyword_recall: zero,
+    keyword_recall_by_decile: Array.from({ length: DECILES }, (_, d) => rate(0, ledger.needles.filter(n => n.decile === d).length)),
+    min_decile_recall: 0, delivered_recall: zero, distractor_preferred: 0,
+    reads: { attempted: 0, contains: 0, correct: 0, max_bytes: null }, direct_read_bytes: null, max_frame_bytes: 0, responses_over_cap: 0,
+    append: null, embed_initial: null, roundtrip: 'crashed', roundtrip_byte_delta: null,
+  };
+}
+
+/** The native arm when the capability probe finds no large-page API: a reported gap, never scored. */
+export function absentSummary(ledger: Pick<N14DocLedger, 'id' | 'needles'>, tier: TierId): ArmSummary {
+  const s = crashedSummary('native', ledger, tier, 'capability absent', null);
+  return { ...s, status: 'capability_absent', crash: undefined, ingest: { ...s.ingest, status: 'capability_absent' }, roundtrip: 'not_run' };
+}
+
+export interface N14Summary {
+  safety: { crashes: number; responses_over_cap: number; roundtrip_byte_loss: number; presence_failures: number };
+  quality: { native_append_embed_ratio_max: number | null; native_recall_gap_points_max: number | null };
+  floor: { native_keyword_recall_2mb: number | null };
+  capability: NativeCapability;
+  arms: ArmSummary[];
+}
+
+export function summarize(arms: readonly ArmSummary[], presenceFailures: number, capability: NativeCapability): N14Summary {
+  const ran = arms.filter(a => a.status !== 'capability_absent');
+  const native = ran.filter(a => a.arm === 'native');
+  const nativeRatios = native.map(a => a.append?.embed_ratio ?? null);
+  const gaps = native.map(n => {
+    const parts = ran.find(a => a.arm === 'managed-parts' && a.doc === n.doc && a.tier === n.tier);
+    return parts ? (parts.keyword_recall.rate - n.keyword_recall.rate) * 100 : null;
+  });
+  const native2 = native.filter(a => a.tier === '2mb');
+  return {
+    safety: {
+      crashes: ran.filter(a => a.status === 'crashed').length,
+      responses_over_cap: ran.reduce((n, a) => n + a.responses_over_cap, 0),
+      roundtrip_byte_loss: ran.filter(a => a.roundtrip === 'mismatch' || a.roundtrip === 'error').length,
+      presence_failures: presenceFailures,
+    },
+    quality: {
+      // A missing native append measurement (no capability, append refused, page unsearchable) is null, which fails the threshold.
+      native_append_embed_ratio_max: !native.length || nativeRatios.some(r => r === null) ? null : Math.max(...(nativeRatios as number[])),
+      native_recall_gap_points_max: !native.length || gaps.some(g => g === null) ? null : Number(Math.max(...(gaps as number[])).toFixed(2)),
+    },
+    floor: {
+      native_keyword_recall_2mb: native2.length ? native2.reduce((n, a) => n + a.keyword_recall.hits, 0) / native2.reduce((n, a) => n + a.keyword_recall.total, 0) : null,
+    },
+    capability,
+    arms: [...arms],
+  };
+}
+
+/** The preregistered rules, applied to a summary; the registry row repeats them for all.ts. */
+export function n14Verdict(s: N14Summary): { verdict: 'pass' | 'fail'; failed: string[] } {
+  const failed: string[] = [];
+  for (const [k, v] of Object.entries(s.safety)) if (v !== 0) failed.push(`safety.${k}=${v}`);
+  const { native_append_embed_ratio_max: ratio, native_recall_gap_points_max: gap } = s.quality;
+  if (ratio === null || ratio > THRESHOLDS.append_embed_ratio_max) failed.push(`quality.native_append_embed_ratio_max=${ratio}`);
+  if (gap === null || gap > THRESHOLDS.native_recall_gap_points_max) failed.push(`quality.native_recall_gap_points_max=${gap}`);
+  const floor = s.floor.native_keyword_recall_2mb;
+  if (floor === null || floor < THRESHOLDS.native_keyword_recall_floor) failed.push(`floor.native_keyword_recall_2mb=${floor}`);
+  return { verdict: failed.length ? 'fail' : 'pass', failed };
+}
+
+// ─── Managed parts (the split design) ────────────────────────────────────
+
+export interface PartPlan { slug: string; key: string; content: string; body: string }
+
+/**
+ * Split a document into a hub page and one page per `## ` section, the
+ * conversation-archive / imessage-daily design. Part bodies are the section
+ * text verbatim, so concatenating the hub preamble and the parts in key order
+ * rebuilds the body byte for byte.
+ */
+export function splitIntoParts(raw: string, ledger: Pick<N14DocLedger, 'slug' | 'title' | 'kind' | 'page_type'>): { hub: { slug: string; preamble: string }; parts: PartPlan[] } {
+  const bodyStart = raw.indexOf('\n---\n', 3) + 5;
+  const body = raw.slice(bodyStart);
+  const starts: number[] = [];
+  if (body.startsWith('## ')) starts.push(0);
+  for (let i = body.indexOf('\n## '); i >= 0; i = body.indexOf('\n## ', i + 1)) starts.push(i + 1);
+  const preamble = body.slice(0, starts[0] ?? body.length);
+  const partType = ledger.kind === 'conversation' ? 'imessage-daily' : 'note';
+  const parts = starts.map((s, i) => {
+    const text = body.slice(s, starts[i + 1] ?? body.length);
+    return partFor(ledger, text, partType);
+  });
+  return { hub: { slug: ledger.slug, preamble }, parts };
+}
+
+function partFor(ledger: Pick<N14DocLedger, 'slug' | 'title'>, sectionText: string, partType: string): PartPlan {
+  const heading = sectionText.slice(3, sectionText.indexOf('\n') >= 0 ? sectionText.indexOf('\n') : undefined).trim();
+  const chapter = /^Chapter (\d+)/.exec(heading);
+  const key = chapter ? `chapter-${chapter[1].padStart(3, '0')}` : heading;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(key) ? `date: ${key}\n` : '';
+  return { slug: `${ledger.slug}/${key}`, key, body: sectionText, content: `---\ntype: ${partType}\ntitle: ${JSON.stringify(`${ledger.title}, ${heading}`)}\n${date}---\n${sectionText}` };
+}
+
+export function hubContent(ledger: Pick<N14DocLedger, 'title' | 'page_type'>, preamble: string, parts: readonly PartPlan[]): string {
+  return `---\ntype: ${ledger.page_type}\ntitle: ${JSON.stringify(ledger.title)}\nparts: ${parts.length}\n---\n${preamble}${PARTS_MARKER}\n\n${parts.map(p => `- [[${p.slug}]]`).join('\n')}\n`;
+}
+
+/**
+ * gbrain's documented body framing: parseMarkdown stores `compiled_truth.trim()`
+ * (src/core/markdown.ts parseMarkdown) and serializeMarkdown writes it between a
+ * blank line and one trailing newline. The round trip applies this framing to the
+ * source and compares everything else byte for byte.
+ */
+export function canonicalBody(body: string): string {
+  return `\n${body.trim()}\n`;
+}
+
+/** Body of an exported Markdown file (after its frontmatter block). */
+export function exportedBody(file: string): string {
+  if (!file.startsWith('---\n')) return file;
+  const end = file.indexOf('\n---\n', 3);
+  return end < 0 ? file : file.slice(end + 5);
+}
+
+// ─── Native capability probe ─────────────────────────────────────────────
+
+export interface NativeCapability { present: boolean; get_page_body: string | null; append_page: boolean; upload_session: boolean; evidence: string }
+
+/** Read gbrain's own operation registry: the large-page API is get_page `body` with a window mode. */
+export function probeNativeCapability(operations: ReadonlyArray<{ name: string; params?: Record<string, unknown> }>): NativeCapability {
+  const byName = new Map(operations.map(o => [o.name, o]));
+  const body = byName.get('get_page')?.params?.body;
+  const bodyText = body === undefined ? null : JSON.stringify(body);
+  const present = bodyText !== null && /window/.test(bodyText);
+  const appendPage = byName.has('append_page');
+  const upload = byName.has('begin_page_upload') && byName.has('upload_page_part') && byName.has('commit_page_upload');
+  return {
+    present, get_page_body: bodyText, append_page: appendPage, upload_session: upload,
+    evidence: present ? `get_page declares body ${bodyText}${appendPage ? '; append_page exists' : ''}` : `get_page declares ${bodyText === null ? 'no body parameter' : `body ${bodyText} without a window mode`}; ${appendPage ? 'append_page exists' : 'no append_page op'}`,
+  };
+}
+
+// ─── gbrain adapter (runs inside a child process) ────────────────────────
+
+interface OperationsModule { operations: Array<{ name: string; params?: Record<string, unknown>; handler: (ctx: unknown, p: Record<string, unknown>) => Promise<unknown> }> }
+interface GatewayModule {
+  configureGateway: (c: Record<string, unknown>) => void;
+  __setEmbedTransportForTests: (fn: unknown) => void;
+  embedQuery?: (text: string) => Promise<Float32Array>;
+  chat?: (o: Record<string, unknown>) => Promise<{ text: string; usage?: { input_tokens?: number; output_tokens?: number } }>;
+}
+type RunEmbedCore = (engine: unknown, opts: Record<string, unknown>) => Promise<unknown>;
+type RunExport = (engine: unknown, args: string[]) => Promise<void>;
+type Embedder = { kind: 'counting' } | { kind: 'none' } | { kind: 'real'; model: string; dims: number; env: Record<string, string> };
+
+export class GbrainAdapter implements N14Adapter {
+  readonly frames: CallFrame[] = [];
+  readonly arm: Arm;
+  #engine!: PGLiteEngineType;
+  #ops!: Map<string, OperationsModule['operations'][number]>;
+  #ctx!: Record<string, unknown>;
+  #gw!: GatewayModule;
+  #runEmbedCore!: RunEmbedCore;
+  #runExport!: RunExport;
+  #embedder: Embedder;
+  #embedCount: EmbedCount = { inputs: 0, tokens: 0 };
+  #gatewayReady = false;
+  #ledger!: N14DocLedger;
+  #raw = '';
+  #rev = new Map<string, string>();
+  #parts: PartPlan[] = [];
+  #preamble = '';
+  #capability!: NativeCapability;
+
+  private constructor(arm: Arm, embedder: Embedder) { this.arm = arm; this.#embedder = embedder; }
+
+  static async open(root: string, arm: Arm, embedder: Embedder): Promise<GbrainAdapter> {
+    const a = new GbrainAdapter(arm, embedder);
+    const gut: GbrainUnderTest = { root, version: 'child', overlay: null };
+    const { PGLiteEngine } = await importGbrain<{ PGLiteEngine: new () => PGLiteEngineType }>(gut, 'src/core/pglite-engine.ts');
+    const { operations } = await importGbrain<OperationsModule>(gut, 'src/core/operations.ts');
+    a.#gw = await importGbrain<GatewayModule>(gut, 'src/core/ai/gateway.ts');
+    a.#runEmbedCore = (await importGbrain<{ runEmbedCore: RunEmbedCore }>(gut, 'src/commands/embed.ts')).runEmbedCore;
+    a.#runExport = (await importGbrain<{ runExport: RunExport }>(gut, 'src/commands/export.ts')).runExport;
+    a.#engine = new PGLiteEngine();
+    await a.#engine.connect({});
+    await a.#engine.initSchema();
+    for (const [k, v] of Object.entries({ 'search.cache.enabled': 'false', 'search.reranker.enabled': 'false', 'search.expansion': 'false' })) await a.#engine.setConfig(k, v);
+    const logger = { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} };
+    a.#ctx = { engine: a.#engine, config: { engine: 'pglite', database_path: ':memory:' }, logger, dryRun: false, remote: false, sourceId: 'default' };
+    a.#ops = new Map(operations.map(o => [o.name, o]));
+    a.#capability = probeNativeCapability(operations);
+    return a;
+  }
+
+  get capability(): NativeCapability { return this.#capability; }
+
+  async call(name: string, params: Record<string, unknown>): Promise<unknown> {
+    const o = this.#ops.get(name);
+    if (!o) throw Object.assign(new Error(`gbrain has no operation ${name}`), { code: 'unknown_operation' });
+    const result = await o.handler(this.#ctx, params);
+    this.frames.push({ op: name, bytes: frameBytes(result) });
+    return result;
+  }
+
+  async sql<T = Record<string, unknown>>(q: string, params?: unknown[]): Promise<T[]> {
+    return await (this.#engine as unknown as { executeRaw: <R>(q: string, p?: unknown[]) => Promise<R[]> }).executeRaw<T>(q, params);
+  }
+
+  async #put(slug: string, content: string): Promise<void> {
+    const prev = this.#rev.get(slug);
+    const r = await this.call('put_page', { slug, content, ...(prev ? { expected_revision: prev } : {}) }) as { revision?: string };
+    if (r?.revision) this.#rev.set(slug, r.revision);
+  }
+
+  async ingest(ledger: N14DocLedger, raw: string): Promise<IngestOutcome> {
+    this.#ledger = ledger;
+    this.#raw = raw;
+    await this.#put(CONTROL_SLUG, ledger.control.content);
+    let writeErrors = 0;
+    let first: { code: string; message: string } | null = null;
+    const attempt = async (slug: string, content: string) => {
+      try { await this.#put(slug, content); }
+      catch (e) { writeErrors++; first ??= { code: errCode(e), message: errMsg(e).slice(0, 500) }; }
+    };
+    if (this.arm === 'managed-parts') {
+      const split = splitIntoParts(raw, ledger);
+      this.#parts = split.parts;
+      this.#preamble = split.hub.preamble;
+      for (const p of split.parts) await attempt(p.slug, p.content);
+      await attempt(ledger.slug, hubContent(ledger, split.hub.preamble, split.parts));
+    } else if (this.arm === 'native' && this.#capability.upload_session && Buffer.byteLength(raw) > 4 * 1024 * 1024) {
+      try { await this.#upload(ledger.slug, raw); } catch (e) { writeErrors++; first ??= { code: errCode(e), message: errMsg(e).slice(0, 500) }; }
+    } else {
+      await attempt(ledger.slug, raw);
+    }
+    const docPages = await this.sql<{ n: number; chunks: number; skip: string | null }>(
+      `SELECT count(*)::int AS n, coalesce(sum((SELECT count(*) FROM content_chunks c WHERE c.page_id = p.id)), 0)::int AS chunks,
+              max(p.frontmatter->'embed_skip'->>'reason') AS skip
+         FROM pages p WHERE p.deleted_at IS NULL AND p.slug <> $1`, [CONTROL_SLUG]);
+    const pages = Number(docPages[0]?.n ?? 0);
+    const status: IngestOutcome['status'] = pages > 0 && writeErrors === 0 ? 'stored' : first && /too_large|file_too_large|oversized|request_too_large/.test(first.code + first.message) ? 'refused' : pages > 0 ? 'stored' : 'error';
+    return { status, ...(first ? { code: first.code, message: first.message } : {}), pages, chunks: Number(docPages[0]?.chunks ?? 0), embed_skip: docPages[0]?.skip ?? null, write_errors: writeErrors };
+  }
+
+  async #upload(slug: string, raw: string): Promise<void> {
+    const buf = Buffer.from(raw);
+    const begun = await this.call('begin_page_upload', { slug, total_bytes: buf.length, sha256: createHash('sha256').update(buf).digest('hex') }) as { upload_id: string };
+    const part = 2 * 1024 * 1024;
+    let seq = 0;
+    for (let off = 0; off < buf.length; seq++) {
+      let end = Math.min(buf.length, off + part);
+      while (end < buf.length && (buf[end] & 0xc0) === 0x80) end--;
+      await this.call('upload_page_part', { upload_id: begun.upload_id, seq, text: buf.subarray(off, end).toString('utf8') });
+      off = end;
+    }
+    const r = await this.call('commit_page_upload', { upload_id: begun.upload_id }) as { revision?: string };
+    if (r?.revision) this.#rev.set(slug, r.revision);
+  }
+
+  async storedContains(answer: string): Promise<boolean> {
+    const r = await this.sql<{ n: number }>(`SELECT count(*)::int AS n FROM pages WHERE deleted_at IS NULL AND slug <> $2 AND strpos(compiled_truth, $1) > 0`, [answer, CONTROL_SLUG]);
+    return Number(r[0]?.n ?? 0) > 0;
+  }
+
+  async search(query: string): Promise<SearchHit[]> {
+    const rows = await this.call('search', { query, limit: TOP_K }) as Array<{ slug: string; chunk_id?: number | null; chunk_text?: string }>;
+    const ids = rows.map(r => r.chunk_id).filter((x): x is number => typeof x === 'number');
+    const stored = new Map((ids.length ? await this.sql<{ id: number; chunk_text: string }>(`SELECT id, chunk_text FROM content_chunks WHERE id = ANY($1::int[])`, [ids]) : []).map(r => [Number(r.id), r.chunk_text]));
+    return rows.slice(0, TOP_K).map(r => ({ slug: r.slug, chunk_id: typeof r.chunk_id === 'number' ? r.chunk_id : null, passage: typeof r.chunk_id === 'number' ? stored.get(r.chunk_id) ?? '' : '', delivered: r.chunk_text ?? '' }));
+  }
+
+  async read(hit: SearchHit): Promise<string> {
+    const params: Record<string, unknown> = this.arm === 'native' ? { slug: hit.slug, body: 'window', ...(hit.chunk_id !== null ? { around_chunk_id: hit.chunk_id } : {}) } : { slug: hit.slug };
+    return JSON.stringify(await this.call('get_page', params));
+  }
+
+  async directRead(): Promise<string> {
+    return JSON.stringify(await this.call('get_page', { slug: this.#ledger.slug }));
+  }
+
+  async #ensureGateway(): Promise<void> {
+    if (this.#gatewayReady) return;
+    if (this.#embedder.kind === 'counting') {
+      // The brain's own configured model and dimensions (voyage:voyage-4, 1024 at the pin), so the counted batches are the ones gbrain plans.
+      const cfg = new Map((await this.sql<{ key: string; value: string }>(`SELECT key, value FROM config WHERE key IN ('embedding_model', 'embedding_dimensions')`)).map(r => [r.key, r.value]));
+      const model = cfg.get('embedding_model') ?? 'voyage:voyage-4';
+      const dims = Number(cfg.get('embedding_dimensions') ?? 1024);
+      const provider = model.split(':')[0].toUpperCase().replace(/[^A-Z0-9]/g, '_');
+      this.#gw.configureGateway({ embedding_model: model, embedding_dimensions: dims, env: { [`${provider}_API_KEY`]: 'n14-counting-embedder-no-network' } });
+      this.#gw.__setEmbedTransportForTests(async (p: { values: string[] }) => {
+        this.#embedCount.inputs += p.values.length;
+        for (const v of p.values) this.#embedCount.tokens += estTokens(v);
+        return { embeddings: p.values.map(v => countingVector(v, dims)), values: p.values, warnings: [], usage: { tokens: 0 } };
+      });
+    } else if (this.#embedder.kind === 'real') {
+      this.#gw.configureGateway({ embedding_model: this.#embedder.model, embedding_dimensions: this.#embedder.dims, env: this.#embedder.env });
+      this.#gw.__setEmbedTransportForTests(null);
+    }
+    this.#gatewayReady = true;
+  }
+
+  async embedPass(): Promise<EmbedCount | null> {
+    if (this.#embedder.kind === 'none') return null;
+    await this.#ensureGateway();
+    const before = { ...this.#embedCount };
+    await this.#runEmbedCore(this.#engine, { stale: true, catchUp: true });
+    return { inputs: this.#embedCount.inputs - before.inputs, tokens: this.#embedCount.tokens - before.tokens };
+  }
+
+  async #chunkSnapshot(): Promise<Map<number, string>> {
+    const rows = await this.sql<{ id: number; h: string }>(`SELECT c.id, md5(c.chunk_text) AS h FROM content_chunks c JOIN pages p ON p.id = c.page_id WHERE p.deleted_at IS NULL AND p.slug <> $1`, [CONTROL_SLUG]);
+    return new Map(rows.map(r => [Number(r.id), r.h]));
+  }
+
+  async append(text: string): Promise<AppendOutcome> {
+    const before = await this.#chunkSnapshot();
+    let path = 'put_page (whole page rewrite)';
+    let failure: { status: 'refused' | 'error'; code: string; message: string } | null = null;
+    try {
+      if (this.arm === 'managed-parts') {
+        path = 'put_page new part + hub index update';
+        const part = partFor(this.#ledger, text, this.#ledger.kind === 'conversation' ? 'imessage-daily' : 'note');
+        this.#parts.push(part);
+        await this.#put(part.slug, part.content);
+        await this.#put(this.#ledger.slug, hubContent(this.#ledger, this.#preamble, this.#parts));
+      } else if (this.arm === 'native' && this.#capability.append_page) {
+        path = 'append_page';
+        const r = await this.call('append_page', { slug: this.#ledger.slug, text, request_id: randomUUID(), ...(this.#rev.get(this.#ledger.slug) ? { expected_revision: this.#rev.get(this.#ledger.slug) } : {}) }) as { revision?: string };
+        if (r?.revision) this.#rev.set(this.#ledger.slug, r.revision);
+      } else {
+        await this.#put(this.#ledger.slug, this.#raw + text);
+      }
+    } catch (e) {
+      const code = errCode(e);
+      const message = errMsg(e).slice(0, 500);
+      failure = { status: /too_large|oversized/.test(code + message) ? 'refused' : 'error', code, message };
+    }
+    const after = await this.#chunkSnapshot();
+    let rewritten = 0;
+    for (const [id, h] of after) if (before.get(id) !== h) rewritten++;
+    let deleted = 0;
+    for (const id of before.keys()) if (!after.has(id)) deleted++;
+    return { status: failure ? failure.status : 'ok', ...(failure ? { code: failure.code, message: failure.message } : {}), chunks_before: before.size, chunks_after: after.size, chunks_rewritten: rewritten, chunks_deleted: deleted, path };
+  }
+
+  async exportBody(): Promise<string> {
+    const dir = mkdtempSync(join(tmpdir(), 'n14-export-'));
+    const out = join(dir, 'out');
+    const realExit = process.exit;
+    const realLog = console.log;
+    try {
+      process.exit = ((code?: number) => { throw Object.assign(new Error(`export exited with code ${code ?? 0}`), { code: 'export_failed' }); }) as typeof process.exit;
+      console.log = () => {};
+      await this.#runExport(this.#engine, ['--dir', out, '--slug-prefix', this.#ledger.slug]);
+    } finally {
+      process.exit = realExit;
+      console.log = realLog;
+    }
+    try {
+      const read = (slug: string) => readFileSync(join(out, `${slug}.md`), 'utf8');
+      if (this.arm !== 'managed-parts') return exportedBody(read(this.#ledger.slug));
+      const hub = exportedBody(read(this.#ledger.slug));
+      const at = hub.indexOf(PARTS_MARKER);
+      const preamble = at >= 0 ? hub.slice(0, at) : hub;
+      const partDir = join(out, this.#ledger.slug);
+      const keys = existsSync(partDir) ? readdirSync(partDir).filter(f => f.endsWith('.md')).map(f => f.slice(0, -3)).sort() : [];
+      // Sections are separated by exactly one blank line in the source, so trimmed parts rejoin with one.
+      return [preamble, ...keys.map(k => exportedBody(read(`${this.#ledger.slug}/${k}`)))].map(x => x.trim()).join('\n\n');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  /** Paid arm helpers: hybrid query and vector-only search, hits mapped to stored chunks. */
+  async hybrid(query: string): Promise<SearchHit[]> {
+    const rows = await this.call('query', { query, limit: TOP_K, expand: false, autocut: false, adaptive_return: false }) as Array<{ slug: string; chunk_id?: number | null; chunk_text?: string }>;
+    return await this.#mapRows(rows);
+  }
+
+  async vector(query: string): Promise<SearchHit[]> {
+    if (!this.#gw.embedQuery) throw new Error('gateway has no embedQuery');
+    const vec = await this.#gw.embedQuery(query);
+    const rows = await (this.#engine as unknown as { searchVector: (v: Float32Array, o: Record<string, unknown>) => Promise<Array<{ slug: string; chunk_id?: number; chunk_text?: string }>> }).searchVector(vec, { limit: TOP_K });
+    return await this.#mapRows(rows);
+  }
+
+  async #mapRows(rows: Array<{ slug: string; chunk_id?: number | null; chunk_text?: string }>): Promise<SearchHit[]> {
+    const ids = rows.map(r => r.chunk_id).filter((x): x is number => typeof x === 'number');
+    const stored = new Map((ids.length ? await this.sql<{ id: number; chunk_text: string }>(`SELECT id, chunk_text FROM content_chunks WHERE id = ANY($1::int[])`, [ids]) : []).map(r => [Number(r.id), r.chunk_text]));
+    return rows.slice(0, TOP_K).map(r => ({ slug: r.slug, chunk_id: typeof r.chunk_id === 'number' ? r.chunk_id : null, passage: typeof r.chunk_id === 'number' ? stored.get(r.chunk_id) ?? '' : '', delivered: r.chunk_text ?? '' }));
+  }
+
+  get gateway(): GatewayModule { return this.#gw; }
+
+  async close(): Promise<void> {
+    try { this.#gw.__setEmbedTransportForTests(null); } catch { /* best effort */ }
+    await this.#engine.disconnect().catch(() => {});
+  }
+}
+
+/** A deterministic unit vector per text for the counting embedder (a harness control, never a quality signal). */
+function countingVector(text: string, dims: number): number[] {
+  const v = new Array(dims).fill(0);
+  const h = createHash('sha256').update(text).digest();
+  for (let i = 0; i < 16; i++) v[h[i] % dims] += (h[i + 16] / 255) - 0.5;
+  const norm = Math.hypot(...v) || 1;
+  return v.map(x => x / norm);
+}
+
+// ─── Child process ───────────────────────────────────────────────────────
+
+interface ChildSpec { root: string; arm: Arm; docPath: string; ledgerPath: string; outPath: string; embed: boolean }
+interface ChildResult { ok: true; run: ArmRun; capability: NativeCapability }
+
+function memMark(t0: number): (phase: string) => MemMark {
+  return (phase: string) => ({ phase, t_ms: Math.round(performance.now() - t0), rss_mb: Math.round(process.memoryUsage().rss / 1048576), max_rss_mb: Math.round(process.resourceUsage().maxRSS / 1024) });
+}
+
+async function childMain(specPath: string): Promise<void> {
+  const spec = JSON.parse(readFileSync(specPath, 'utf8')) as ChildSpec;
+  await withHermeticEnv('n14-child', async () => {
+    const ledger = JSON.parse(readFileSync(spec.ledgerPath, 'utf8')) as N14DocLedger;
+    const adapter = await GbrainAdapter.open(spec.root, spec.arm, spec.embed ? { kind: 'counting' } : { kind: 'none' });
+    try {
+      const raw = readFileSync(spec.docPath, 'utf8');
+      const t0 = performance.now();
+      const run = await evaluateArm(adapter, ledger, raw, { embed: spec.embed, probeMemory: memMark(t0) });
+      const result: ChildResult = { ok: true, run, capability: adapter.capability };
+      writeFileSync(spec.outPath, JSON.stringify(result));
+    } finally {
+      await adapter.close();
+    }
+  });
+}
+
+interface ChildOutcome { result: ChildResult | null; crash: string | null; rss_peak_mb: number; wall_ms: number; tail: string }
+
+function readRssMb(pid: number): number {
+  try { const m = /VmRSS:\s+(\d+) kB/.exec(readFileSync(`/proc/${pid}/status`, 'utf8')); return m ? Math.round(Number(m[1]) / 1024) : 0; }
+  catch { return 0; }
+}
+
+async function runChild(spec: ChildSpec, rssLimitMb: number, timeoutMs: number): Promise<ChildOutcome> {
+  const specPath = spec.outPath.replace(/\.json$/, '.spec.json');
+  writeFileSync(specPath, JSON.stringify(spec));
+  const started = performance.now();
+  return await new Promise(resolve => {
+    const child = spawn(process.execPath, [import.meta.path, '--child', specPath], { stdio: ['ignore', 'pipe', 'pipe'], env: process.env });
+    let tail = '';
+    const keep = (b: Buffer) => { tail = (tail + b.toString()).slice(-4000); };
+    child.stdout.on('data', keep);
+    child.stderr.on('data', keep);
+    let peak = 0;
+    let killed: string | null = null;
+    const watch = setInterval(() => {
+      const rss = readRssMb(child.pid ?? 0);
+      peak = Math.max(peak, rss);
+      if (rss > rssLimitMb && !killed) { killed = `rss_limit: RSS ${rss} MB passed the ${rssLimitMb} MB ceiling`; child.kill('SIGKILL'); }
+    }, 100);
+    const timer = setTimeout(() => { if (!killed) { killed = `timeout after ${timeoutMs} ms`; child.kill('SIGKILL'); } }, timeoutMs);
+    child.on('close', (code, signal) => {
+      clearInterval(watch);
+      clearTimeout(timer);
+      const wall = Math.round(performance.now() - started);
+      let result: ChildResult | null = null;
+      if (!killed && code === 0 && existsSync(spec.outPath)) {
+        try { result = JSON.parse(readFileSync(spec.outPath, 'utf8')) as ChildResult; } catch { result = null; }
+      }
+      const crash = result ? null : killed ?? `exit ${code ?? 'null'}${signal ? ` signal ${signal}` : ''} without a result`;
+      resolve({ result, crash, rss_peak_mb: peak, wall_ms: wall, tail });
+    });
+  });
+}
+
+// ─── Run ─────────────────────────────────────────────────────────────────
+
+export interface TierRun { tier: TierId; docs: N14DocLedger[]; presence: PresenceCheck[]; arms: ArmSummary[]; children: Array<{ tier: TierId; doc: string; arm: Arm; wall_ms: number; rss_peak_mb: number; crash: string | null; control: ArmRun['control'] | null; tail?: string }> }
+
+export interface N14RunResult {
+  tiers: TierRun[];
+  capability: NativeCapability;
+  summary: N14Summary | null;
+  verdict: ReturnType<typeof n14Verdict> | null;
+  acc: ProbeAccounting;
+  harnessError: string | null;
+  ledgerSha256: string;
+  runs: Array<{ tier: TierId; run: ArmRun }>;
+}
+
+export interface N14Options { gut: GbrainUnderTest; tiers: TierId[]; arms: Arm[]; docs?: DocKind[]; seed: number; concurrency: number; rssLimitMb: number; workDir?: string; log?: (s: string) => void }
+
+async function pool<T, R>(items: readonly T[], n: number, fn: (x: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (next < items.length) { const i = next++; out[i] = await fn(items[i]); } }));
+  return out;
+}
+
+export async function runN14(opts: N14Options): Promise<N14RunResult> {
+  return withHermeticEnv('n14', () => runN14Hermetic(opts));
+}
+
+async function runN14Hermetic(opts: N14Options): Promise<N14RunResult> {
+  const log = opts.log ?? (() => {});
+  const { operations } = await importGbrain<OperationsModule>(opts.gut, 'src/core/operations.ts');
+  const capability = probeNativeCapability(operations);
+  log(`native capability: ${capability.present ? 'present' : 'absent'} (${capability.evidence})`);
+  const work = opts.workDir ?? mkdtempSync(join(tmpdir(), 'n14-work-'));
+  mkdirSync(work, { recursive: true });
+  const tiers: TierRun[] = [];
+  const runs: N14RunResult['runs'] = [];
+  const allLedgers: N14DocLedger[] = [];
+  let presenceFailures = 0;
+  let harnessError: string | null = null;
+  const specsFor = (t: TierId) => tierSpecs(t, opts.seed).filter(x => !opts.docs || opts.docs.includes(x.kind));
+  const plannedProbes = opts.tiers.reduce((n, t) => n + specsFor(t).length * DECILES * NEEDLE_TYPES.length * opts.arms.length, 0);
+  const acc = new ProbeAccounting(plannedProbes);
+  try {
+    for (const tier of opts.tiers) {
+      const dir = join(work, tier);
+      mkdirSync(dir, { recursive: true });
+      const docs: Array<{ ledger: N14DocLedger; docPath: string; ledgerPath: string }> = [];
+      for (const spec of specsFor(tier)) {
+        const docPath = join(dir, `${spec.kind}.md`);
+        const ledger = writeDocument(spec, docPath);
+        const ledgerPath = join(dir, `${spec.kind}.ledger.json`);
+        writeFileSync(ledgerPath, JSON.stringify(ledger));
+        docs.push({ ledger, docPath, ledgerPath });
+        allLedgers.push(ledger);
+        log(`[${tier}] generated ${spec.kind}: ${(ledger.bytes / 1e6).toFixed(1)} MB, ${ledger.lines} lines, ${ledger.sections.length} sections`);
+      }
+      const presence = docs.flatMap(d => checkPresence(readFileSync(d.docPath), d.ledger));
+      const failed = presence.filter(p => !p.ok);
+      presenceFailures += failed.length;
+      const tierRun: TierRun = { tier, docs: docs.map(d => d.ledger), presence, arms: [], children: [] };
+      tiers.push(tierRun);
+      if (failed.length) {
+        harnessError = `presence assertions failed: ${failed.map(f => `${f.name} (expected ${f.expected}, got ${f.actual})`).join('; ')}`;
+        acc.error(`presence:${tier}`, 'harness', harnessError);
+        break;
+      }
+      const jobs = docs.flatMap(d => opts.arms.map(arm => ({ d, arm })));
+      for (const { d } of jobs.filter(j => j.arm === 'native' && !capability.present)) tierRun.arms.push(absentSummary(d.ledger, tier));
+      const runnable = jobs.filter(j => j.arm !== 'native' || capability.present);
+      const embed = tier === '2mb' || tier === '20mb';
+      const timeoutMs = Math.max(300_000, Math.round(Math.max(...docs.map(x => x.ledger.bytes)) / 1e6 * 20_000));
+      const outcomes = await pool(runnable, opts.concurrency, async ({ d, arm }) => {
+        log(`[${tier}] ${d.ledger.id} / ${arm}: start`);
+        const o = await runChild({ root: opts.gut.root, arm, docPath: d.docPath, ledgerPath: d.ledgerPath, outPath: join(dir, `${d.ledger.id}.${arm}.result.json`), embed }, opts.rssLimitMb, timeoutMs);
+        log(`[${tier}] ${d.ledger.id} / ${arm}: ${o.crash ? `CRASH ${o.crash}` : 'done'} in ${(o.wall_ms / 1000).toFixed(1)} s, peak RSS ${o.rss_peak_mb} MB`);
+        return { d, arm, o };
+      });
+      for (const { d, arm, o } of outcomes) {
+        tierRun.children.push({ tier, doc: d.ledger.id, arm, wall_ms: o.wall_ms, rss_peak_mb: o.rss_peak_mb, crash: o.crash, control: o.result?.run.control ?? null, ...(o.crash ? { tail: o.tail } : {}) });
+        if (!o.result) {
+          tierRun.arms.push(crashedSummary(arm, d.ledger, tier, o.crash ?? 'unknown', o.rss_peak_mb));
+          for (const n of d.ledger.needles) acc.error(`${tier}:${arm}:${n.id}`, 'sut', `child crashed: ${o.crash}`);
+          continue;
+        }
+        const run = o.result.run;
+        runs.push({ tier, run });
+        tierRun.arms.push(summarizeArm(run, tier));
+        if (run.control.hits < run.control.total) {
+          presenceFailures++;
+          const msg = `control page not found in ${tier}/${d.ledger.id}/${arm}: ${run.control.missed.join(', ')}`;
+          acc.error(`control:${tier}:${d.ledger.id}:${arm}`, 'harness', msg);
+          harnessError ??= `solvability control failed: ${msg}`;
+        }
+        for (const p of run.probes) {
+          if (p.error) acc.error(`${tier}:${arm}:${p.id}`, 'sut', p.error);
+          else acc.score(`${tier}:${arm}:${p.id}`, p.hit_rank !== null ? 1 : 0);
+        }
+      }
+    }
+  } catch (e) {
+    harnessError = `harness: ${errMsg(e)}`;
+    acc.error('run', 'harness', harnessError);
+  } finally {
+    if (!opts.workDir) rmSync(work, { recursive: true, force: true });
+  }
+  const arms = tiers.flatMap(t => t.arms);
+  const summary = harnessError ? null : summarize(arms, presenceFailures, capability);
+  return { tiers, capability, summary, verdict: summary ? n14Verdict(summary) : null, acc, harnessError, ledgerSha256: ledgerFingerprint(allLedgers), runs };
+}
+
+// ─── gbrain findings ─────────────────────────────────────────────────────
+
+export function n14Findings(r: N14RunResult, gut: GbrainUnderTest): BugEntry[] {
+  const sha = gut.overlay?.build.commit ?? productIdentity('gbrain').declared_sha;
+  if (!sha || !r.summary) return [];
+  const at = gut.overlay ? `--gbrain <gbrain checkout>@${sha}` : '';
+  const repro = (tier: TierId, arms: string) => `bun eval/runner/n14-large-page-fidelity.ts --tier ${tier} --arms ${arms} ${at}`.trim();
+  const out: BugEntry[] = [];
+  const single = r.summary.arms.filter(a => a.arm === 'single-page' && a.status === 'ran');
+  const skipped = single.find(a => a.ingest.status === 'stored' && a.ingest.chunks === 0);
+  if (skipped) {
+    out.push({
+      id: 'N14-1', category: 'large-page-fidelity', classification: 'feature-gap', status: 'open', gbrain_sha: sha,
+      contract: 'gbrain does not claim search over pages above content_sanity.bytes_block (500 KB default, src/core/content-sanity.ts DEFAULT_BYTES_BLOCK); such a page lands with frontmatter embed_skip and is never chunked',
+      surface: 'put_page -> content sanity (embed_skip, PAGE_OVERSIZED)',
+      repro: repro(skipped.tier, 'single-page'),
+      expected: 'a stored page is keyword-searchable: a query for a planted needle returns the chunk that holds it',
+      actual: `the ${(skipped.doc)} document (${skipped.tier}) is stored with embed_skip=${skipped.ingest.embed_skip} and ${skipped.ingest.chunks} chunks; keyword needle recall@10 ${skipped.keyword_recall.hits}/${skipped.keyword_recall.total} while every needle is in the stored body (${skipped.stored_needles.hits}/${skipped.stored_needles.total})`,
+    });
+  }
+  const refused = single.find(a => a.ingest.status === 'refused');
+  if (refused) {
+    out.push({
+      id: 'N14-2', category: 'large-page-fidelity', classification: 'feature-gap', status: 'open', gbrain_sha: sha,
+      contract: 'gbrain documents a 5 MB per-page write limit (MAX_FILE_SIZE, src/core/import-screen.ts; file_too_large / request_too_large in src/core/error-registry.ts) and tells the user to split the file',
+      surface: 'put_page -> persistence preparation (request_too_large)',
+      repro: repro(refused.tier, 'single-page'),
+      expected: 'one large document can be written as one page',
+      actual: `put_page of the ${refused.tier} ${refused.doc} refused with ${refused.ingest.code}; keyword recall ${refused.keyword_recall.hits}/${refused.keyword_recall.total}`,
+    });
+  }
+  const loud = single.find(a => (a.direct_read_bytes ?? 0) > EGRESS_CAP_BYTES);
+  if (loud) {
+    out.push({
+      id: 'N14-3', category: 'large-page-fidelity', classification: 'feature-gap', status: 'open', gbrain_sha: sha,
+      contract: 'get_page has no windowed read and no response budget at this commit (params slug, include_content, content_only; src/core/ops/pages.ts get_page); nothing claims a bounded response',
+      surface: 'get_page (default parameters)',
+      repro: repro(loud.tier, 'single-page'),
+      expected: `a read of a large page returns a bounded window (frame at most ${EGRESS_CAP_BYTES} bytes) with a way to page`,
+      actual: `a default get_page of the stored ${loud.tier} ${loud.doc} page returns a ${loud.direct_read_bytes}-byte frame (${(loud.direct_read_bytes! / EGRESS_CAP_BYTES).toFixed(1)}x the 1 MiB cap)`,
+    });
+  }
+  return out;
+}
+
+// ─── Paid arm ────────────────────────────────────────────────────────────
+
+export interface QaRow { needle: string; model: string; arm: Arm; tier: TierId; answer: string; correct: boolean; distractor: boolean; error?: string }
+
+/** Exact-token scoring of a reader answer; an answer naming the distractor's value is a confusion. */
+export function scoreQa(answer: string, needle: Pick<Needle, 'answer' | 'distractor'>): { correct: boolean; distractor: boolean } {
+  const correct = containsToken(answer, needle.answer);
+  const distractor = containsToken(answer, needle.distractor.answer);
+  return { correct: correct && !distractor, distractor };
+}
+
+async function runPaid(gut: GbrainUnderTest, argv: readonly string[], tiers: TierId[], arms: Arm[], seed: number, log: (s: string) => void): Promise<{ data: Record<string, unknown>; cost: RunSummary | null }> {
+  const voyage = process.env.VOYAGE_API_KEY ?? '';
+  const keys = { ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ?? '', OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? '' };
+  if (!voyage || !keys.ANTHROPIC_API_KEY || !keys.OPENAI_API_KEY) throw new Error('the N14 paid arm needs VOYAGE_API_KEY, ANTHROPIC_API_KEY and OPENAI_API_KEY');
+  const { run, guard } = startPaidRun(`${CATEGORY}-paid`, { ...budgetOptionsFrom(argv), estimateUsd: PAID_ESTIMATE_USD, log });
+  const recall: Record<string, unknown> = {};
+  const qa: QaRow[] = [];
+  let cost: RunSummary | null = null;
+  try {
+    for (const tier of tiers) {
+      const work = mkdtempSync(join(tmpdir(), `n14-paid-${tier}-`));
+      try {
+        for (const spec of tierSpecs(tier, seed)) {
+          const docPath = join(work, `${spec.kind}.md`);
+          const ledger = writeDocument(spec, docPath);
+          const failed = checkPresence(readFileSync(docPath), ledger).filter(p => !p.ok);
+          if (failed.length) throw new Error(`presence failed for ${tier}/${spec.kind}: ${failed[0].name}`);
+          const raw = readFileSync(docPath, 'utf8');
+          for (const arm of arms) {
+            if (guard.exhausted) break;
+            const adapter = await GbrainAdapter.open(gut.root, arm, { kind: 'real', model: PAID_EMBEDDING.model, dims: PAID_EMBEDDING.dims, env: { VOYAGE_API_KEY: voyage, ...keys } });
+            if (arm === 'native' && !adapter.capability.present) { await adapter.close(); recall[`${tier}/${spec.kind}/${arm}`] = 'capability absent'; continue; }
+            try {
+              const ingest = await adapter.ingest(ledger, raw);
+              await adapter.embedPass();
+              const rows = { hybrid: new Array(DECILES).fill(0), vector: new Array(DECILES).fill(0), total: new Array(DECILES).fill(0) };
+              const deliveredByNeedle = new Map<string, string[]>();
+              for (const n of ledger.needles) {
+                rows.total[n.decile]++;
+                try {
+                  const h = await adapter.hybrid(n.query);
+                  if (hitRank(h.map(x => x.passage), n.answer) !== null) rows.hybrid[n.decile]++;
+                  deliveredByNeedle.set(n.id, h.slice(0, 5).map(x => x.delivered.slice(0, 2000)));
+                } catch { /* scored miss */ }
+                try { if (hitRank((await adapter.vector(n.query)).map(x => x.passage), n.answer) !== null) rows.vector[n.decile]++; } catch { /* scored miss */ }
+              }
+              const byDecile = (k: 'hybrid' | 'vector') => rows[k].map((h, d) => rate(h, rows.total[d]));
+              recall[`${tier}/${spec.kind}/${arm}`] = { ingest: ingest.status, hybrid_by_decile: byDecile('hybrid'), vector_by_decile: byDecile('vector'), hybrid_min_decile: Math.min(...byDecile('hybrid').map(r => r.rate)) };
+              for (const n of ingest.status === 'stored' ? ledger.needles.filter(x => x.decile >= 5) : []) {
+                for (const model of PAID_MODELS) {
+                  if (guard.exhausted) break;
+                  const context = (deliveredByNeedle.get(n.id) ?? []).map((t, i) => `[${i + 1}] ${t}`).join('\n\n') || '(no results)';
+                  try {
+                    adapter.gateway.configureGateway({ chat_model: model, embedding_model: PAID_EMBEDDING.model, embedding_dimensions: PAID_EMBEDDING.dims, env: { VOYAGE_API_KEY: voyage, ...keys } });
+                    const res = await adapter.gateway.chat!({ model, system: 'Answer from the search results only. Reply with the answer alone, or "unknown".', messages: [{ role: 'user', content: `Search results:\n${context}\n\nQuestion: ${n.question}` }], maxTokens: 64 });
+                    qa.push({ needle: n.id, model, arm, tier, answer: res.text.trim().slice(0, 200), ...scoreQa(res.text, n) });
+                  } catch (e) { qa.push({ needle: n.id, model, arm, tier, answer: '', correct: false, distractor: false, error: errMsg(e).slice(0, 200) }); }
+                }
+              }
+            } finally { await adapter.close(); }
+          }
+        }
+      } finally { rmSync(work, { recursive: true, force: true }); }
+    }
+  } finally {
+    guard.uninstall();
+    cost = run.close();
+  }
+  const qaByModel = Object.fromEntries(PAID_MODELS.map(m => { const rs = qa.filter(q => q.model === m); return [m, { correct: rs.filter(q => q.correct).length, distractor: rs.filter(q => q.distractor).length, errors: rs.filter(q => q.error).length, total: rs.length }]; }));
+  const gates = Object.entries(recall).filter(([k, v]) => typeof v === 'object' && /^(2mb|20mb)\//.test(k) && !k.endsWith('/single-page')).map(([k, v]) => {
+    const min = (v as { hybrid_min_decile: number }).hybrid_min_decile;
+    return { id: `hybrid-recall-${k}`, pass: min >= THRESHOLDS.hybrid_recall_min_decile, observed: min, threshold: THRESHOLDS.hybrid_recall_min_decile };
+  });
+  return { data: { paid: { embedding: PAID_EMBEDDING, models: PAID_MODELS, recall, qa_by_model: qaByModel, qa, gates } }, cost };
+}
+
+const PAID_ESTIMATE_USD = 8;
+
+// ─── CLI ─────────────────────────────────────────────────────────────────
+
+function argValue(argv: readonly string[], flag: string): string | undefined {
+  const at = argv.indexOf(flag);
+  if (at >= 0) return argv[at + 1];
+  return argv.find(a => a.startsWith(`${flag}=`))?.slice(flag.length + 1);
+}
+
+export function parseTiers(argv: readonly string[]): TierId[] {
+  const raw = argValue(argv, '--tiers') ?? argValue(argv, '--tier') ?? '2mb';
+  const tiers = raw.split(',').map(s => s.trim()).filter(Boolean);
+  for (const t of tiers) if (!TIER_IDS.includes(t as TierId)) throw new Error(`unknown tier ${t}; use ${TIER_IDS.join(', ')}`);
+  return tiers as TierId[];
+}
+
+export function parseDocs(argv: readonly string[]): DocKind[] | undefined {
+  const raw = argValue(argv, '--docs');
+  if (!raw) return undefined;
+  const docs = raw.split(',').map(x => x.trim()).filter(Boolean);
+  for (const d of docs) if (!['conversation', 'project-log', 'book'].includes(d)) throw new Error(`unknown document ${d}; use conversation, project-log, book`);
+  return docs as DocKind[];
+}
+
+export function parseArms(argv: readonly string[]): Arm[] {
+  const raw = argValue(argv, '--arms');
+  if (!raw) return [...ARMS];
+  const arms = raw.split(',').map(s => s.trim()).filter(Boolean);
+  for (const a of arms) if (!(ARMS as readonly string[]).includes(a)) throw new Error(`unknown arm ${a}; use ${ARMS.join(', ')}`);
+  return arms as Arm[];
+}
+
+const pct = (r: Rate) => `${r.hits}/${r.total}`;
+
+async function main(): Promise<void> {
+  const argv = process.argv.slice(2);
+  if (argv[0] === '--child') { await childMain(argv[1]); process.exit(0); }
+  const json = argv.includes('--json');
+  const log = json ? () => {} : (s: string) => console.log(s);
+  const seedArg = argValue(argv, '--seed');
+  const seed = seedArg === undefined ? N14_DEFAULT_SEED : Number(seedArg);
+  if (!Number.isInteger(seed)) throw new Error('--seed needs an integer');
+  const tiers = parseTiers(argv);
+  const arms = parseArms(argv);
+  const docs = parseDocs(argv);
+  const concurrency = Number(argValue(argv, '--concurrency') ?? 2);
+  const rssLimitMb = Number(argValue(argv, '--rss-limit-mb') ?? DEFAULT_RSS_LIMIT_MB);
+  const output = argValue(argv, '--output');
+  const outPath = output ? join(output, 'receipt.json') : receiptPath(CATEGORY);
+  const paid = paidRequested(argv);
+  let attestation: Attestation | null = null;
+  if (paid) {
+    requirePaidArm(argv, { arm: 'N14 paid arm (real embeddings and reader QA)', estimateUsd: PAID_ESTIMATE_USD });
+    const prereg = argValue(argv, '--preregistration');
+    if (!prereg) throw new Error('the N14 paid arm needs --preregistration docs/benchmarks/2026-10-14-n14-large-page-fidelity-preregistration.md (committed and pushed)');
+    attestation = attestPreregistration(prereg);
+  }
+  const startedAt = new Date().toISOString();
+  const gut = resolveGbrainUnderTest(gbrainSpecFrom(argv));
+  log(`# BrainBench N14: large-page fidelity (gbrain ${gut.version}${gut.overlay ? `, overlay ${gut.overlay.build.commit.slice(0, 7)}` : ', pinned'}; tiers ${tiers.join(', ')}; arms ${arms.join(', ')})`);
+  const t0 = performance.now();
+  const r = await runN14({ gut, tiers, arms, docs, seed, concurrency, rssLimitMb, log });
+  const hermeticMs = Math.round(performance.now() - t0);
+  let paidData: Record<string, unknown> | null = null;
+  let paidCost: RunSummary | null = null;
+  if (paid && !r.harnessError) ({ data: paidData, cost: paidCost } = await runPaid(gut, argv, tiers.filter(t => t !== '1gb'), arms, seed, log));
+  const a = r.acc.summary();
+  const findings = n14Findings(r, gut);
+  if (argv.includes('--record-bugs')) for (const f of findings) upsertBug(f);
+  const runStatus = r.harnessError || a.run_invalid ? 'error' : 'completed';
+  const receipt: Receipt = {
+    ...(paidCost ? { cost: receiptCost(paidCost), delivered_tokens: null } : noModelSpend('hermetic: provider keys stripped, keyword search only; the append-cost embedder is an in-process counting fake (no network)')),
+    schema_version: RECEIPT_SCHEMA_VERSION,
+    benchmark_version: BENCHMARK_VERSION,
+    category: CATEGORY,
+    run_status: runStatus,
+    ...(runStatus === 'completed' ? { verdict: r.verdict?.verdict ?? 'fail' } : {}),
+    n_total: a.n_total,
+    n_scored: a.n_scored,
+    completion_rate: a.completion_rate,
+    errors: a.errors,
+    publishable: a.publishable && !r.harnessError,
+    gbrain_version: gut.version,
+    gbrain_pin: gbrainPin(),
+    ...(attestation ? { preregistration_attestation: attestation } : {}),
+    execution: { source_tree: sourceTreeIdentity(), product: productIdentityFor(gut) },
+    resolved_config: {
+      engine: 'pglite-in-memory, one brain per (document, arm) child process',
+      decide: DECIDE_OFF,
+      caller: 'operation handlers with OperationContext { remote: false, sourceId: default }',
+      tiers, arms, docs: docs ?? 'all', seed, concurrency, rss_limit_mb: rssLimitMb,
+      generator_version: N14_GENERATOR_VERSION,
+      tier_sizes: Object.fromEntries(tiers.map(t => [t, TIERS[t]])),
+      search: `search op (keyword), limit ${TOP_K}; a hit is a result whose stored chunk (content_chunks.chunk_text by chunk_id) holds the needle answer as a whole token, passage at most ${PASSAGE_CAP_BYTES} bytes`,
+      egress: `largest JSON-RPC text frame of every operation result; cap ${EGRESS_CAP_BYTES} bytes`,
+      reads: 'single-page and managed-parts: get_page {slug} of the hit page; native: get_page {slug, body: window, around_chunk_id}; plus one default get_page of the entry page per arm',
+      append: 'single-page: put_page whole page + 1 KB; managed-parts: put_page new part + hub index; native: append_page when it exists',
+      append_cost: 'embedding inputs and estimated tokens (UTF-8 bytes / 4) sent by runEmbedCore({stale: true}) after the append, counted by a fake embed transport; ratio = embed tokens / appended tokens; null when the page has no chunks',
+      embed_pass_tiers: ['2mb', '20mb'],
+      roundtrip: 'export (runExport --slug-prefix) then reassemble the body; sha256 against source body + append',
+      native_capability: r.capability,
+      thresholds: THRESHOLDS,
+      gbrain_overlay: overlaySummary(gut),
+      hermetic_wall_ms: hermeticMs,
+    },
+    hashes: { ledger_sha256: r.ledgerSha256 },
+    started_at: startedAt,
+    finished_at: new Date().toISOString(),
+    data: {
+      safety: r.summary?.safety ?? null,
+      quality: r.summary?.quality ?? null,
+      floor: r.summary?.floor ?? null,
+      capability: r.capability,
+      verdict_failures: r.verdict?.failed ?? null,
+      arms: r.summary?.arms ?? r.tiers.flatMap(t => t.arms),
+      children: r.tiers.flatMap(t => t.children),
+      presence: r.tiers.flatMap(t => t.presence),
+      documents: r.tiers.flatMap(t => t.docs.map(d => ({ tier: t.tier, id: d.id, bytes: d.bytes, lines: d.lines, sections: d.sections.length, sha256: d.sha256, needles: d.needles.length, append_bytes: d.append.bytes }))),
+      probes: r.runs.map(x => ({ tier: x.tier, arm: x.run.arm, doc: x.run.doc, rows: x.run.probes, reads: x.run.reads, append: x.run.append, roundtrip: x.run.roundtrip, frames: x.run.frames, memory: x.run.memory, ingest: x.run.ingest, direct_read: x.run.direct_read, embed_initial: x.run.embed_initial, embed_error: x.run.embed_error ?? null })),
+      findings: findings.map(f => ({ id: f.id, classification: f.classification, surface: f.surface, actual: f.actual, repro: f.repro })),
+      ...(paidData ?? {}),
+      harness_error: r.harnessError,
+    },
+  };
+  writeReceipt(outPath, receipt);
+
+  log('');
+  log(`verdict: ${runStatus === 'completed' ? r.verdict?.verdict : `run error (${r.harnessError})`}${r.verdict?.failed.length ? ` (${r.verdict.failed.join('; ')})` : ''}`);
+  if (r.summary) {
+    const s = r.summary;
+    log(`safety: crashes ${s.safety.crashes}, responses over ${EGRESS_CAP_BYTES} B ${s.safety.responses_over_cap}, round-trip byte loss ${s.safety.roundtrip_byte_loss}, presence failures ${s.safety.presence_failures}`);
+    log(`quality: native append embed ratio max ${s.quality.native_append_embed_ratio_max ?? 'n/a'} (<= ${THRESHOLDS.append_embed_ratio_max}), native recall gap vs parts ${s.quality.native_recall_gap_points_max ?? 'n/a'} points (<= ${THRESHOLDS.native_recall_gap_points_max}), native keyword recall at 2 MB ${s.floor.native_keyword_recall_2mb ?? 'n/a'} (>= ${THRESHOLDS.native_keyword_recall_floor}); native capability ${s.capability.present ? 'present' : 'absent'}`);
+    log('\n| tier | doc | arm | ingest | chunks | keyword recall@10 | min decile | delivered | reads ok | max frame B | append embed ratio | rewritten | round trip | ingest s | RSS over base MB |');
+    log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+    for (const x of s.arms) {
+      log(`| ${x.tier} | ${x.doc} | ${x.arm} | ${x.ingest.status}${x.ingest.code ? ` (${x.ingest.code})` : ''}${x.ingest.embed_skip ? ` embed_skip=${x.ingest.embed_skip}` : ''} | ${x.ingest.chunks} | ${pct(x.keyword_recall)} | ${x.min_decile_recall.toFixed(2)} | ${pct(x.delivered_recall)} | ${x.reads.correct}/${x.reads.attempted} | ${x.max_frame_bytes} | ${x.append?.embed_ratio ?? 'n/a'} | ${x.append?.chunks_rewritten ?? 'n/a'} | ${x.roundtrip} | ${x.ingest.wall_ms === null ? 'n/a' : (x.ingest.wall_ms / 1000).toFixed(1)} | ${x.ingest.rss_over_baseline_mb ?? 'n/a'} |`);
+    }
+  }
+  log(`\ngbrain findings: ${findings.length ? '' : 'none'}`);
+  for (const f of findings) log(`  ${f.id} (${f.classification}) ${f.surface}: ${f.actual}\n    repro: ${f.repro}`);
+  if (argv.includes('--record-bugs')) log(`  recorded in ${WAVE_BUG_LEDGER}`);
+  log(`receipt: ${outPath} (hermetic arm ${(hermeticMs / 1000).toFixed(1)} s)`);
+  if (json) process.stdout.write(JSON.stringify({ run_status: runStatus, verdict: receipt.verdict, safety: r.summary?.safety, quality: r.summary?.quality, floor: r.summary?.floor }, null, 2) + '\n');
+  process.exit(runStatus === 'error' ? 3 : r.verdict?.verdict === 'pass' ? 0 : 1);
+}
+
+if (import.meta.main) {
+  main().catch(e => { console.error(e); process.exit(3); });
+}
