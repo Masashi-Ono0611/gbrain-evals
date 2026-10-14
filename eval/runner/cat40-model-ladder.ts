@@ -49,6 +49,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { homedir, tmpdir } from 'node:os';
 import { generateLadderWorld, worldDigest, DEFAULT_LADDER_DIR, WIDE_FAMILIES, stratumOf, openCustodianTemplates, assertDevWorld, type LadderTask, type LadderWorld, type Family, type Stratum } from '../generators/model-ladder-gen.ts';
 import { gbrainSpecFrom, parseGbrainSpec } from './gbrain-under-test.ts';
 import { runAgent, runAgentText, provider, HarnessError, type AgentRun, type Arm, type ScriptedModel } from './cat40/loop.ts';
@@ -72,6 +73,7 @@ import { checkRoster, checkConfirmLedger, isConfirmStep, loadRoster, project, lo
 import { canonicalCells, readRecords } from './cat40/records.ts';
 import { CHAT_PRICE_OVERRIDES } from './budget-ledger.ts';
 import { prepareBuild } from './lifecycle/builds.ts';
+import { scrubMachinePaths } from './receipt.ts';
 
 export const CAT40_VERSION = 'cat40-v1';
 
@@ -318,6 +320,16 @@ export interface ExperimentManifest {
 
 export { rerankProbe };
 
+/**
+ * Scrubs a value before the runner writes it under --out (experiment.json, the receipt, results, attempts,
+ * transcripts, judge requests, served instructions and tools, run.log): the gbrain checkout becomes `gbrain`, the
+ * slot root `<slots>`, then the evals checkout, home and temp paths as scrubMachinePaths rewrites them.
+ */
+export function cat40Recorder(gbrainRepo: string, slotsRoot: string, home = homedir(), tmp = tmpdir()): <T>(value: T) => T {
+  const extra: Array<[string, string]> = [[`${slotsRoot}/`, '<slots>/'], [slotsRoot, '<slots>'], [`${gbrainRepo}@`, 'gbrain@'], [`${gbrainRepo}/`, 'gbrain/'], [gbrainRepo, 'gbrain']];
+  return value => scrubMachinePaths(value, REPO_ROOT, home, tmp, extra);
+}
+
 export function experimentFlags(argv: readonly string[]): Record<string, string | true> {
   const flags: Record<string, string | true> = {};
   for (let i = 0; i < argv.length; i++) {
@@ -338,10 +350,12 @@ export function experimentFlags(argv: readonly string[]): Record<string, string 
  * experiment is refused: give a changed build its own --out.
  */
 export function bindExperiment<T extends { run: BudgetRun; guard: PaidRequestGuard }>(
-  out: string, manifest: Omit<ExperimentManifest, 'schema' | 'budget_run_id' | 'budget_runs'>, start: (recordedRunId: string | null) => T | null, opts: { newBudgetRun?: boolean } = {},
+  out: string, manifest: Omit<ExperimentManifest, 'schema' | 'budget_run_id' | 'budget_runs'>, start: (recordedRunId: string | null) => T | null, opts: { newBudgetRun?: boolean; scrub?: <V>(value: V) => V } = {},
 ): { paid: T | null; manifest: ExperimentManifest } {
   const path = join(out, 'experiment.json');
-  const recorded = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) as ExperimentManifest : null;
+  // An experiment.json written before the runner scrubbed its files still binds: both sides compare scrubbed.
+  const scrub = opts.scrub ?? (<V>(value: V) => value);
+  const recorded = existsSync(path) ? scrub(JSON.parse(readFileSync(path, 'utf8')) as ExperimentManifest) : null;
   if (recorded) {
     const fresh: Record<string, unknown> = { schema: 'cat40-experiment-v1', ...manifest };
     // The runner commit is provenance, not identity: a resume from a later commit is the same experiment when
@@ -487,6 +501,13 @@ export async function main(argv = process.argv.slice(2)) {
   if (!tasks.length && !buildSlots) throw new UsageError('the task selection is empty (check --families, --tasks and --per-family)');
   const out = resolve(flag(argv, '--out') ?? join('eval/reports/cat40', scripted ? 'scripted' : new Date().toISOString().replace(/[:.]/g, '-')));
   const hw = hard ? raw : null;
+  const spec = gbrainSpecFrom(argv, {});
+  if (spec && (flag(argv, '--gbrain-repo') || flag(argv, '--gbrain-ref'))) throw new Error('pass either --gbrain <checkout>@<ref> or --gbrain-repo/--gbrain-ref, not both');
+  const parsedSpec = spec ? parseGbrainSpec(spec) : null;
+  const repo = parsedSpec?.checkout ?? resolve(flag(argv, '--gbrain-repo') ?? '../gbrain');
+  const gbrainRef = parsedSpec?.ref ?? flag(argv, '--gbrain-ref') ?? 'HEAD';
+  const root = resolve(flag(argv, '--gbrain-root') ?? join(process.env.HOME ?? '.', '.capy/work/cat40/gbrain'));
+  const record = cat40Recorder(repo, root);
   const maxTurns = flag(argv, '--max-turns') ? Number(flag(argv, '--max-turns')) : hw?.max_turns;
   if (maxTurns !== undefined && (!Number.isInteger(maxTurns) || maxTurns < 1)) throw new UsageError('--max-turns must be a positive integer');
   const toolLimits = (flag(argv, '--hard-tool-limits') ?? 'hard') as 'hard' | 'v1';
@@ -505,7 +526,7 @@ export async function main(argv = process.argv.slice(2)) {
     const recordedPath = join(out, 'experiment.json');
     const recorded = existsSync(recordedPath) ? JSON.parse(readFileSync(recordedPath, 'utf8')) as ExperimentManifest : null;
     identityRefusal(recorded?.hard?.identity, identityOf(hw), relative(process.cwd(), out));
-    if (recorded && JSON.stringify(recorded.flags) !== JSON.stringify(Object.fromEntries(Object.entries(experimentFlags(argv)).filter(([k]) => k !== '--preflight')))) {
+    if (recorded && JSON.stringify(record(recorded.flags)) !== JSON.stringify(record(Object.fromEntries(Object.entries(experimentFlags(argv)).filter(([k]) => k !== '--preflight'))))) {
       throw new Error(`${out} already holds a different experiment (flags: recorded ${JSON.stringify(recorded.flags)}, now ${JSON.stringify(experimentFlags(argv))}). A resume must repeat the original command except for budget flags; a changed flag set needs a new --out.`);
     }
   }
@@ -519,7 +540,7 @@ export async function main(argv = process.argv.slice(2)) {
   instructionsOverride.dropTools = (flag(argv, '--gbrain-drop-tools') ?? '').split(',').filter(Boolean);
   const ctx: Ctx = { world, files: { all: files(() => true), acl: files(d => !d.restricted) }, out, scripted, judge, gbrainLabel: flag(argv, '--gbrain-label') ?? 'gbrain',
     maxToolChars: parseMaxToolChars(flag(argv, '--max-tool-chars')), budgetRunId: null, failedCellsProxyUsd: 0, ...(flag(argv, '--max-turns') ? { maxTurns } : {}) };
-  const log = (s: string) => { process.stderr.write(`[cat40] ${s}\n`); appendFileSync(join(out, 'run.log'), `${new Date().toISOString()} ${s}\n`); };
+  const log = (s: string) => { process.stderr.write(`[cat40] ${s}\n`); appendFileSync(join(out, 'run.log'), record(`${new Date().toISOString()} ${s}\n`)); };
 
   const resultsPath = join(out, 'results.jsonl');
   const attemptsPath = join(out, 'attempts.jsonl');
@@ -541,12 +562,6 @@ export async function main(argv = process.argv.slice(2)) {
   // gbrain identity and the slot preflight come first, so a refusal opens no budget run.
   const needsGbrain = buildSlots || cells.some(c => c.arm === 'gbrain' || c.arm === 'gbrain-fs');
   const analyze = !argv.includes('--no-pglite-analyze');
-  const spec = gbrainSpecFrom(argv, {});
-  if (spec && (flag(argv, '--gbrain-repo') || flag(argv, '--gbrain-ref'))) throw new Error('pass either --gbrain <checkout>@<ref> or --gbrain-repo/--gbrain-ref, not both');
-  const parsedSpec = spec ? parseGbrainSpec(spec) : null;
-  const repo = parsedSpec?.checkout ?? resolve(flag(argv, '--gbrain-repo') ?? '../gbrain');
-  const gbrainRef = parsedSpec?.ref ?? flag(argv, '--gbrain-ref') ?? 'HEAD';
-  const root = resolve(flag(argv, '--gbrain-root') ?? join(process.env.HOME ?? '.', '.capy/work/cat40/gbrain'));
   const nSlots = Number(flag(argv, '--slots') ?? 3);
   let gbrainCommit: string | null = null, slotCommit: string | null = null, slotDir: string | null = null;
   if (needsGbrain) {
@@ -597,9 +612,9 @@ export async function main(argv = process.argv.slice(2)) {
 
   const options = budgetOptionsFrom(argv);
   const estimateUsd = flag(argv, '--estimate-usd') ? Number(flag(argv, '--estimate-usd')) : null;
-  const { paid: budget } = bindExperiment(out, { gbrain_commit: gbrainCommit, slot_commit: slotCommit, world_digest: worldDigest(world), models, arms, label: ctx.gbrainLabel, flags: experimentFlags(argv), ...(exploratory ? { exploratory: true as const } : {}), ...(hardManifest ? { hard: hardManifest } : {}) },
+  const { paid: budget } = bindExperiment(out, record({ gbrain_commit: gbrainCommit, slot_commit: slotCommit, world_digest: worldDigest(world), models, arms, label: ctx.gbrainLabel, flags: experimentFlags(argv), ...(exploratory ? { exploratory: true as const } : {}), ...(hardManifest ? { hard: hardManifest } : {}) }),
     recorded => scripted ? null : startPaidRun(buildSlots ? 'cat40-slot-build' : 'cat40-model-ladder', { ...options, runId: recorded ?? options.runId, estimateUsd, log }),
-    { newBudgetRun: argv.includes('--new-budget-run') });
+    { newBudgetRun: argv.includes('--new-budget-run'), scrub: record });
   ctx.budgetRunId = budget?.run.runId ?? null;
   if (budget?.run.participant) log(`resumed: joined the recorded budget run ${budget.run.runId}`);
 
@@ -674,7 +689,7 @@ export async function main(argv = process.argv.slice(2)) {
     if (hw) {
       const hctx: HardCtx = {
         world: hw, worldDigest: hardWorldDigest(hw), files: ctx.files, pg: ctx.pg, pool: ctx.pool, proxy: ctx.proxy, scripted, judge, gbrainLabel: ctx.gbrainLabel,
-        maxToolChars: ctx.maxToolChars, maxTurns: maxTurns!, toolLimits, budgetRunId: ctx.budgetRunId, logJudge: e => appendFileSync(join(out, 'judge-requests.jsonl'), JSON.stringify(e) + '\n'),
+        maxToolChars: ctx.maxToolChars, maxTurns: maxTurns!, toolLimits, budgetRunId: ctx.budgetRunId, logJudge: e => appendFileSync(join(out, 'judge-requests.jsonl'), JSON.stringify(record(e)) + '\n'),
       };
       await pool(cells, concurrency, async c => {
         const key = cellKey(c.model, cellLabel(c.arm, ctx.gbrainLabel), c.task.id, c.repeat);
@@ -687,13 +702,13 @@ export async function main(argv = process.argv.slice(2)) {
             throw e;
           }
         }, a => {
-          appendFileSync(attemptsPath, JSON.stringify(a) + '\n');
-          if (transcripts) appendFileSync(join(out, 'transcripts.jsonl'), JSON.stringify({ key: a.key, attempt_id: a.attempt_id, tools: hardTranscripts.get(a.attempt_id) ?? [] }) + '\n');
+          appendFileSync(attemptsPath, JSON.stringify(record(a)) + '\n');
+          if (transcripts) appendFileSync(join(out, 'transcripts.jsonl'), JSON.stringify(record({ key: a.key, attempt_id: a.attempt_id, tools: hardTranscripts.get(a.attempt_id) ?? [] })) + '\n');
           hardTranscripts.delete(a.attempt_id);
           if (a.stop === 'harness_error') log(`cell ${key} attempt ${a.attempt}: harness error: ${a.error}`);
         });
         if (!rec) return;
-        appendFileSync(resultsPath, JSON.stringify(rec) + '\n');
+        appendFileSync(resultsPath, JSON.stringify(record(rec)) + '\n');
         finished++;
         if (finished % 10 === 0 || finished === cells.length) log(`${finished}/${cells.length} cells; last ${rec.key} success=${rec.score.success} stop=${rec.stop} $${rec.total_usd.toFixed(3)}`);
       });
@@ -709,8 +724,8 @@ export async function main(argv = process.argv.slice(2)) {
         if ((e as Error).name === 'BudgetExceededError' || /BudgetExceeded|exceed/i.test((e as Error).message)) throw e;
         return;
       }
-      appendFileSync(resultsPath, JSON.stringify(rec) + '\n');
-      if (transcripts) appendFileSync(join(out, 'transcripts.jsonl'), JSON.stringify({ key: rec.key, tools: lastTools.get(rec.key) ?? [] }) + '\n');
+      appendFileSync(resultsPath, JSON.stringify(record(rec)) + '\n');
+      if (transcripts) appendFileSync(join(out, 'transcripts.jsonl'), JSON.stringify(record({ key: rec.key, tools: lastTools.get(rec.key) ?? [] })) + '\n');
       finished++;
       if (finished % 10 === 0 || finished === cells.length) log(`${finished}/${cells.length} cells; last ${rec.key} success=${rec.score.success} $${rec.total_usd.toFixed(3)}`);
     });
@@ -750,10 +765,10 @@ export async function main(argv = process.argv.slice(2)) {
       cost: summary ? receiptCost(summary) : null,
       finished_at: new Date().toISOString(),
     };
-    if (instructionsOverride.served !== null) writeFileSync(join(out, 'served-instructions.txt'), instructionsOverride.served + '\n');
-    if (instructionsOverride.servedTools !== null) writeFileSync(join(out, 'served-tools.json'), JSON.stringify(instructionsOverride.servedTools, null, 2) + '\n');
+    if (instructionsOverride.served !== null) writeFileSync(join(out, 'served-instructions.txt'), record(instructionsOverride.served) + '\n');
+    if (instructionsOverride.servedTools !== null) writeFileSync(join(out, 'served-tools.json'), JSON.stringify(record(instructionsOverride.servedTools), null, 2) + '\n');
     const receiptPath = join(out, `receipt-${Date.now()}.json`);
-    writeFileSync(receiptPath, JSON.stringify(receipt, null, 2));
+    writeFileSync(receiptPath, JSON.stringify(record(receipt), null, 2));
     log(`receipt ${receiptPath}`);
     const lag = summary?.event_loop_lag_ms;
     if (lag && lag.p99 >= 50) log(`warning: event-loop lag p99 ${lag.p99} ms (max ${lag.max} ms); tool latency in this run is not trustworthy`);

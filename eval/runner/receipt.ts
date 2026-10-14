@@ -456,9 +456,12 @@ function scrubString(value: string, prefixes: ReadonlyArray<readonly [string, st
   return out;
 }
 
-/** Rewrite checkout, home and temp paths in every string of a JSON value. */
-export function scrubMachinePaths<T>(value: T, root = REPO_ROOT, home = homedir(), tmp = tmpdir()): T {
-  const pairs: Array<[string, string]> = [[`${root}/`, ''], [root, '.']];
+/**
+ * Rewrite checkout, home and temp paths in every string of a JSON value. `extra` prefix pairs (a runner's own
+ * known paths, such as a gbrain checkout) apply first, longest prefix first.
+ */
+export function scrubMachinePaths<T>(value: T, root = REPO_ROOT, home = homedir(), tmp = tmpdir(), extra: ReadonlyArray<readonly [string, string]> = []): T {
+  const pairs: Array<readonly [string, string]> = [...[...extra].sort((a, b) => b[0].length - a[0].length), [`${root}/`, ''], [root, '.']];
   if (tmp) pairs.push([`${tmp}/`, '<tmp>/'], ['/tmp/', '<tmp>/']);
   if (home) pairs.push([`${home}/`, '~/']);
   const prefixes = pairs.filter(([prefix]) => prefix.length > 1);
