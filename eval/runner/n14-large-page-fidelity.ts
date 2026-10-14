@@ -50,9 +50,9 @@ import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import type { PGLiteEngine as PGLiteEngineType } from 'gbrain/pglite-engine';
-import { WAVE_BUG_LEDGER, upsertBug, type BugEntry } from './bug-ledger.ts';
+import { WAVE_BUG_LEDGER, readBugLedger, upsertBug, type BugEntry } from './bug-ledger.ts';
 import { budgetOptionsFrom, receiptCost, startPaidRun, type RunSummary } from './budget-ledger.ts';
 import { gbrainSpecFrom, importGbrain, overlaySummary, productIdentityFor, resolveGbrainUnderTest, type GbrainUnderTest } from './gbrain-under-test.ts';
 import { gbrainPin } from './gbrain-version.ts';
@@ -60,7 +60,7 @@ import { DECIDE_OFF, withHermeticEnv } from './hermetic-env.ts';
 import { paidRequested, requirePaidArm } from './paid-arm.ts';
 import { attestPreregistration, type Attestation } from './prereg.ts';
 import { ProbeAccounting } from './probe-accounting.ts';
-import { BENCHMARK_VERSION, RECEIPT_SCHEMA_VERSION, noModelSpend, productIdentity, receiptPath, sourceTreeIdentity, writeReceipt, type Receipt } from './receipt.ts';
+import { BENCHMARK_VERSION, RECEIPT_SCHEMA_VERSION, noModelSpend, productIdentity, receiptPath, scrubMachinePaths, sourceTreeIdentity, writeReceipt, type Receipt } from './receipt.ts';
 import {
   DECILES, N14_DEFAULT_SEED, N14_GENERATOR_VERSION, NEEDLE_TYPES, TIERS, TIER_IDS, checkPresence, containsToken, ledgerFingerprint, tierSpecs, writeDocument,
   type DocKind, type N14DocLedger, type Needle, type PresenceCheck, type TierId,
@@ -1154,7 +1154,14 @@ async function main(): Promise<void> {
   if (paid && !r.harnessError) ({ data: paidData, cost: paidCost } = await runPaid(gut, argv, tiers.filter(t => t !== '1gb'), arms, seed, log));
   const a = r.acc.summary();
   const findings = n14Findings(r, gut);
-  if (argv.includes('--record-bugs')) for (const f of findings) upsertBug(f);
+  if (argv.includes('--record-bugs')) {
+    const prior = new Map(readBugLedger(WAVE_BUG_LEDGER).entries.map(e => [e.id, e]));
+    for (const f of findings) {
+      const was = prior.get(f.id);
+      const history = was?.review ? [...(was.review_history ?? []), was.review] : was?.review_history;
+      upsertBug({ ...f, review: { date: startedAt.slice(0, 10), gbrain_sha: f.gbrain_sha, evidence: 'rerun', receipts: [relative(process.cwd(), outPath)], note: was?.review ? 'reproduced by this run' : 'found by this run' }, ...(history?.length ? { review_history: history } : {}) });
+    }
+  }
   const runStatus = r.harnessError || a.run_invalid ? 'error' : 'completed';
   const receipt: Receipt = {
     ...(paidCost ? { cost: receiptCost(paidCost), delivered_tokens: null } : noModelSpend('hermetic: provider keys stripped, keyword search only; the append-cost embedder is an in-process counting fake (no network)')),
@@ -1210,7 +1217,7 @@ async function main(): Promise<void> {
       harness_error: r.harnessError,
     },
   };
-  writeReceipt(outPath, receipt);
+  writeReceipt(outPath, scrubMachinePaths(receipt));
 
   log('');
   log(`verdict: ${runStatus === 'completed' ? r.verdict?.verdict : `run error (${r.harnessError})`}${r.verdict?.failed.length ? ` (${r.verdict.failed.join('; ')})` : ''}`);
