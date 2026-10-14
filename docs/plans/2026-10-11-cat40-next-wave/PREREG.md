@@ -466,3 +466,14 @@ ledger rate of 1.108:
   - **Secondary, public only:** wave − baseline success +4.00 [+1.33, +6.83]; wrong values −3.50 [−5.67, −1.33]. The
     D3 test is pooled over four worlds and waits for S1, S2. Sol watch not flagged (2 vs 2).
 - **Sealed worlds S1, S2:** not run. Waiting on GBRA-40's staging step 3.
+- **The tested wave build includes F5** (owner-phrase resolution, switched on by the build-time key
+  `mentions.owner_phrases=true`), and the shipped Part 1 may not. On 2026-10-14 Garry declined to provide the
+  production database URL, so the precision sample on his brain did not run. Under the ship condition, F5 stays out
+  of Part 1 unless Garry decides otherwise. Development round 3 measured the configuration without F5 as level with
+  the control (success −0.5 pp [−3.8, +2.8]), so these confirmation results may not describe a build without F5.
+- **Ship condition: corpus changed, bar unchanged** (Garry, 2026-10-14: "go ahead and build an adapted larger
+  version of the messy set test … adapt it"). The bar is still a Wilson 95% lower bound ≥ 0.85 with at least 22
+  derived links. The corpus moves from Garry's production brain, which he declined to share, to a new, independently
+  authored synthetic corpus: gbrain-evals `messy-company-v1`, written by non-Claude models and labeled from a frozen
+  world plan (being built by Subagent 22). This is a ship condition for the Part 1 merge, not a confirmation
+  endpoint. The confirmation runs unchanged.
