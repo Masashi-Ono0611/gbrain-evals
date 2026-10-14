@@ -24,6 +24,18 @@ use:
 | changes | Contradiction surfacing (N2) | 14 | 12 | Contradictions, dated changes and compatible pairs between claims; "ignore my earlier number" retractions. A category that proposes resolutions can use `correct` on each side. |
 | agent-tasks | Cat 40 Hard style agent questions; takes and attribution | 22 | 22 | End-to-end questions over the brain with typed answers and evidence slugs. Each task names the lane it exercises, and `traps` lists what makes it hard. |
 
+## Runs on this dataset
+
+Each run that used this dataset, newest first. A held-out run spends that lane's held-out split: later work on the
+same lane tunes on dev only, and any later held-out run reports that the split was used before.
+
+| Date | Lane and splits | Purpose | Code | Rule sha256 | Result |
+|---|---|---|---|---|---|
+| 2026-10-14 | owner-phrases, dev and held-out | F5 owner-phrase precision ship condition | gbrain `4e10136b` | `6ca46ba4a25e09dd87a3b0ca298f406ab077e71fb06145f83e40703b5fce0b11` | **FAIL.** 6 links, 6 correct, Wilson 95% [0.610, 1.000], against a bar of ≥ 0.85 with ≥ 22 links. Recall dev 2/66, held-out 4/58. 0 links on should-not-link rows. [Run record](../../../docs/benchmarks/2026-10-14-f5-messy-company/README.md) |
+
+**Held-out use so far:** owner-phrases, once (the F5 run above). Future owner-phrase work tunes on dev only. No other
+lane's held-out split has been used.
+
 ## Notes per use
 
 **Owner phrases.** Each row records `reason` and `window_relation`, so a report can show which resolution rule
@@ -47,6 +59,11 @@ them, are known only from those pages. Run the `public` view with `load.ts --pub
 facts don't leak into public answers.
 
 ## Changelog
+
+### 2026-10-14: First run entry
+
+Added "Runs on this dataset" with the F5 owner-phrase run: FAIL at gbrain `4e10136b`, 6 of 6 links correct but
+below the 22-link minimum and the 0.85 Wilson bar. The owner-phrases held-out split has now been used once.
 
 ### 2026-10-14: First version
 
