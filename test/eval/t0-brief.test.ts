@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { generatePersona, PP_BRIEF_DEV_SEEDS, PP_BRIEF_V2_DEV_SEEDS, PP_BRIEF_V2_SESSION2_DAY, PP_DEV_SEEDS, solvabilityProblems } from '../../eval/generators/program-primary-gen.ts';
 import { ARMS, scriptedRememberer } from '../../eval/runner/t0-program-primary.ts';
-import { AGED_FACTS_AT, agedFactsAt, BRIEF_ARMS, BRIEF_HEADER, briefBlock, briefCondition, briefConfig, BriefGuardError, cellBrief, classifyItem, CROWD_FACTS, crowdFacts, hotMemoryText, pairedSuccess, PROACTIVE_BRIEF_KEY, savePath } from '../../eval/runner/t0/brief.ts';
+import { AGED_FACTS_AT, agedFactsAt, BRIEF_ARMS, BRIEF_HEADER, briefBlock, briefCondition, briefConfig, BriefGuardError, cellBrief, classifyItem, CROWD_FACTS, crowdFacts, hotMemoryText, NONINFERIORITY_MARGIN, pairedRatio, pairedSuccess, PROACTIVE_BRIEF_KEY, savePath, TOOL_CALL_RATIO_MAX } from '../../eval/runner/t0/brief.ts';
 import { matches } from '../../eval/runner/t0/score.ts';
 import type { HookResult } from '../../eval/runner/t0/delivery.ts';
 import { scoreAnswer } from '../../eval/runner/t0/score.ts';
@@ -159,4 +159,15 @@ describe('D6 v2 design', () => {
     expect(briefConfig('brief-off', [['x.y', 'true']])).toEqual([]);
   });
 
+
+  test('the v2 primary is a paired tool-call ratio with a clustered interval, plus a frozen non-inferiority margin', () => {
+    expect([TOOL_CALL_RATIO_MAX, NONINFERIORITY_MARGIN]).toEqual([0.8, 0.05]);
+    const pairs = ['a', 'a', 'b', 'b', 'c', 'c'].flatMap(persona => [{ persona, off: 10, on: 6 }, { persona, off: 8, on: 5 }]);
+    const r = pairedRatio(pairs);
+    expect(r.ratio).toBeCloseTo(33 / 54);
+    expect(r.upper!).toBeLessThan(1);
+    expect(r.lower!).toBeLessThan(r.ratio!);
+    expect(pairedRatio(pairs.filter(p => p.persona === 'a')).upper).toBeNull();
+    expect(pairedRatio([]).ratio).toBeNull();
+  });
 });

@@ -25,8 +25,13 @@ Code: `eval/runner/t0-program-primary.ts` (the T0 carrier with the brief arms an
 ## The question
 
 The facts the task needs no longer reach the agent through hot memory, because they are too old or crowded out by
-newer facts. In that situation, do agents finish meeting-prep and reply tasks correctly more often with gbrain's
-"Before you start" brief on than with it off?
+newer facts. In that situation, does gbrain's "Before you start" brief save the agent work on meeting-prep and reply
+tasks, measured as fewer tool calls and fewer input tokens, without lowering task success?
+
+The plan's wave 5 exit allows either measure: "an improvement in end-to-end task success **or user time saved**". The
+first run measured success and found the expected ceiling. Finding 4 below predicts the same here, so this design
+makes time saved the primary, with non-inferiority on success. This change was made in the draft before any v2 data
+existed, and was approved on October 15, 2026 under the standing rule.
 
 ## What is known before any spend
 
@@ -53,20 +58,21 @@ These findings come from hermetic runs on October 15 ($0, scripted models, keyle
 5. **What the brief carries.** In this release, per counterparty, the brief carries the top open loop, then the newest
    fact, then more loops, with at most 3 items. Without loops it carries one fact, while each task needs three facts
    (the commitment, the moved date and the correction).
-6. **Loops from mail or calendar cannot reach the pushed brief in this release.** Commitments that the mail extractor
-   finds are written as private facts (`src/core/google/loops-extract.ts`, `visibility: 'private'`). The push brief
-   is world-only: a loop is admitted only through a world-visible fact. Detector loops have no fact at all. The calendar
-   trigger also needs a Google-kind source synced within 24 hours. So this draft has no loop condition. At the pin,
-   the [loop presence check](#loop-presence-check-at-the-pin) decides whether one can be added.
+6. **Loops are out of scope.** Commitments that the mail extractor finds are written as private facts by design
+   (`src/core/google/loops-extract.ts`, `visibility: 'private'`). The push brief is world-only: it admits a loop only
+   through a world-visible fact, and detector loops have no fact at all. So a loop from a mail or calendar fixture
+   cannot reach a pushed brief in this release, and this design has no loop condition. A loop condition would need
+   its own preregistration on a release where such a loop can be pushed.
 7. **Save path.** In the first run, all 14 brief-on misses were Sonnet 5.5 sessions that saved by editing pages and
    never called `remember`, which left the brief no fact to push. The release this draft waits for adds a page-edit
    source to the brief, off by default. The brief-on arm turns it on.
 
 **Prediction.** Finding 4 still makes a small or null difference in task success likely. Readers that open the
 contact's page, or search, find the facts in both arms. In the first run, 143 of 144 session-2 cells called `get_page`,
-`search`, `recall`, `entity` or `get_chunks`.
-Effects are more likely in session-2 tool calls and input tokens than in success. The decision rule below is written
-so that a null result or a token saving cannot read as a gain in success.
+`search`, `recall`, `entity` or `get_chunks`. The open question is whether reading one needed fact in the prompt makes
+readers search less. In the first run, where hot memory carried the facts in both arms, session-2 tool calls were
+6.10 per task with the brief off and 5.94 with it on, about 3% fewer. That is well short of the 20% this design
+requires. A time-saved signal therefore needs a much larger effect once hot memory no longer carries the facts.
 
 ## Workload (frozen)
 
@@ -99,14 +105,6 @@ so that a null result or a token saving cannot read as a gain in success.
   hot-memory control holding, the brief firing in brief-on cells and staying silent in brief-off cells. Its record
   goes into the freezing commit's message or a file under the results directory added after the freezing commit.
 
-### Loop presence check at the pin
-
-On the pinned release, and before the freezing commit, one hermetic or minimal check answers one question. Can a
-commitment that gbrain's own pipeline derives from a mail or calendar fixture appear as a loop item in a pushed
-(world-only) brief? If it cannot, the loop condition is recorded as not runnable on that release, with the reason. If
-it can, a loop condition is added only by a dated amendment. The amendment sets the condition's tasks, budget and
-analysis before any of its cells, and the loop condition never joins this design's primary.
-
 ## Arms (frozen)
 
 | Arm | What differs |
@@ -137,28 +135,44 @@ by persona (6 clusters).
 
 ## Primary measure and decision rule (frozen)
 
-**Primary:** the paired difference in end-to-end task success, brief-on minus brief-off, over the task × reader pairs
-of both conditions, pooled across the three readers. It comes with a persona-clustered 95% interval (`pairedSuccess`,
-t on 5 degrees of freedom). Each condition is also reported separately, and neither is a co-primary.
+The primary has two parts. Both are computed over the task × reader pairs of both conditions (72 pairs), paired by
+task and reader, reported for each reader, then pooled across the three readers, with persona-clustered 95% intervals
+(6 clusters, t on 5 degrees of freedom). Each condition is also reported separately, and neither is a co-primary.
 
-**Development signal.** The run is labelled "improvement signal (development evidence only)" only when all six checks
-hold, and "no improvement signal (development evidence only)" otherwise (`summarizeBriefV2`):
+**Part 1, time saved (`pairedRatio`).** This is the ratio of session-2 tool calls, brief-on total over brief-off total,
+across the pairs. The interval comes from the delta method on the log ratio (`ratioInterval`, method `delta-t`, in
+`eval/runner/power/risk-ratio.ts`). The same ratio is computed for session-2 input tokens. Tool calls are the primary
+efficiency measure because the plan names "tool calls and input tokens per task" as D6's measures. The plan's "time to
+the first correct action" belongs to D7, and a T0 session has one deliverable at its end rather than timestamped
+actions marked correct. Session-2 wall time from the first hook to the deliverable is reported as a diagnostic only:
+it includes provider latency, which varies with the hour the cell runs.
 
-1. the pooled paired success difference has a 95% lower bound above 0;
-2. **the hot-memory control holds:** in each condition, at most 10% of cells (both arms) carry any needed fact in
+**Part 2, non-inferiority on success (`pairedSuccess`).** This is the paired difference in end-to-end task success,
+brief-on minus brief-off, under `t0-score-v3`.
+
+**Development signal.** The run is labelled "time-saved signal (development evidence only)" only when all seven
+checks hold, and "no time-saved signal (development evidence only)" otherwise (`summarizeBriefV2`):
+
+1. **time saved:** the pooled session-2 tool-call ratio is at most 0.80 (at least 20% fewer tool calls with the brief
+   on), its 95% upper bound is below 1, and the pooled session-2 input-token ratio's 95% upper bound is also below 1.
+   Brief-on adds its block to the prompt, so fewer calls have to mean fewer tokens overall;
+2. **success is non-inferior:** the pooled paired success difference has a 95% lower bound at or above −5 points;
+3. **the hot-memory control holds:** in each condition, at most 10% of cells (both arms) carry any needed fact in
    session 2's hot-memory lines. If more do, the condition did not remove the fact from hot memory and the run cannot
    answer the question;
-3. **the paid-arm guard holds:** no brief-off cell shows a brief (the run halts otherwise), and among brief-on cells
+4. **the paid-arm guard holds:** no brief-off cell shows a brief (the run halts otherwise), and among brief-on cells
    whose session 1 saved anything (`remember` or a page write), the brief fails to fire in at most 10%. Brief-on cells
    whose session 1 saved nothing are reported separately, because the brain then holds nothing to push;
-4. attention: no session-2 brief block exceeds 1,800 characters;
-5. false pushes: at most 0.05 false-push items per brief-on session;
-6. no rise in confident-wrong: brief-on has no more confident-wrong cells than brief-off.
+5. attention: no session-2 brief block exceeds 1,800 characters;
+6. false pushes: at most 0.05 false-push items per brief-on session;
+7. no rise in confident-wrong: brief-on has no more confident-wrong cells than brief-off.
 
-Checks 4 to 6 are the plan's exit bar. Uptake, fewer tool calls or fewer tokens never satisfy the rule.
+Checks 5 to 7 are the plan's exit bar. The per-reader rows are reported for every reader, but they are not separate
+gates. Uptake alone never satisfies the rule. A pooled success difference whose 95% lower bound is above 0 is reported
+as a success improvement. It is a secondary finding and does not replace check 1.
 
-**What each label allows.** "Improvement signal" means the design may go to the sealed phase unchanged, under its own
-preregistration and custody. "No improvement signal" means the result is reported, and whether D6 continues is
+**What each label allows.** "Time-saved signal" means the design may go to the sealed phase unchanged, under its own
+preregistration and custody. "No time-saved signal" means the result is reported, and whether D6 continues is
 Garry's decision. Neither label changes the release default.
 
 ## Diagnostics (frozen definitions; for each arm, condition and reader)
@@ -171,6 +185,8 @@ Garry's decision. Neither label changes the release default.
   lines, across all hooks. Counts are given per condition and separately for brief-off cells.
 - **Save path:** session 1's save path, which is `remember` if any `remember` call was made, else `page` if a
   `put_page` or `edit_page` call was made, else `none`. The brief's firing rate is reported for each save path.
+- **Efficiency per condition and reader:** the tool-call, input-token and wall-time ratios with their intervals, plus
+  each arm's means.
 - **Setup records:** for each cell, the backdated fact ids and their timestamp (aged), or the count of crowd facts
   saved and refused (crowded).
 
@@ -191,14 +207,13 @@ Garry's decision. Neither label changes the release default.
 The development record (`docs/benchmarks/2026-10-15-proactive-brief-dev-v2.md` and the run directory
 `docs/benchmarks/2026-10-15-proactive-brief-dev-v2/`) reports:
 
-- the primary with its interval and discordant pairs, and the label with each check;
+- both parts of the primary with their intervals, the success discordant pairs, and the label with each check;
 - each condition, each reader with ceilings, and prep and reply separately;
 - the hot-memory control and firing by save path;
 - every diagnostic, with raw counts;
 - spend from the ledger with the budget run id;
 - `t0-score-v2` as a secondary;
-- the hermetic slice on the pinned release;
-- the loop presence check's outcome.
+- the hermetic slice on the pinned release.
 
 Machine-local paths are scrubbed from committed files.
 

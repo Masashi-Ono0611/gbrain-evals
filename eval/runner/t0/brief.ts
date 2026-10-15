@@ -13,7 +13,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { generatePersona, PP_BRIEF_V2_DEV_SEEDS, type PPPersona, type PPTask } from '../../generators/program-primary-gen.ts';
-import { riskDifference } from '../power/risk-ratio.ts';
+import { ratioInterval, riskDifference } from '../power/risk-ratio.ts';
 import { matches, scoreAnswer, staleMentions, T0_SCORER_POSTHOC, type T0Score } from './score.ts';
 import type { HookResult } from './delivery.ts';
 
@@ -154,12 +154,14 @@ export interface CellBrief {
   save_path?: SavePath;
   /** Needed facts in session 2's hot-memory lines: the v2 control expects none in the aged and crowded conditions. */
   s2_hot_facts?: NeededFact[];
+  /** Session 2 from its first hook to the deliverable (v2 diagnostic). */
+  s2_wall_ms?: number;
 }
 
 export class BriefGuardError extends Error { override name = 'BriefGuardError'; }
 
 /** The brief record for one cell; throws BriefGuardError when brief-off shows a brief (the arms are not what they claim). */
-export function cellBrief(arm: BriefArm, t: PPTask, sessions: ReadonlyArray<{ hooks: HookResult[]; tool_calls: Array<{ name: string }> }>, s2InputTokens: number, condition: BriefCondition = 'next-day'): CellBrief {
+export function cellBrief(arm: BriefArm, t: PPTask, sessions: ReadonlyArray<{ hooks: HookResult[]; tool_calls: Array<{ name: string }>; wall_ms?: number }>, s2InputTokens: number, condition: BriefCondition = 'next-day'): CellBrief {
   const blocks = sessions.map(s => s.hooks.map(briefBlock).filter((b): b is BriefBlock => b !== null));
   const s2 = blocks[1] ?? [];
   const s2Prompt = s2.find(b => b.hook === 'user-prompt');
@@ -172,6 +174,7 @@ export function cellBrief(arm: BriefArm, t: PPTask, sessions: ReadonlyArray<{ ho
   const v2 = condition === 'next-day' ? {} : {
     condition, save_path: savePath(sessions[0]?.tool_calls ?? []),
     s2_hot_facts: has((sessions[1]?.hooks ?? []).map(h => hotMemoryText(h.text)).join('\n')),
+    s2_wall_ms: sessions[1]?.wall_ms ?? 0,
   };
   return { ...v2,
     arm, config: briefConfig(arm), blocks, guard,
@@ -286,6 +289,22 @@ export function summarizeBrief(all: readonly BriefCell[]) {
 
 /** v2 ceilings: a condition whose hot-memory control fails in more than this share of its cells cannot answer the question. */
 export const CONTROL_FAILURE_CEILING = 0.1;
+/** v2 primary, part 1 (time saved): pooled brief-on/brief-off session-2 tool calls at most this ratio (20% fewer), its 95% upper bound below 1. */
+export const TOOL_CALL_RATIO_MAX = 0.8;
+/** v2 primary, part 2 (non-inferiority): the pooled paired success difference's 95% lower bound at or above minus this margin. */
+export const NONINFERIORITY_MARGIN = 0.05;
+
+/** Paired ratio of a per-task measure, brief-on total over brief-off total, persona-clustered 95% interval (delta method on the log ratio, t on clusters - 1 df). */
+export function pairedRatio(pairs: Array<{ persona: string; off: number; on: number }>) {
+  const by = new Map<string, { n: number; baseline: number; candidate: number }>();
+  for (const p of pairs) { const x = by.get(p.persona) ?? { n: 0, baseline: 0, candidate: 0 }; x.n++; x.baseline += p.off; x.candidate += p.on; by.set(p.persona, x); }
+  const totals = [...by.values()];
+  const off = pairs.reduce((a, p) => a + p.off, 0);
+  const on = pairs.reduce((a, p) => a + p.on, 0);
+  if (!pairs.length || off === 0) return { pairs: pairs.length, personas: totals.length, off_total: off, on_total: on, ratio: null, lower: null, upper: null };
+  const r = ratioInterval(totals, 'delta-t');
+  return { pairs: pairs.length, personas: totals.length, off_total: off, on_total: on, ratio: on / off, lower: totals.length < 2 ? null : r.lower, upper: totals.length < 2 ? null : r.upper };
+}
 
 /** The v2 summary (aged and crowded cells only): the v1 primary and checks, plus conditions, the hot-memory control and firing by save path. */
 export function summarizeBriefV2(all: readonly BriefCell[]) {
@@ -301,7 +320,14 @@ export function summarizeBriefV2(all: readonly BriefCell[]) {
   });
   const arms = (cs: BriefCell[]) => Object.fromEntries(BRIEF_ARMS.map(a => [a, armStats(cs.filter(c => c.arm === a), tasks)]));
   const uptakeFor = (keep: (c: BriefCell) => boolean) => uptake(cells.filter(c => c.arm === 'brief-on' && keep(c)).map(on => ({ on, off: byKey.get(`${on.task}|${on.reader}|${on.repeat}|brief-off`), t: tasks.get(on.task)! })));
-  const slice = (keep: (c: BriefCell) => boolean) => ({ primary: pairedSuccess(pairs(keep)), arms: arms(cells.filter(keep)), uptake: uptakeFor(keep) });
+  const measure = (keep: (c: BriefCell) => boolean, m: (b: CellBrief) => number) => pairedRatio(cells.filter(c => c.arm === 'brief-off' && keep(c)).flatMap(off => {
+    const on = byKey.get(`${off.task}|${off.reader}|${off.repeat}|brief-on`);
+    return on ? [{ persona: off.persona, off: m(off.brief!), on: m(on.brief!) }] : [];
+  }));
+  const efficiency = (keep: (c: BriefCell) => boolean) => ({
+    s2_tool_calls: measure(keep, b => b.s2_tool_calls), s2_input_tokens: measure(keep, b => b.s2_input_tokens), s2_wall_ms: measure(keep, b => b.s2_wall_ms ?? 0),
+  });
+  const slice = (keep: (c: BriefCell) => boolean) => ({ success: pairedSuccess(pairs(keep)), efficiency: efficiency(keep), arms: arms(cells.filter(keep)), uptake: uptakeFor(keep) });
   const control = Object.fromEntries((['aged', 'crowded'] as const).map(cond => {
     const cs = cells.filter(c => c.brief!.condition === cond);
     const failed = cs.filter(c => (c.brief!.s2_hot_facts ?? []).length > 0);
@@ -315,8 +341,11 @@ export function summarizeBriefV2(all: readonly BriefCell[]) {
   const saved = on.filter(c => c.brief!.save_path !== 'none');
   const pooled = slice(() => true);
   const onStats = pooled.arms['brief-on'];
+  const tools = pooled.efficiency.s2_tool_calls;
+  const tokens = pooled.efficiency.s2_input_tokens;
   const checks = {
-    improvement: pooled.primary.lower !== null && pooled.primary.lower > 0,
+    time_saved: tools.ratio !== null && tools.ratio <= TOOL_CALL_RATIO_MAX && tools.upper !== null && tools.upper < 1 && tokens.upper !== null && tokens.upper < 1,
+    success_non_inferior: pooled.success.lower !== null && pooled.success.lower >= -NONINFERIORITY_MARGIN,
     hot_memory_control_valid: Object.values(control).every(x => x.valid),
     guard_misses_within_ceiling: saved.length > 0 && saved.filter(c => c.brief!.guard === 'miss').length / saved.length <= GUARD_MISS_CEILING,
     attention_within_cap: onStats.brief_chars.max <= BRIEF_MAX_CHARS,
@@ -326,7 +355,8 @@ export function summarizeBriefV2(all: readonly BriefCell[]) {
   const ceilings = readers.filter(r => { const x = armStats(cells.filter(c => c.reader === r && c.arm === 'brief-off'), tasks); return x.cells > 0 && x.successes === x.cells; });
   return {
     scorer: T0_SCORER_POSTHOC, design: 'd6-dev-v2', cells: cells.length, readers, ceilings, pooled, checks,
-    development_signal: Object.values(checks).every(Boolean) ? 'improvement signal (development evidence only)' : 'no improvement signal (development evidence only)',
+    development_signal: Object.values(checks).every(Boolean) ? 'time-saved signal (development evidence only)' : 'no time-saved signal (development evidence only)',
+    success_improvement: pooled.success.lower !== null && pooled.success.lower > 0,
     control, firing_by_save_path: firing,
     guard_saved: { brief_on_cells_with_a_save: saved.length, misses: saved.filter(c => c.brief!.guard === 'miss').length },
     by_condition: Object.fromEntries((['aged', 'crowded'] as const).map(cond => [cond, slice(c => c.brief!.condition === cond)])),
