@@ -2,6 +2,21 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.103] - 2026-10-15
+
+### N14 large-page fidelity after large pages Wave A
+
+The N14 rerun against gbrain master `44eb049` (v0.60.242.0) is hermetic and cost $0. Each 2 MB document and the 20 MB chat is
+stored as one page and found 40 of 40 in every decile (0 of 40 at the baseline). Windowed reads around a hit are
+correct 40 of 40, the largest 20,871 bytes. Export round trips are exact, and a 1 KB append re-embeds one chunk (1.87
+to 2.87 times the appended text, under the preregistered 3x). An older brain's skipped page comes back with
+`reindex --oversized`. Of the preregistered rules, Wave A passes all measured here except the egress contract: a trusted
+local default `get_page` is still the full page by design, while the agent-facing default read is 23.6 to 35.6 KB.
+Pages over 24 MiB are refused, now with `request_too_large` (bug N14-4 fixed), and appends still rewrite the whole
+page: both wait for Wave B. Preregistration Amendment 1 adds the upgrade-path case and the agent-facing read. The bug
+ledger closes N14-1 and N14-3, fixes N14-4 and narrows N14-2. See the
+[Wave A report](docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a.md).
+
 ## [0.10.102] - 2026-10-14
 
 ### D5 brief parameters: the re-smoke passes

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "description": "Map from published claims to their saved evidence. The manifest test checks artifact paths, SHA-256 hashes, and declared JSON-pointer values. It does not parse report prose or independently validate every scorer. Separate golden tests and recount scripts are named where available. Entries marked disclosed-gap identify missing evidence; a fresh run cannot restore a missing historical receipt.",
-  "updated": "2026-10-14",
+  "updated": "2026-10-15",
   "entries": [
     {
       "claim_id": "lifecycle-2026-09-29-primary",
@@ -5294,6 +5294,62 @@
         "/by_model/gpt-6.1-sol/d5/brief_param_calls": 0
       },
       "note": "Per-model success, tool calls and brief-parameter calls on master 3961bf16 and gbrain #6703 head f127b1b5, rebuilt by score.py from the per-cell results and transcripts."
+    },
+    {
+      "claim_id": "n14-large-page-wave-a-2mb-44eb049",
+      "readme_anchor": "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a.md: 2 MB native recall 1.00, append ratio max 2.76, gap 0, round trip exact, 126 trusted-local frames over 1 MiB; upgrade path re-chunks the old embed_skip page, 40/40",
+      "artifact_path": "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a/2mb/receipt.json",
+      "artifact_sha256": "2339c5ae48cfa2188571049c7653349962f9616b632f701ca5c333f2cbc418ea",
+      "expected": {
+        "/run_status": "completed",
+        "/resolved_config/gbrain_overlay/commit": "44eb0493ff2776f04d6616b1a526657702f7544a",
+        "/data/safety/crashes": 0,
+        "/data/safety/responses_over_cap": 126,
+        "/data/safety/roundtrip_byte_loss": 0,
+        "/data/floor/native_keyword_recall_2mb": 1,
+        "/data/quality/native_append_embed_ratio_max": 2.76,
+        "/data/quality/native_recall_gap_points_max": 0,
+        "/data/upgrade/0/marker_removed": true,
+        "/data/upgrade/0/summary/keyword_recall/hits": 40,
+        "/hashes/ledger_sha256": "c09ed85562906f0fd9d959eed907d85743c544085711d31ff5e0490ece1fb436"
+      },
+      "golden_test": "test/eval/n14-large-page-fidelity.test.ts: pinned 2 MB ledger hash, scorer and mutation suite",
+      "status": "covered",
+      "note": "N14 hermetic rerun after large pages Wave A, 2mb tier, gbrain master 44eb0493 (v0.60.242.0) through --gbrain, gbrain-evals 763566f, keyword search and a counting embedder, $0."
+    },
+    {
+      "claim_id": "n14-large-page-wave-a-20mb-44eb049",
+      "readme_anchor": "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a.md: 20 MB chat stored as one page, 40/40, append ratio 2.87, round trip exact",
+      "artifact_path": "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a/20mb/receipt.json",
+      "artifact_sha256": "3875ea88ba5ccac4882e179871f6d4ae7053c72b9ac97d4de22074732cde0965",
+      "expected": {
+        "/run_status": "completed",
+        "/data/safety/responses_over_cap": 42,
+        "/data/quality/native_append_embed_ratio_max": 2.872,
+        "/data/safety/roundtrip_byte_loss": 0,
+        "/data/arms/2/keyword_recall/hits": 40,
+        "/data/arms/2/ingest/chunks": 8855
+      },
+      "golden_test": "test/eval/n14-large-page-fidelity.test.ts: pinned 2 MB ledger hash, scorer and mutation suite",
+      "status": "covered",
+      "note": "N14 hermetic rerun after large pages Wave A, 20mb tier, gbrain master 44eb0493 (v0.60.242.0) through --gbrain, gbrain-evals 763566f, keyword search and a counting embedder, $0."
+    },
+    {
+      "claim_id": "n14-large-page-wave-a-200mb-44eb049",
+      "readme_anchor": "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a.md: 200 MB chat refused with request_too_large on single-page and native (N14-4 fixed)",
+      "artifact_path": "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a/200mb/receipt.json",
+      "artifact_sha256": "90b9d2524d8981d851cc18aac56e27a85328b98997ad7d978749daa3de2d70e1",
+      "expected": {
+        "/run_status": "completed",
+        "/data/safety/crashes": 0,
+        "/data/arms/0/ingest/code": "request_too_large",
+        "/data/arms/0/arm": "single-page",
+        "/data/arms/1/ingest/code": "request_too_large",
+        "/data/arms/1/arm": "native"
+      },
+      "golden_test": "test/eval/n14-large-page-fidelity.test.ts: pinned 2 MB ledger hash, scorer and mutation suite",
+      "status": "covered",
+      "note": "N14 hermetic rerun after large pages Wave A, 200mb tier, gbrain master 44eb0493 (v0.60.242.0) through --gbrain, gbrain-evals 763566f, keyword search and a counting embedder, $0."
     }
   ]
 }
