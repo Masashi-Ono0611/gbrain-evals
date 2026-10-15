@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.86 (`VERSION`) |
+| This repository | gbrain-evals v0.10.104 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except two: the Cat 40 Hard row's, which shipped after it
@@ -302,6 +302,100 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-15: Repository row names v0.10.104
+
+gbrain-evals v0.10.104 adds the N14 large-page fidelity rerun after large pages Wave A (gbrain `44eb049`, measured
+through `--gbrain`; the pin is unchanged). No result row on this page changes. The repository row names v0.10.104 (was
+v0.10.103).
+
+### 2026-10-14: Repository row names v0.10.103
+
+gbrain-evals v0.10.103 records the D6 proactive-brief development run. On the T0 carrier with gbrain v0.60.240.0,
+brief-on and brief-off both finished 70 of 72 paired tasks, so it shows no improvement signal; this is development
+evidence only. No result row on this page changes. The repository row names v0.10.103 (was v0.10.102).
+
+### 2026-10-14: Repository row names v0.10.102
+
+gbrain-evals v0.10.102 records the D5 brief re-smoke on gbrain #6703, which passes, and makes the Cat 40 runner scrub
+machine paths from the files it writes. No result row on this page changes. The repository row names v0.10.102 (was
+v0.10.101).
+
+### 2026-10-14: Repository row names v0.10.101
+
+gbrain-evals v0.10.101 records the Cat 40 smoke for gbrain #6703's `context_pack` `counterparty` and `intent`
+parameters. No result row on this page changes. The repository row names v0.10.101 (was v0.10.100).
+
+### 2026-10-14: Repository row names v0.10.100
+
+gbrain-evals v0.10.100 adds BrainBench N14, large-page fidelity, and its hermetic baseline on gbrain master `c71fe74`.
+The category is report-only and held until gbrain ships a large-page API. No result row on this page changes. The
+repository row names v0.10.100 (was v0.10.99).
+
+### 2026-10-14: Repository row names v0.10.99
+
+gbrain-evals v0.10.99 adds the query-expansion latency result: on 300 LongMemEval-S questions, `query` without
+expansion on `tokenmax` keeps retrieval quality within the preregistered margins at about a ninth of the latency. No
+result row on this page changes. The repository row names v0.10.99 (was v0.10.98).
+
+### 2026-10-14: Repository row names v0.10.98
+
+gbrain-evals v0.10.98 records the F5 owner-phrase run on messy-company-v1. No result on this page changed. The
+repository row names v0.10.98 (was v0.10.97).
+
+### 2026-10-14: Repository row names v0.10.97
+
+gbrain-evals v0.10.97 adds the messy-company-v1 dataset. No result on this page changed. The repository row names
+v0.10.97 (was v0.10.96).
+
+### 2026-10-14: Cat 41 fifth-run report corrected; repository row names v0.10.96
+
+gbrain-evals v0.10.96. The [fifth Cat 41 setup report](docs/benchmarks/2026-10-14-cat41-setup-run5.md) had compared
+install-guide reading times measured two different ways. Measured one way, they are 14.4, 16.9 and 10.2 s against
+the fourth run's 14.5, 6.9 and 8.2 s. The report also gained a descriptive appendix. No verdict and no result row on
+this page changes. The repository row names v0.10.96 (was v0.10.95).
+
+### 2026-10-14: Cat 41 setup fifth run; repository row names v0.10.95
+
+gbrain-evals v0.10.95. On gbrain v0.60.219.0, with the fourth run's design unchanged, first push is met for the first
+time: the hook printed the preference into all 3 fresh Claude Code sessions, and every agent kept it in gbrain only.
+Consent is met (no provider request). Wired recall misses by 0.2 s (60.2 s against 60 s), and faster setup misses
+(2.8%) ([report](docs/benchmarks/2026-10-14-cat41-setup-run5.md)). No result row on this page changes. The repository
+row names v0.10.95 (was v0.10.93, since v0.10.94 did not update it).
+
+### 2026-10-13: Repository row names v0.10.93
+
+gbrain-evals v0.10.93 adds the reranker-settings addendum: on 300 LongMemEval-S questions, Voyage `rerank-3-lite` at
+the shipped 50 × 1,400 shape keeps retrieval quality within the preregistered margins and cuts rerank cost 60%, with
+about the same latency. No result row on this page changes. The repository row names v0.10.93 (was v0.10.92).
+
+### 2026-10-13: receipt source-tree hash fix; repository row names v0.10.92
+
+gbrain-evals v0.10.92 hashes the source tree for receipts from git's index, reading only changed files, so the
+first receipt in a test no longer hashes 1.7 GB. No result on this page changes. The repository row names v0.10.92 (was v0.10.91).
+
+### 2026-10-13: Cat 41 setup fourth run; repository row names v0.10.91
+
+gbrain-evals v0.10.91. With a world-visible preference as the first-push item, gbrain v0.60.208.0's hook printed it
+into all 3 fresh Claude Code sessions. First push still met its target in only 1 of 3 runs, because two agents also
+saved the preference to Claude Code's own memory. Wired recall (55.5 s) and consent (no provider request) are met,
+and faster setup (20.7%) is missed ([report](docs/benchmarks/2026-10-13-cat41-setup-run4.md)). No result row on this
+page changes. The repository row names v0.10.91 (was v0.10.89, since v0.10.90 did not update it).
+
+### 2026-10-13: Cat 41 setup on v0.60.208.0; repository row names v0.10.89
+
+gbrain-evals v0.10.89. On gbrain v0.60.208.0 setup meets wired recall (54.3 s against 60 s) and consent (no provider
+request in any run). It misses first push (0/3: every agent saved the locker code as a private fact, which push never
+carries). The faster-setup claim misses as scored and holds on reading (28.1%)
+([report](docs/benchmarks/2026-10-13-cat41-setup-v208.md)). No result row on this page changes. The repository row
+names v0.10.89 (was v0.10.88).
+
+### 2026-10-13: W1 guidance smoke; repository row names v0.10.88
+
+gbrain-evals v0.10.88 adds the W1 guidance smoke (A12g): with the gbrain plugin installed natively, Opus 5.5 passed 2 of
+5 sessions and Fable 5.1 5 of 5, so the `recall` `question` guidance stays parked
+([report](docs/benchmarks/2026-10-13-w1-guidance-smoke.md)). No result row on this page changes. The repository row
+names v0.10.88 (was v0.10.86; v0.10.87 did not update it).
 
 ### 2026-10-13: Cat 41 setup re-measure; repository row names v0.10.86
 

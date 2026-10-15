@@ -53,7 +53,7 @@ function cell(id: string) {
 const A = cell('setup_to_wired_recall');
 const B = cell('manual_import_to_recall');
 const C = cell('setup_import_to_recall');
-const D = cell('fresh_install_to_first_push');
+const D = cell(scores.some(s => s.scenario === 'fresh_install_to_first_push_pref') ? 'fresh_install_to_first_push_pref' : 'fresh_install_to_first_push');
 const E = cell('setup_consent_negative');
 const F = scores.some(s => s.scenario === 'fresh_install_to_wired_recall') ? cell('fresh_install_to_wired_recall') : null;
 

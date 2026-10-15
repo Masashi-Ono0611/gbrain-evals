@@ -2,6 +2,288 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.104] - 2026-10-15
+
+### N14 large-page fidelity after large pages Wave A
+
+The N14 rerun against gbrain master `44eb049` (v0.60.242.0) is hermetic and cost $0. Each 2 MB document and the 20 MB chat is
+stored as one page and found 40 of 40 in every decile (0 of 40 at the baseline). Windowed reads around a hit are
+correct 40 of 40, the largest 20,871 bytes. Export round trips are exact, and a 1 KB append re-embeds one chunk (1.87
+to 2.87 times the appended text, under the preregistered 3x). An older brain's skipped page comes back with
+`reindex --oversized`. Of the preregistered rules, Wave A passes all measured here except the egress contract: a trusted
+local default `get_page` is still the full page by design, while the agent-facing default read is 23.6 to 35.6 KB.
+Pages over 24 MiB are refused, now with `request_too_large` (bug N14-4 fixed), and appends still rewrite the whole
+page: both wait for Wave B. Preregistration Amendment 1 adds the upgrade-path case and the agent-facing read. The bug
+ledger closes N14-1 and N14-3, fixes N14-4 and narrows N14-2. See the
+[Wave A report](docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a.md).
+
+## [0.10.103] - 2026-10-14
+
+### D6 proactive brief, development phase: no improvement signal
+
+Cat 40 family P gains the proactive-brief arms. The T0 runner takes `--arms brief-off,brief-on`. Brief-on sets
+`context.proactive_brief` after every restore. The paid-arm guard halts the run on any brief in a brief-off cell, and
+paid brief cells need `--preregistration`. `eval/runner/t0/brief.ts` reads the brief block, classifies each pushed item
+against the gold and summarizes the preregistered primary and diagnostics. There are six new development seeds,
+20261201 to 20261206, and a registry row `proactive-brief` (D6).
+
+The [preregistration](docs/benchmarks/2026-10-14-proactive-brief-dev-preregistration.md) was frozen and pushed before
+any spend. The run used gbrain v0.60.240.0 with Opus 5.5, Sonnet 5.5 and gpt-6.1-sol, 144 cells, and reports
+[no improvement signal](docs/benchmarks/2026-10-14-proactive-brief-dev.md):
+
+- Both arms finished 70/72 paired tasks: a difference of 0 points, 95% interval −5.5 to +5.5. Two of the four
+  discordant pairs were provider errors.
+- The guard check fails: the brief missed in 14 of 72 brief-on cells. Each miss was a Sonnet session that updated
+  pages without calling `remember`, which left the brief no fact to push.
+- The brief pushed one item per session, 397 characters at most, with 0 false pushes and no rise in confident-wrong
+  answers.
+
+This is development evidence only and does not decide the default. Spend was $27.85 of a new $45 ledger.
+
+## [0.10.102] - 2026-10-14
+
+### D5 brief parameters: the re-smoke passes
+
+After gbrain #6708 fixed `list_write_conflicts`, the D5 brief Cat 40 smoke ran again under a dated
+[Amendment 1](docs/benchmarks/2026-10-14-d5-brief-smoke-amendment-1.md). It compared master `3961bf16` (v0.60.232.0)
+with gbrain #6703's head `f127b1b5`, using the same rules, tasks, models and arm.
+
+It passes every preregistered check:
+
+- Success was 29/30 on master and 28/30 on the head, within R1. Sol lost B01 and F01 and gained F02, and none of those
+  cells used a brief parameter.
+- Tool calls were at or below master for every model.
+- No cell passed `counterparty` or `intent`.
+- There were 0 output leaks and 0 unsafe writes.
+- N6 found 0 findings of any kind on either build.
+
+Spend was $6.78 of a new $10 ledger. See the [re-smoke verdict](docs/benchmarks/2026-10-14-d5-brief-smoke/resmoke-1/VERDICT.md).
+The first run's verdict stands for its builds.
+
+### The Cat 40 runner scrubs what it writes
+
+Every file the Cat 40 runner writes under `--out` now goes through `scrubMachinePaths`. That covers
+`experiment.json`, the receipt, results, attempts, transcripts, judge requests, served instructions and tools, and
+`run.log`. The gbrain checkout is recorded as `gbrain@<sha>`, the slot root as `<slots>`, and other paths
+repo-relative. A resume still binds to an `experiment.json` written before this change. The re-smoke record is the
+first written this way, with no hand edits.
+
+## [0.10.101] - 2026-10-14
+
+### D5 brief parameters: Cat 40 smoke on gbrain #6703
+
+gbrain #6703 adds `counterparty` and `intent` to `context_pack`. A preregistered Cat 40 smoke compared master
+`14ea3e2e` with the PR head `e6575894` on Opus 5.5, Sonnet 5.5 and gpt-6.1-sol (10 tasks per model per build, callable
+`full`, advertised `starter`). Success was 29/30 on master and 30/30 on the head. Tool calls stayed within the frozen
+limit for every model, and no cell passed `counterparty` or `intent`.
+
+An N6 fuzz with a new `counterparty` variant found 0 leaks in `context_pack`'s 540 probes, including the pulled brief.
+The frozen verdict is "regresses, on L1 only". Both builds show the same 4 existence findings in
+`list_write_conflicts` (#6643, already on master), where the op echoes a foreign `source_id` and returns no rows.
+
+Spend was $6.78 of a new $10 ledger. See the [summary](docs/benchmarks/2026-10-14-d5-brief-smoke.md) and the
+[verdict](docs/benchmarks/2026-10-14-d5-brief-smoke/VERDICT.md).
+
+### Machine paths in committed receipts
+
+The D5 record's receipts and experiment files now name builds as `gbrain@<sha>`, slot roots as `<slots>/…` and the
+ledger as `.budget/d5-brief-smoke.sqlite`. The receipt machine-path test also now rejects Capy checkout and scratch
+paths (`/workspace/…`, `~/.capy/…`, `$HOME/.capy/…`), which home scrubbing leaves in a form the old pattern accepted.
+The 404 earlier receipts that contain them are frozen by hash in
+`test/eval/fixtures/historical-capy-local-paths.json`.
+
+## [0.10.100] - 2026-10-14
+
+### N14 large-page fidelity: preregistered category and master baseline
+
+New category N14 `large-page-fidelity` asks whether an agent can find and read what's deep inside one very large
+document, and whether keeping it up to date stays cheap. The preregistration landed before any counted run. On gbrain
+master `c71fe74` (v0.60.225.0), hermetic and at $0, each 2 MB document is stored but unsearchable (keyword recall@10
+0 of 120 needles, all present in the stored body), `get_page` returns 1.5 to 2.0 MB, a 20 MB write is refused and a
+200 MB write gets a retryable `queue_capacity` it can never pass (bug N14-4). The managed-parts arm (hub plus day
+pages) finds 40 of 40 needles in every decile at 2, 20 and 200 MB, but a 1 KB append re-embeds 2.1 to 11.8 times the
+appended text. The native arm reports "capability absent" until gbrain ships large-page reads. See the
+[baseline report](docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md). Receipts now record a `--gbrain`
+overlay as `gbrain@<ref>`, never a checkout path.
+
+## [0.10.99] - 2026-10-14
+
+### Query expansion latency: no expansion on `tokenmax` keeps quality at a ninth of the latency
+
+GBRA-94 compared gbrain's `query` expansion setups on 300 LongMemEval-S questions, with embeddings and the reranker
+frozen at the proxy so that only expansion varied ([preregistration and results](docs/benchmarks/2026-10-14-expansion-latency-preregistration.md)).
+
+- **No expansion passes the preregistered rule and is fastest:** strict recall@10 299 → 298 (the reference's own re-run
+  also scored 298), strict@5 287 → 285, nDCG@10 +0.0008, and end-to-end query time 2,022 → 227 ms p50 (2,292 → 384 ms
+  p95). No expanding arm answered a question that the no-expansion arm missed.
+- **Faster expansion models don't close the gap.** `claude-haiku-5-5` is 7% faster at p50 and 6x cheaper, but slower at
+  p95. `gpt-6-luna` and `gemini-3.8-flash` are slower than Haiku 4.5 at their default reasoning, and Gemini fails nDCG
+  on its 90-question screen.
+- **Skipping expansion on pasted passages (≥30 words)** changes no score; a short-keyword rule fires on 1 query on this
+  set.
+- Spend about $4.71 of a $5 cap. This recommends a setting; it does not change gbrain's default.
+- **Test flake fix:** the Cat 40 Hard 50k ledger test (`test/eval/cat40-hard.test.ts`) generates two 50k ledgers per
+  seed, CPU-bound, and timed out at bun's 5 s default on a busy CI runner (5.6 s). It now has a 60 s test timeout, like
+  the file's other heavy test; no assertion changed. Measured on a 4 vCPU cloud machine, Bun 1.4.3, one run each: 3.9 s
+  idle; pinned to one CPU shared with two busy loops, it timed out at 5 s before the change and passed in 10.4 s after.
+
+## [0.10.98] - 2026-10-14
+
+### F5 owner-phrase precision on messy-company-v1: FAIL
+
+gbrain's F5 owner-phrase linking at gbrain `4e10136b` derived 6 links across both splits of messy-company-v1. All 6
+were correct, but 6 is below the 22-link minimum, and the Wilson 95% lower bound of 0.610 is below the 0.85 bar, so
+the ship condition fails. Recall was 2 of 66 should-link phrases on dev and 4 of 58 on held-out, with 0 links on
+should-not-link rows. The [run record](docs/benchmarks/2026-10-14-f5-messy-company/README.md) has the decision rule
+(sha256 `6ca46ba4…0b11`), the scores and the scripts as run. The dataset's [USES.md](eval/data/messy-company-v1/USES.md)
+now lists the run and records that the owner-phrases held-out split has been used once.
+
+## [0.10.97] - 2026-10-14
+
+### messy-company-v1: a frozen messy-company dataset with gold for 9 lanes
+
+New reusable dataset [`eval/data/messy-company-v1`](eval/data/messy-company-v1/README.md): a fictional company
+knowledge base of 226 pages (118 dev, 108 held-out, split by account cluster) with gold labels for owner phrases,
+entity mentions, aliases, ownership windows, governing records, document status, timelines, changes and agent tasks.
+`gpt-6.1-sol` and `gemini-4-argon` wrote the pages, each checked by the other model. 91 of 1,740 labeled items
+disagreed (5.2%), and every disagreement was adjudicated by reading the page. Gold comes from the world plan's oracle,
+never from a model. `validate-data` now fails if any data file drifts from the frozen manifest (dataset hash
+`4a6bd099…4568`). It adds a loader, nine scorers and tests. Model spend was $4.45.
+
+## [0.10.96] - 2026-10-14
+
+### Cat 41 fifth-run report: reading times corrected
+
+The [fifth setup report](docs/benchmarks/2026-10-14-cat41-setup-run5.md) said C r1 and C r2 spent 26.2 and 15.0 s
+reading the install guide, against 4.5 and 4.6 s in the fourth run. Those numbers came from tables built two
+different ways. Measured the same way, the guide reads took 14.4, 16.9 and 10.2 s against 14.5, 6.9 and 8.2 s. Only C
+r2 read for longer, after its own `ls` exited 2 and cut its first fetch short. The report has a dated correction note
+and a rebuilt "Where the time went" table. A new descriptive appendix gives the C runs' path through gbrain's docs,
+and a phase split of the wired-recall runs against the fourth run. No verdict, score or results artifact changed.
+
+## [0.10.95] - 2026-10-14
+
+### Cat 41 setup, fifth run: first push met on v0.60.219.0
+
+The fourth run's preregistered design, unchanged except the gbrain version (scorer `cat41-score-v8`,
+[preregistration](docs/benchmarks/2026-10-14-cat41-setup-run5-preregistration.md) at `b2e32ccb`, approved by GBRA-40
+before any paid cell). On v0.60.219.0, with `claude-opus-5-5`, 3 runs per cell and the frozen targets:
+- First push: met, 3/3. The SessionStart hook printed the preference into every fresh session, and no agent also
+  saved it to Claude Code's own memory.
+- Wired recall: missed, 60.2 s against 60 s.
+- Consent: met, 0 provider requests.
+- Faster setup: missed, 2.8% (the same on reading).
+
+No `setup` run ran `gbrain apply-migrations` by hand, and a positional `gbrain recall "<question>"` returned the saved
+fact in all 3 D runs. The fourth run's verdicts stand. $6.56 of a $10 ledger cap
+([result](docs/benchmarks/2026-10-14-cat41-setup-run5.md)).
+
+## [0.10.94] - 2026-10-13
+
+### Vector side alongside the keyword arms: about 150 ms faster per search on a 20,000-page Postgres brain
+
+gbrain v0.60.214.0 (gbrain#6641) starts the query embed and expansion with the keyword arms instead of after them
+([report](docs/benchmarks/2026-10-13-vector-side-early.md)). Median warm `search` went from 578 / 572 ms to
+424 / 402 ms and `query` from 578 / 548 ms to 448 / 428 ms on a 20,000-page Postgres brain with Voyage. On a 400-page
+PGLite brain the saving is only the 13 to 15 ms the keyword arms take. Results are unchanged: the bench digests match
+master, and with stub providers on the 20k brain all 80 result lists match. About $0.40 in provider calls.
+
+## [0.10.93] - 2026-10-13
+
+### Reranker settings addendum: rerank-3-lite at the shipped shape cuts rerank cost 60% with no loss
+
+GBRA-86 re-ran the frozen LongMemEval-S candidate lists (300 questions) under Voyage `rerank-3` and `rerank-3-lite`,
+with a fresh reference run and per-query reranker latency ([addendum](docs/benchmarks/2026-10-13-rerank3-addendum-preregistration.md)).
+
+- **`rerank-3-lite`, 50 candidates × 1,400 tokens, passes the preregistered rule:** strict recall@10 299 → 298,
+  strict@5 288 → 289, nDCG@10 −0.0012, and rerank cost $1.51 → $0.60 per 1,000 queries (−60%). Reranker latency is
+  about the same (p50 232 → 251 ms, p95 596 → 604 ms).
+- **`rerank-3` at the same shape** passes at today's price and has the best strict@5 (291).
+- **Cutting candidates to 25 or 15** takes 8–17% off p50 latency but loses 3–5 questions on strict@10 with either
+  model, so it fails, as in 0.10.84.
+- **The reference reproduced:** fresh `rerank-2.5` calls jittered scores by up to 0.003 and flipped no question.
+- Spend about $3.74 of a $5 cap. This recommends a setting; it does not change gbrain's default.
+
+## [0.10.92] - 2026-10-13
+
+### Receipt source-tree hash reads only changed files
+
+The intermittent 2-failure run of the receipts tests (`round-trips atomically` timed out, then `writeReceipt stores
+the executed source tree` saw `dirty: null`) came from `sourceTreeIdentity`. The first receipt in each process
+hashed every byte of the evals tree, about 1.7 GB of committed artifacts: 1.4 s warm, 2.3 s cold and over 5 s under
+load on a 4-core machine, inside a test with Bun's 5 s timeout. A timeout during `git status` also left `dirty: null`
+cached for the rest of the process.
+
+- The hash now takes each file's blob id from git's index when `git status` reports the file unchanged, and reads
+  and hashes (as a git blob) only changed and untracked files: 0.1 to 0.4 s warm, 0.6 to 0.7 s cold under load.
+  For the evals tree and for clones with modified, untracked, deleted, staged, renamed, touched and copied files,
+  the result matched a full read of every file.
+- The field is versioned. New receipts write `execution.source_tree.scheme: "git-index-blob-v1"` next to `sha256`,
+  which is sha256 over (name, git blob id). Receipts written before v0.10.92 have no `scheme`; readers
+  (`sourceTreeScheme`) treat them as `legacy-full-read`, sha256 over (name, size, bytes). The validator accepts
+  `git-index-blob-v1` or no scheme and rejects anything else. Hashes from the two schemes are not comparable, and
+  nothing in the repository compares them. A test pins both: a new receipt carries the scheme, and a legacy receipt
+  without one still validates and loads.
+- A failed or interrupted git call returns an identity with an error and is no longer cached. A new test makes
+  `git status` fail once and checks that the next call hashes the tree.
+
+No assertion or timeout was loosened. A forced probe (cold page cache plus six CPU hogs, the targeted receipts
+command, default timeout) failed all 6 trials before the fix and passed all 9 after.
+
+## [0.10.91] - 2026-10-13
+
+### Cat 41 setup, fourth run: push delivers a preference; first push 1/3
+
+A new preregistration, written after the v0.60.208.0 results and approved by Garry, made three changes (scorer
+`cat41-score-v8`): a world-visible preference ("I take my coffee black, with a pinch of cardamom") as the first-push
+item, any unambiguous form of the expected date, and an agent's save-and-recall smoke fact counted as its exempt
+install check. On v0.60.208.0, with `claude-opus-5-5`, 3 runs per cell and the frozen targets:
+- First push: missed. The SessionStart hook printed the preference into all 3 fresh sessions, but the target was met
+  in 1 of 3 runs, because two agents also saved the preference to Claude Code's own memory.
+- Wired recall: met, 55.5 s.
+- Consent: met, 0 provider requests.
+- Faster setup: missed, 20.7% (18.4% on reading).
+
+$7.58 of a $10 ledger cap ([result](docs/benchmarks/2026-10-13-cat41-setup-run4.md),
+[preregistration](docs/benchmarks/2026-10-13-cat41-setup-run4-preregistration.md)).
+
+## [0.10.90] - 2026-10-13
+
+### Low-hanging fruit plan: published with its outcome
+
+[The plan](docs/plans/2026-10-11-low-hanging-fruit/PLAN.md) and its autoplan review record (CEO, DX and Eng phases,
+each with a native Claude Opus 5.5 and an outside GPT-6 Astra reviewer) are published, approved by Garry on
+2026-10-12 and closed on 2026-10-13. Items 0, 1b and 2 to 5 shipped in gbrain v0.60.178.0, v0.60.188.0 and
+v0.60.205.0. The `balanced` new-install default did not ship because its Cat 40 gate was inconclusive. The measured
+verdicts are in the [wave report](docs/benchmarks/2026-10-12-lhf-wave.md).
+
+## [0.10.89] - 2026-10-13
+
+### Cat 41 setup on gbrain v0.60.208.0: wired recall and consent met, first push missed
+
+The third preregistered measurement of `gbrain setup claude-code` ran on the published v0.60.208.0 (`febbd4ebc`, #6612),
+with `claude-opus-5-5` on Claude Code, 3 runs per cell and the second run's frozen targets and scorer.
+- Wired recall: 54.3 s mean, 3/3 (met).
+- Consent: 0 provider requests in each of 3 runs, `GET /v1/models` included (met).
+- First push: 0/3 (missed). All three agents saved the locker code as a private fact, which push never carries.
+- Faster setup: missed as scored (C 1/3, after a correct day-first date and an install test fact failed the frozen
+  rules); 28.1% faster on reading.
+
+The runner's preflight cost estimate now counts only runs still to do (preregistration Amendment 1); no measurement
+changed. $7.13 of a $10 ledger cap ([result](docs/benchmarks/2026-10-13-cat41-setup-v208.md),
+[preregistration](docs/benchmarks/2026-10-13-cat41-setup-v208-preregistration.md)).
+
+## [0.10.88] - 2026-10-13
+
+### W1 guidance smoke (A12g): fails, guidance stays parked
+
+A preregistered one-shot smoke installed the gbrain plugin natively in Claude Code from gbrain `d5a86e4f8` (master
+`148b74d14` plus the `recall` `question` guidance) and ran A12's prompt and MCP setup in 5 fresh sessions per model.
+Opus 5.5 passed 2 of 5 and Fable 5.1 passed 5 of 5; the rule needs both at 4 of 5, so the guidance stays parked. No
+session invoked a skill, though `brain-ops` and `query` were listed in every one. All 30 answers were correct. $3.43, run
+once, none replaced ([result](docs/benchmarks/2026-10-13-w1-guidance-smoke.md),
+[preregistration](docs/benchmarks/2026-10-13-w1-guidance-smoke-preregistration.md)).
+
 ## [0.10.87] - 2026-10-13
 
 ### Low-hanging-fruit wave item 5: per-stage search timings change no results
