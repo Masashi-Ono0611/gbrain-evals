@@ -19,23 +19,23 @@
   "completion_rate": 1,
   "errors": [],
   "publishable": true,
-  "gbrain_version": "0.60.249.0",
+  "gbrain_version": "0.60.250.0",
   "gbrain_pin": "github:garrytan/gbrain#77cf8e1116e9af67c1983adcbb3223b96f0991a5",
   "execution": {
     "source_tree": {
-      "sha256": "04fa41c960cf3a1adb5467a7bb7f10d1ab232d28add568f4319f1684833c6ea8",
+      "sha256": "af791d992f0a93317fad77f3c2c273e9c41b6e122bb3b10c1ac4328ba7251a6a",
       "scheme": "git-index-blob-v1",
-      "files": 14151,
-      "git_head": "83bfaddb190e39f716997b233eaacae6678deffe",
+      "files": 14157,
+      "git_head": "6cb141d9565cd123757af5a3fa8ecc593c7501a6",
       "dirty": false
     },
     "product": {
       "package": "gbrain",
       "declared_pin": "github:garrytan/gbrain#77cf8e1116e9af67c1983adcbb3223b96f0991a5",
       "declared_sha": "77cf8e1116e9af67c1983adcbb3223b96f0991a5",
-      "version": "0.60.249.0",
-      "package_sha256": "84bc4d3d85378fc346e6123d59fb67430307fc6746c5dfa82119a42c3d678cb4",
-      "loaded_git_head": "e8e7db441adc0ab664f7851e4c5bc1afe68c185f"
+      "version": "0.60.250.0",
+      "package_sha256": "ff629168405600cc37fc1f6a10febb23a2f53699b89216c53e127b3268bfc3f2",
+      "loaded_git_head": "3c16e9ba42f8852bfde6c6fb3a86ed07afe811ca"
     }
   },
   "resolved_config": {
@@ -66,18 +66,18 @@
       "operations: put_page, find_contradictions"
     ],
     "gbrain_overlay": {
-      "requested": "gbrain@e8e7db441",
-      "ref": "e8e7db441",
-      "commit": "e8e7db441adc0ab664f7851e4c5bc1afe68c185f",
-      "tree": "429d5b6d42d4dcf46590e4d23b8fd543491b97d2",
-      "version": "0.60.249.0",
+      "requested": "gbrain@3c16e9ba42f8852bfde6c6fb3a86ed07afe811ca",
+      "ref": "3c16e9ba42f8852bfde6c6fb3a86ed07afe811ca",
+      "commit": "3c16e9ba42f8852bfde6c6fb3a86ed07afe811ca",
+      "tree": "ec2926b9c70246e753ef1b8a46c61378cd129100",
+      "version": "0.60.250.0",
       "checkout_dirty": false,
       "verified": {
-        "copy_tree": "429d5b6d42d4dcf46590e4d23b8fd543491b97d2",
+        "copy_tree": "ec2926b9c70246e753ef1b8a46c61378cd129100",
         "tree_matches": true,
         "symlinks_under_src": 0,
         "dir_is_realpath": true,
-        "cli_version": "0.60.249.0",
+        "cli_version": "0.60.250.0",
         "cli_version_matches": true
       },
       "copied_not_symlinked": true
@@ -88,8 +88,8 @@
   "hashes": {
     "ledger_sha256": "19459c108444a19de466b0b416c9a63521c1dfb57c30a80479bc925d6288de31"
   },
-  "started_at": "2026-10-15T19:50:01.857Z",
-  "finished_at": "2026-10-15T19:50:58.549Z",
+  "started_at": "2026-10-15T20:54:59.875Z",
+  "finished_at": "2026-10-15T20:55:40.992Z",
   "data": {
     "safety": {
       "applied_mutations": 0,
@@ -535,10 +535,10 @@
       }
     ],
     "timings_ms": {
-      "seed": 31611,
-      "oracle_probe": 8541,
-      "throwing_probe": 998,
-      "total": 47441
+      "seed": 25189,
+      "oracle_probe": 7872,
+      "throwing_probe": 886,
+      "total": 39169
     },
     "gaps": [
       {
