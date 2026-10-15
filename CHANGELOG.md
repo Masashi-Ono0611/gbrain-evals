@@ -2,6 +2,30 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.107] - 2026-10-15
+
+### D7 Cat 41 brief scenarios: no time-saved signal; the brief stays default-off
+
+Cat 41 gains the D7 brief scenarios: reply, meeting prep, task start and a namesake negative, on two new
+program-primary worlds (seeds 20261222 and 20261226), with facts aged 72 hours or crowded out of hot memory. gbrain
+wires each harness itself with `gbrain setup`, and the brief switch is off or on, plus a hooks-off pull arm. The driver
+timestamps every transcript line, keeps each hook's output, and has a $0 smoke mode that sends the harness's model
+calls to its fake provider. `eval/runner/cat41/brief-d7.ts` runs the smoke and the analysis (`summarizeD7`).
+
+The [preregistration](docs/benchmarks/2026-10-15-cat41-brief-preregistration.md) was frozen on gbrain v0.60.247.0
+before any spend. The run had 48 native sessions: Claude Code with Sonnet 5.5 and Opus 5.5, Codex with gpt-6.1-sol,
+and a Sonnet pull arm. It reports [no time-saved signal](docs/benchmarks/2026-10-15-cat41-brief.md):
+
+- Time to the first correct output fell 6% with the brief on (ratio 0.938, 95% interval 0.853 to 1.032), short of
+  the required 20%. Turns and tool calls to it fell about 10%, while per-request provider latency was unchanged.
+- Success was 15 of 15 on against 14 of 15 off. Non-inferiority fails on width (lower bound −7.6 points).
+- The brief fired in every positive brief-on cell and was always complete. It made 0 false pushes and was silent in
+  every negative. Hot memory carried no needed value.
+- In 19 of 20 brief-off sessions, the agent pulled the same brief itself with `context_pack(counterparty)`, so the
+  push saved one round trip.
+
+Under the preregistered rule, wave 5's brief work closes at default-off. Spend was $4.46 of a new $30 ledger.
+
 ## [0.10.106] - 2026-10-15
 
 ### D6 proactive brief, development v2: no time-saved signal
