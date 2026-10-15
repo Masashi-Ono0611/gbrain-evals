@@ -1,11 +1,10 @@
 # Preregistration: the proactive brief on Cat 40 family P, development phase v2 (wave 5 D6 redesign)
 
-**Status: draft. No cell may run.** The draft was committed on October 15, 2026 (Pacific). It is frozen by the commit
-that fills in [the release under test](#the-release-under-test-filled-in-when-it-ships) in this file and in
-`BRIEF_V2_RELEASE` and `BRIEF_V2_EXTRA_CONFIG` (`eval/runner/t0/brief.ts`). That commit lands after gbrain ships the
-brief's page-edit source, which another lane is building now, and before any paid cell. Until the pin is filled in,
-the runner refuses paid v2 cells. After the freezing commit, every change is an amendment, appended at the bottom with
-its reason and committed before any cell it governs.
+**Status: frozen.** The draft was committed on October 15, 2026 (Pacific). It was frozen on October 15, 2026 (Pacific) by the commit that
+pins [the release under test](#the-release-under-test) here and in `BRIEF_V2_RELEASE` (`eval/runner/t0/brief.ts`):
+gbrain v0.60.247.0, the first published release with the brief's page-edit source. No paid cell ran before that
+commit. After it, every change is an amendment, appended at the bottom with its reason and committed before any cell
+it governs.
 
 This is a redesign written after seeing the results of the
 [first development run](2026-10-14-proactive-brief-dev.md) (preregistration `6aa12098`). Garry approved it on October
@@ -55,17 +54,19 @@ These findings come from hermetic runs on October 15 ($0, scripted models, keyle
    fact whatever the brief switch says, and a reader that edited the page in session 1 left the facts there too. The
    brief can only change the outcome for a reader that does not open the page. It can also save the tool calls and
    tokens needed to find the facts.
-5. **What the brief carries.** In this release, per counterparty, the brief carries the top open loop, then the newest
+5. **What the brief carries.** In v0.60.240.0, per counterparty, the brief carries the top open loop, then the newest
    fact, then more loops, with at most 3 items. Without loops it carries one fact, while each task needs three facts
-   (the commitment, the moved date and the correction).
+   (the commitment, the moved date and the correction). v0.60.247.0 adds an edit item after the newest fact. That item
+   is either the page's newest revision (`Ev<version id>`: the narrative lines it added, without the facts and takes
+   sections) or its newest timeline entry (`Et<id>`), whichever was recorded last, within 30 days. It is dropped when
+   it repeats a fact or loop already in the brief.
 6. **Loops are out of scope.** Commitments that the mail extractor finds are written as private facts by design
    (`src/core/google/loops-extract.ts`, `visibility: 'private'`). The push brief is world-only: it admits a loop only
    through a world-visible fact, and detector loops have no fact at all. So a loop from a mail or calendar fixture
    cannot reach a pushed brief in this release, and this design has no loop condition. A loop condition would need
    its own preregistration on a release where such a loop can be pushed.
 7. **Save path.** In the first run, all 14 brief-on misses were Sonnet 5.5 sessions that saved by editing pages and
-   never called `remember`, which left the brief no fact to push. The release this draft waits for adds a page-edit
-   source to the brief, off by default. The brief-on arm turns it on.
+   never called `remember`, which left the brief no fact to push. v0.60.247.0 adds the page-edit source to the brief.
 
 **Prediction.** Finding 4 still makes a small or null difference in task success likely. Readers that open the
 contact's page, or search, find the facts in both arms. In the first run, 143 of 144 session-2 cells called `get_page`,
@@ -96,21 +97,25 @@ requires. A time-saved signal therefore needs a much larger effect once hot memo
     facts contain no number or date and match none of the task's gold values (`crowdFacts`, tested). Then session 2
     starts in a new server process.
 
-## The release under test (filled in when it ships)
+## The release under test
 
-- gbrain version and commit: **to be pinned.** This is the first release containing the brief's page-edit source.
-  It is recorded here and in `BRIEF_V2_RELEASE`, and built with tree and CLI-version verification, surface `starter`.
-- Page-edit source switch: **to be pinned.** It goes in `BRIEF_V2_EXTRA_CONFIG` and only brief-on sets it.
-- When the pin lands, the hermetic slice reruns on the pinned release (one persona, both arms, $0). It must show the
-  hot-memory control holding, the brief firing in brief-on cells and staying silent in brief-off cells. Its record
-  goes into the freezing commit's message or a file under the results directory added after the freezing commit.
+- gbrain v0.60.247.0, commit `47f052af0c7f92f259daa9b1b51bb90370dcf520` (gbrain #6751, the brief's page-edit source). It is built through
+  `eval/runner/lifecycle/builds.ts` with tree and CLI-version verification, surface `starter`. Paid v2 cells refuse to
+  run on any other commit.
+- The page-edit source has no switch of its own. It is part of the brief behind `context.proactive_brief`, which is
+  off by default, so `BRIEF_V2_EXTRA_CONFIG` stays empty and brief-on sets only `context.proactive_brief`.
+- Before any paid cell, a free smoke (scripted, keyless) runs on this release, and the hermetic slice (one persona,
+  both arms) reruns on it. Their record goes into the results directory, added after the freezing commit. The smoke
+  must show four things for every task of one persona, under both save paths: hot memory carries no needed fact in
+  either condition, the brief fires in brief-on cells, it stays silent in brief-off cells, and it emits an edit item
+  when session 1 saved by editing the page.
 
 ## Arms (frozen)
 
 | Arm | What differs |
 |---|---|
-| `brief-off` | Nothing is set: the release defaults, with the brief off and the page-edit source off. |
-| `brief-on` | After every snapshot restore and before session 1, `context.proactive_brief` is set to `true` and the page-edit source switch is turned on. Both stay on through session 2. |
+| `brief-off` | Nothing is set: the release default, with the brief (and its page-edit source) off. |
+| `brief-on` | After every snapshot restore and before session 1, `context.proactive_brief` is set to `true`. In this release that also turns on the page-edit source. It stays on through session 2. |
 
 Everything else is the T0 carrier, unchanged from the first run: the snapshot, the native-event delivery contract
 `t0-delivery-v1`, the stdio MCP tools, 20 turns per session and the system prompt. Every task runs once in each arm

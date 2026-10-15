@@ -44,9 +44,9 @@ export const briefConfig = (arm: string, extra: ReadonlyArray<[string, string]> 
  */
 export type BriefCondition = 'next-day' | 'aged' | 'crowded';
 export const CROWD_FACTS = 40;
-/** The v2 release: null until the page-edit source ships and the preregistration pins it; paid v2 cells refuse while null. */
-export const BRIEF_V2_RELEASE: { version: string; commit: string } | null = null;
-/** Config pairs brief-on adds in v2 besides the brief switch (the page-edit source switch, filled in with the pin). */
+/** The v2 release (preregistration, "The release under test"): paid v2 cells run only on this commit. */
+export const BRIEF_V2_RELEASE: { version: string; commit: string } | null = { version: '0.60.247.0', commit: '47f052af0c7f92f259daa9b1b51bb90370dcf520' };
+/** Config pairs brief-on adds in v2 besides the brief switch: none, because the pinned release's page-edit source sits behind the same switch. */
 export const BRIEF_V2_EXTRA_CONFIG: ReadonlyArray<[string, string]> = [];
 /**
  * The v2 aged condition dates session 1's facts at noon Pacific on the world's session-1 day, or 72 hours before the
@@ -114,8 +114,8 @@ export function briefBlock(h: Pick<HookResult, 'event' | 'text'>): BriefBlock | 
   let end = 1;
   while (end < lines.length && lines[end].trim() !== '') end++;
   const text = lines.slice(0, end).join('\n');
-  const items = lines.slice(1, end).filter(l => /^- \[[A-Z]\d+\]/.test(l)).map(l => ({
-    id: l.match(/^- \[([A-Z]\d+)\]/)![1],
+  const items = lines.slice(1, end).filter(l => /^- \[[A-Z][a-z]?\d+\]/.test(l)).map(l => ({
+    id: l.match(/^- \[([A-Z][a-z]?\d+)\]/)![1],
     slug: l.match(/→ `([^`]+)`\s*$/)?.[1] ?? null,
     text: l,
   }));

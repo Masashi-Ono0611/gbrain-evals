@@ -51,6 +51,15 @@ describe('D6 brief block and items', () => {
     expect(briefBlock(hook('user-prompt', '## Hot memory (recent facts)\n- x'))).toBeNull();
   });
 
+  test('reads page-edit and timeline items (Ev and Et ids) beside fact items', () => {
+    const edit = `- [Ev12] 2026-10-15 · edit: [written by an agent · mcp:put_page] “- Open commitment: I owe them ${g.commitment.label}.” → \`${task.contact}\``;
+    const tl = `- [Et7] 2026-10-14 · timeline: [your notes · managed_sync_import] “Sent the invoice copy.” → \`${task.contact}\``;
+    const b = briefBlock(hook('user-prompt', brief(item('x'), edit, tl)))!;
+    expect(b.items.map(i => i.id)).toEqual(['F3', 'Ev12', 'Et7']);
+    expect(classifyItem(task, b.items[1]).carries).toEqual(['commitment']);
+    expect(classifyItem(task, b.items[2]).false_push).toBe(true);
+  });
+
   test('an item carrying a current value is relevant; stale, namesake, other-counterparty and empty items are false pushes', () => {
     const relevant = classifyItem(task, { id: 'F1', slug: task.contact, text: item(`I promised them ${g.commitment.label}.`) });
     expect(relevant.carries).toEqual(['commitment']);
