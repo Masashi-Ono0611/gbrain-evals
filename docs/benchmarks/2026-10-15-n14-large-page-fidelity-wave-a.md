@@ -24,7 +24,7 @@ The over-cap responses come from the trusted local default read, which Wave A le
 What still needs Wave B:
 
 - **Documents over 24 MiB.** The 200 MB chat is refused, now correctly with `request_too_large`; gbrain bug N14-4 is fixed.
-- **Appends.** There is still no `append_page`. The append is a whole-page `put_page` rewrite: the embedding cost passes the 3x rule, but only just at 20 MB (2.87), and that rewrite takes 13.9 s and sends all 20 MB.
+- **Appends.** There is still no `append_page`. The append is a whole-page `put_page` rewrite: the embedding cost passes the 3x rule, but only just at 20 MB (2.87), and that rewrite takes 12.7 s and sends all 20 MB.
 
 The category stays report-only and held. The hold lifts when gbrain-evals re-pins to a gbrain with the capability; this run used `--gbrain`.
 
@@ -48,7 +48,7 @@ The case is the same as the baseline's: a generated 365-day group chat between f
 
 The gbrain under test is master `44eb0493ff2776f04d6616b1a526657702f7544a` (v0.60.242.0), loaded through `--gbrain`. It contains #6707 (the windowed read contract), #6715 (crash fixes) and #6733 (the 24 MiB ceiling, large-page embedding and `reindex --oversized`).
 
-The runner is gbrain-evals `763566f`, which adds the upgrade-path case and the agent-facing read. [Amendment 1](2026-10-14-n14-large-page-fidelity-preregistration.md#amendment-1-2026-10-15-wave-a-rerun) to the preregistration was committed and pushed before any run (`ee9eef4`, SHA corrected in `ea0825e`). It changes no rule, threshold, model or arm.
+The runner is gbrain-evals `763566f`, which adds the upgrade-path case and the agent-facing read; the 20 MB and 200 MB tiers ran at `cb54753`, where the N14 runner and every file it imports are unchanged (the other code differences are main's D6 runner, merged in). [Amendment 1](2026-10-14-n14-large-page-fidelity-preregistration.md#amendment-1-2026-10-15-wave-a-rerun) to the preregistration was committed and pushed before any run (`ee9eef4`, SHA corrected in `ea0825e`). It changes no rule, threshold, model or arm.
 
 **Setup and cost.** The run used Bun 1.4.2 and in-memory PGLite, one brain per (document, arm) child process, inside a `MemoryMax=6G` scope on a 4-core machine. The 20 MB and 200 MB tiers ran one child at a time. The run was hermetic and cost $0: provider keys were stripped, search ran on the keyword path, and the append embedder was an in-process counter.
 
@@ -91,12 +91,12 @@ A hit read counts as correct when it holds the needle and its response is at mos
 | 2 MB | chat | native | none | 1 / 572 / 261 | **2.19** | 1.8 s |
 | 2 MB | log | native | none | 1 / 690 / 250 | **2.76** | 1.5 s |
 | 2 MB | novel | native | none | 1 / 501 / 268 | **1.87** | 1.0 s |
-| 20 MB | chat | native | none | 1 / 741 / 258 | **2.87** | 13.9 s |
+| 20 MB | chat | native | none | 1 / 741 / 258 | **2.87** | 12.7 s |
 | 2 MB | chat | managed-parts | 2.14 | 2 / 558 / 261 | 2.14 | 0.3 s |
 | 2 MB | log | managed-parts | 5.56 | 4 / 1,390 / 250 | 5.56 | 0.4 s |
-| 20 MB | chat | managed-parts | 11.78 | 4 / 3,038 / 258 | 11.78 | 0.9 s |
+| 20 MB | chat | managed-parts | 11.78 | 4 / 3,038 / 258 | 11.78 | 0.7 s |
 
-Wave A keeps a chunk's vector with its text. So rewriting the whole page re-embeds only the chunk that changed, the last one, which now holds the appended day. The ratio is that chunk's size over the appended size, so it passes 3x with little room. The rewrite itself still moves the whole page: 13.9 s at 20 MB, against 0.9 s for the managed-parts append.
+Wave A keeps a chunk's vector with its text. So rewriting the whole page re-embeds only the chunk that changed, the last one, which now holds the appended day. The ratio is that chunk's size over the appended size, so it passes 3x with little room. The rewrite itself still moves the whole page: 12.7 s at 20 MB, against 0.7 s for the managed-parts append.
 
 **Upgrade path (Amendment 1, exploratory).** Each 2 MB document was written single-page by the baseline gbrain `c71fe74` into a file-backed PGLite brain. Then gbrain `44eb049` opened the brain, migrated it and ran `runOversizedBackfill`, the code behind `gbrain reindex --oversized`.
 
@@ -114,10 +114,10 @@ The upgraded pages match the native arm on a fresh brain on chunk count, recall 
 |---|---|---:|---:|---:|---:|
 | 2 MB chat | native | 2.4 s | 9.4 s, 908 inputs | 20.7 s | 1,516 MB |
 | 2 MB chat | managed-parts | 16.0 s | 10.0 s, 756 inputs | 32.9 s | 1,385 MB |
-| 20 MB chat | native | 16.2 s | 139.7 s, 8,857 inputs | 197.2 s | 4,961 MB |
-| 20 MB chat | single-page | 19.0 s | 148.7 s, 8,857 inputs | 219.4 s | 4,940 MB |
-| 20 MB chat | managed-parts | 61.1 s | 150.1 s, 8,697 inputs | 221.9 s | 2,218 MB |
-| 200 MB chat | native (refused) | 0.3 s | – | 4.6 s | 1,973 MB |
+| 20 MB chat | native | 13.7 s | 123.4 s, 8,857 inputs | 174.6 s | 4,990 MB |
+| 20 MB chat | single-page | 13.8 s | 121.4 s, 8,857 inputs | 175.3 s | 4,938 MB |
+| 20 MB chat | managed-parts | 42.2 s | 121.8 s, 8,697 inputs | 172.6 s | 2,216 MB |
+| 200 MB chat | native (refused) | 0.3 s | – | 4.5 s | 1,949 MB |
 
 A 20 MB single page peaks near 5 GB in one process, about 2.2 times managed parts. That is within the 6 GiB watchdog, so it was not counted as a crash.
 
@@ -149,7 +149,7 @@ bun eval/runner/n14-large-page-fidelity.ts --tiers 20mb --concurrency 1 --gbrain
 bun eval/runner/n14-large-page-fidelity.ts --tiers 200mb --arms single-page,native --concurrency 1 --gbrain <checkout>@44eb0493… --output <dir>/200mb
 ```
 
-Each run needs Bun 1.4 or newer and no keys. The run times here were 121.8 s, 641.4 s and 33.9 s of hermetic arm time. The 2 MB receipt records a clean source tree at `763566f`. The 20 MB and 200 MB receipts record it as dirty, because the earlier tiers' receipts were present and uncommitted; the code was the same commit.
+Each run needs Bun 1.4 or newer and no keys. The run times here were 121.8 s, 525.0 s and 31.4 s of hermetic arm time. Every receipt records a clean source tree: the 2 MB tier at `763566f`, and the 20 MB and 200 MB tiers at `cb54753`. The 20 MB and 200 MB tiers were rerun from that clean tree; only timings changed.
 
 **Erratum to the baseline report.** The [baseline report](2026-10-14-n14-large-page-fidelity-baseline.md)'s concrete case quoted "the Orrinmere gate code is 39080" as a 2 MB needle. That sentence is the 20 MB append needle. The 2 MB chat's last-tenth needle is "the Luntmere storage unit number is 38726" (query "Luntmere storage unit number"), the one this report uses. The baseline's measurements are unaffected; its report is left as published.
 
