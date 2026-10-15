@@ -10,12 +10,12 @@ gbrain has no large-page API at this commit (no `get_page` body window, no `appe
 
 ## The concrete case
 
-A real 1.79 MB iMessage export motivated this category: gbrain stored it and never found anything in it. The generated 2 MB group chat reproduces that exactly. It is 365 days of `**Name** (date time): text` lines between four invented people, with one sentence planted in each tenth of the file, such as "the Luntmere storage unit number is 38726" (the place name is invented and appears nowhere else).
+A real 1.79 MB iMessage export motivated this category: gbrain stored it and never found anything in it. The generated 2 MB group chat reproduces that exactly. It is 365 days of `**Name** (date time): text` lines between four invented people, with one sentence planted in each tenth of the file, such as "the Orrinmere gate code is 39080" (the place name is invented and appears nowhere else).
 
 On master:
 
 1. `put_page` of the 2,000,112-byte chat succeeds. The page has `embed_skip: oversized` and no chunks, because its body is over `content_sanity.bytes_block` (500,000 bytes by default).
-2. `search "Luntmere storage unit number"` returns nothing from the chat. The answer is in the stored body; it was never indexed.
+2. `search "Orrinmere gate code"` returns nothing from the chat. The answer is in the stored body; it was never indexed.
 3. An agent that already knows the slug and calls `get_page` gets a 2,042,154-byte response, 1.9 times the 1 MiB cap a remote client is expected to accept.
 4. Appending a day means rewriting the whole page with `put_page`. The rewrite succeeds, and the appended fact is still unfindable.
 

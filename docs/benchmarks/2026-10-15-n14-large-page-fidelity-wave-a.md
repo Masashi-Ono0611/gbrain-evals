@@ -151,4 +151,6 @@ bun eval/runner/n14-large-page-fidelity.ts --tiers 200mb --arms single-page,nati
 
 Each run needs Bun 1.4 or newer and no keys. The run times here were 121.8 s, 641.4 s and 33.9 s of hermetic arm time. The 2 MB receipt records a clean source tree at `763566f`. The 20 MB and 200 MB receipts record it as dirty, because the earlier tiers' receipts were present and uncommitted; the code was the same commit.
 
+**Erratum to the baseline report.** The [baseline report](2026-10-14-n14-large-page-fidelity-baseline.md)'s concrete case quoted "the Orrinmere gate code is 39080" as a 2 MB needle. That sentence is the 20 MB append needle. The 2 MB chat's last-tenth needle is "the Luntmere storage unit number is 38726" (query "Luntmere storage unit number"), the one this report uses. The baseline's measurements are unaffected; its report is left as published.
+
 Receipts: [2mb](2026-10-15-n14-large-page-fidelity-wave-a/2mb/receipt.json), [20mb](2026-10-15-n14-large-page-fidelity-wave-a/20mb/receipt.json), [200mb](2026-10-15-n14-large-page-fidelity-wave-a/200mb/receipt.json). Baseline: [2026-10-14 report](2026-10-14-n14-large-page-fidelity-baseline.md).
