@@ -525,3 +525,20 @@ slots stay on disk, unused.
 
 **Budget.** Unchanged. The new F5-off wave slots cost about $42 for the two worlds (10 × about $4.21). The unused
 F5-on S wave slots (about $42) come out of the retry reserve. Sealed ledger committed before this amendment: $139.27 (both oracles and all 20 slot builds).
+
+## Cap note (2026-10-15, after the sealed baseline cells and before any sealed wave or fs cell)
+
+Approved under Garry's standing rule (2026-10-12), relayed by GBRA-39's parent. Cap changes only. Arms, cells, models,
+tasks and the analysis (including Amendment 1) are unchanged.
+
+- **Why.** After each sealed world's baseline arm, the stop rule's projection check failed: ledger committed plus
+  the remaining priced steps, +10%, came to $1,759 (after S1) and $1,753 (after S2) against the sealed ledger's $1,700
+  cap. The run stopped as preregistered. Sealed gbrain arms cost about 21% more than public ones ($195.93 and $193.11
+  vs about $160), so a sealed fs arm scaled the same way (about $358) would also approach its $364 arm cap.
+- **Changes.** The sealed ledger cap goes from $1,700 to $2,000 (`budget-ledger.ts set-cap`). The sealed fs per-arm
+  `--budget-usd` goes from $364 to $420, for S1 and S2 only. The gbrain and oracle caps and the public ledger are
+  unchanged.
+- **State when changed.** S1 and S2 baseline arms complete (300 cells each, 0 harness errors); no sealed wave or fs
+  cell had run. Sealed ledger committed: $570.40.
+- **Program total** is at most $1,316.96 (public, final) + $2,000 = **$3,316.96**, within the $3,400 Garry approved on
+  2026-10-12 ("Double the budget"). The split between ledgers was the executor's.
