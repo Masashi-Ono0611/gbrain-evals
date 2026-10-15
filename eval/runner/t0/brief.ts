@@ -12,8 +12,8 @@
  *   bun eval/runner/t0/brief.ts <results.jsonl> [more.jsonl ...] [--out summary.json]
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { generatePersona, type PPTask } from '../../generators/program-primary-gen.ts';
-import { riskDifference } from '../power/risk-ratio.ts';
+import { generatePersona, PP_BRIEF_V2_DEV_SEEDS, type PPPersona, type PPTask } from '../../generators/program-primary-gen.ts';
+import { ratioInterval, riskDifference } from '../power/risk-ratio.ts';
 import { matches, scoreAnswer, staleMentions, T0_SCORER_POSTHOC, type T0Score } from './score.ts';
 import type { HookResult } from './delivery.ts';
 
@@ -31,7 +31,78 @@ export const CONFIDENT_WRONG_KINDS = ['stale_date', 'stale_correction', 'unsuppo
 export const NEEDED_FACTS = ['commitment', 'new_date', 'corrected'] as const;
 export type NeededFact = typeof NEEDED_FACTS[number];
 
-export const briefConfig = (arm: string): Array<[string, string]> => (arm === 'brief-on' ? [[PROACTIVE_BRIEF_KEY, 'true']] : []);
+export const briefConfig = (arm: string, extra: ReadonlyArray<[string, string]> = []): Array<[string, string]> => (arm === 'brief-on' ? [[PROACTIVE_BRIEF_KEY, 'true'], ...extra] : []);
+
+// ─── D6 v2: conditions where hot memory does not carry the fact ─────
+
+/**
+ * v1 (`next-day`): session 2 follows session 1 within hot memory's 24-hour window. v2 (preregistration
+ * docs/benchmarks/2026-10-15-proactive-brief-dev-v2-preregistration.md):
+ *   aged     session 1's facts are backdated to the world's session-1 day, more than 24 hours before session 2;
+ *   crowded  after session 1 the harness saves CROWD_FACTS unrelated facts, newer than session 1's, so they fill hot
+ *            memory's fetch (top 10 of the 30 newest).
+ */
+export type BriefCondition = 'next-day' | 'aged' | 'crowded';
+export const CROWD_FACTS = 40;
+/** The v2 release (preregistration, "The release under test"): paid v2 cells run only on this commit. */
+export const BRIEF_V2_RELEASE: { version: string; commit: string } | null = { version: '0.60.247.0', commit: '47f052af0c7f92f259daa9b1b51bb90370dcf520' };
+/** Config pairs brief-on adds in v2 besides the brief switch: none, because the pinned release's page-edit source sits behind the same switch. */
+export const BRIEF_V2_EXTRA_CONFIG: ReadonlyArray<[string, string]> = [];
+/**
+ * The v2 aged condition dates session 1's facts at noon Pacific on the world's session-1 day, or 72 hours before the
+ * cell when that is earlier (a run on or before October 17 would otherwise leave them inside hot memory's 24 hours).
+ */
+export const AGED_FACTS_AT = '2026-10-14T19:00:00.000Z';
+export const AGED_MIN_GAP_HOURS = 72;
+export const agedFactsAt = (now = Date.now()) => new Date(Math.min(Date.parse(AGED_FACTS_AT), now - AGED_MIN_GAP_HOURS * 3_600_000)).toISOString();
+
+/** v2 seeds split each persona's tasks: its first reply and first prep task are aged, the other two crowded; v1 seeds are next-day. */
+export function briefCondition(p: Pick<PPPersona, 'seed' | 'tasks'>, t: Pick<PPTask, 'id'>): BriefCondition {
+  if (!PP_BRIEF_V2_DEV_SEEDS.includes(p.seed)) return 'next-day';
+  const aged = [p.tasks.find(x => x.kind === 'reply')!.id, p.tasks.find(x => x.kind === 'prep')!.id];
+  return aged.includes(t.id) ? 'aged' : 'crowded';
+}
+
+const CROWD_TEMPLATES = [
+  (n: string) => `${n} prefers async updates over calls.`,
+  (n: string) => `${n} asked to be copied on the engineering newsletter.`,
+  (n: string) => `${n} is moving their team to a new office building.`,
+  (n: string) => `${n} likes short written summaries before any review.`,
+  (n: string) => `${n} mentioned their team is hiring a staff engineer.`,
+  (n: string) => `${n} recommended a podcast about incident reviews.`,
+  (n: string) => `${n} switched their build system to Bazel last quarter.`,
+  (n: string) => `${n} would rather get questions by email than chat.`,
+  (n: string) => `${n} is presenting at an internal tooling summit.`,
+  (n: string) => `${n} said their security team rotates keys monthly.`,
+];
+
+/** The crowded condition's unrelated facts: people other than the task's contact and anyone sharing its first name (the namesake), with no number or date. */
+export function crowdFacts(p: Pick<PPPersona, 'docs'>, t: Pick<PPTask, 'contact' | 'contact_name'>): Array<{ entity: string; fact: string }> {
+  const first = t.contact_name.split(' ')[0];
+  const people = p.docs.filter(d => d.id.startsWith('people/') && d.id !== t.contact && !d.title.startsWith(`${first} `));
+  return Array.from({ length: CROWD_FACTS }, (_, i) => {
+    const person = people[i % people.length];
+    return { entity: person.id, fact: CROWD_TEMPLATES[Math.floor(i / people.length) % CROWD_TEMPLATES.length](person.title) };
+  });
+}
+
+export type SavePath = 'remember' | 'page' | 'none';
+/** How session 1 saved what the user said: any `remember` call, else a page write, else nothing. */
+export function savePath(toolCalls: ReadonlyArray<{ name: string }>): SavePath {
+  if (toolCalls.some(c => c.name === 'remember')) return 'remember';
+  if (toolCalls.some(c => c.name === 'put_page' || c.name === 'edit_page')) return 'page';
+  return 'none';
+}
+
+/** The hot-memory lines in one hook's text (the `## Hot memory (recent facts)` header's list). */
+export function hotMemoryText(text: string): string {
+  const at = text.indexOf('## Hot memory');
+  if (at < 0) return '';
+  const lines = text.slice(at).split('\n').slice(1);
+  const out: string[] = [];
+  for (const l of lines) { if (l.startsWith('- ')) out.push(l); else if (out.length || l.trim()) break; }
+  return out.join('\n');
+}
 
 export interface BriefBlock { hook: HookResult['event']; text: string; chars: number; items: Array<{ id: string; slug: string | null; text: string }> }
 
@@ -43,8 +114,8 @@ export function briefBlock(h: Pick<HookResult, 'event' | 'text'>): BriefBlock | 
   let end = 1;
   while (end < lines.length && lines[end].trim() !== '') end++;
   const text = lines.slice(0, end).join('\n');
-  const items = lines.slice(1, end).filter(l => /^- \[[A-Z]\d+\]/.test(l)).map(l => ({
-    id: l.match(/^- \[([A-Z]\d+)\]/)![1],
+  const items = lines.slice(1, end).filter(l => /^- \[[A-Z][a-z]?\d+\]/.test(l)).map(l => ({
+    id: l.match(/^- \[([A-Z][a-z]?\d+)\]/)![1],
     slug: l.match(/→ `([^`]+)`\s*$/)?.[1] ?? null,
     text: l,
   }));
@@ -78,12 +149,19 @@ export interface CellBrief {
   s2_injected_facts: NeededFact[];
   s2_input_tokens: number;
   s2_tool_calls: number;
+  /** v2 fields (absent on v1 cells). */
+  condition?: BriefCondition;
+  save_path?: SavePath;
+  /** Needed facts in session 2's hot-memory lines: the v2 control expects none in the aged and crowded conditions. */
+  s2_hot_facts?: NeededFact[];
+  /** Session 2 from its first hook to the deliverable (v2 diagnostic). */
+  s2_wall_ms?: number;
 }
 
 export class BriefGuardError extends Error { override name = 'BriefGuardError'; }
 
 /** The brief record for one cell; throws BriefGuardError when brief-off shows a brief (the arms are not what they claim). */
-export function cellBrief(arm: BriefArm, t: PPTask, sessions: ReadonlyArray<{ hooks: HookResult[]; tool_calls: unknown[] }>, s2InputTokens: number): CellBrief {
+export function cellBrief(arm: BriefArm, t: PPTask, sessions: ReadonlyArray<{ hooks: HookResult[]; tool_calls: Array<{ name: string }>; wall_ms?: number }>, s2InputTokens: number, condition: BriefCondition = 'next-day'): CellBrief {
   const blocks = sessions.map(s => s.hooks.map(briefBlock).filter((b): b is BriefBlock => b !== null));
   const s2 = blocks[1] ?? [];
   const s2Prompt = s2.find(b => b.hook === 'user-prompt');
@@ -92,11 +170,17 @@ export function cellBrief(arm: BriefArm, t: PPTask, sessions: ReadonlyArray<{ ho
   const guard = arm === 'brief-off' ? 'silent' : s2Prompt ? 'fired' : 'miss';
   const injected = (sessions[1]?.hooks ?? []).map(h => h.text).join('\n');
   const g = t.gold;
-  return {
+  const has = (text: string) => NEEDED_FACTS.filter(f => matches(f === 'commitment' ? g.commitment : f === 'new_date' ? g.date.new : g.correction.corrected, text));
+  const v2 = condition === 'next-day' ? {} : {
+    condition, save_path: savePath(sessions[0]?.tool_calls ?? []),
+    s2_hot_facts: has((sessions[1]?.hooks ?? []).map(h => hotMemoryText(h.text)).join('\n')),
+    s2_wall_ms: sessions[1]?.wall_ms ?? 0,
+  };
+  return { ...v2,
     arm, config: briefConfig(arm), blocks, guard,
     s2_items: s2.flatMap(b => b.items).map(i => classifyItem(t, i)),
     s2_chars: s2.reduce((n, b) => n + b.chars, 0),
-    s2_injected_facts: NEEDED_FACTS.filter(f => matches(f === 'commitment' ? g.commitment : f === 'new_date' ? g.date.new : g.correction.corrected, injected)),
+    s2_injected_facts: has(injected),
     s2_input_tokens: s2InputTokens,
     s2_tool_calls: sessions[1]?.tool_calls.length ?? 0,
   };
@@ -203,6 +287,84 @@ export function summarizeBrief(all: readonly BriefCell[]) {
   };
 }
 
+/** v2 ceilings: a condition whose hot-memory control fails in more than this share of its cells cannot answer the question. */
+export const CONTROL_FAILURE_CEILING = 0.1;
+/** v2 primary, part 1 (time saved): pooled brief-on/brief-off session-2 tool calls at most this ratio (20% fewer), its 95% upper bound below 1. */
+export const TOOL_CALL_RATIO_MAX = 0.8;
+/** v2 primary, part 2 (non-inferiority): the pooled paired success difference's 95% lower bound at or above minus this margin. */
+export const NONINFERIORITY_MARGIN = 0.05;
+
+/** Paired ratio of a per-task measure, brief-on total over brief-off total, persona-clustered 95% interval (delta method on the log ratio, t on clusters - 1 df). */
+export function pairedRatio(pairs: Array<{ persona: string; off: number; on: number }>) {
+  const by = new Map<string, { n: number; baseline: number; candidate: number }>();
+  for (const p of pairs) { const x = by.get(p.persona) ?? { n: 0, baseline: 0, candidate: 0 }; x.n++; x.baseline += p.off; x.candidate += p.on; by.set(p.persona, x); }
+  const totals = [...by.values()];
+  const off = pairs.reduce((a, p) => a + p.off, 0);
+  const on = pairs.reduce((a, p) => a + p.on, 0);
+  if (!pairs.length || off === 0) return { pairs: pairs.length, personas: totals.length, off_total: off, on_total: on, ratio: null, lower: null, upper: null };
+  const r = ratioInterval(totals, 'delta-t');
+  return { pairs: pairs.length, personas: totals.length, off_total: off, on_total: on, ratio: on / off, lower: totals.length < 2 ? null : r.lower, upper: totals.length < 2 ? null : r.upper };
+}
+
+/** The v2 summary (aged and crowded cells only): the v1 primary and checks, plus conditions, the hot-memory control and firing by save path. */
+export function summarizeBriefV2(all: readonly BriefCell[]) {
+  const cells = all.filter(c => (BRIEF_ARMS as readonly string[]).includes(c.arm) && (c.brief?.condition === 'aged' || c.brief?.condition === 'crowded'));
+  const tasks = tasksOf(new Set(cells.map(c => c.persona)));
+  const readers = [...new Set(cells.map(c => c.reader))].sort();
+  const byKey = new Map(cells.map(c => [`${c.task}|${c.reader}|${c.repeat}|${c.arm}`, c]));
+  const pairs = (keep: (c: BriefCell) => boolean) => cells.filter(c => c.arm === 'brief-off' && keep(c)).flatMap(off => {
+    const on = byKey.get(`${off.task}|${off.reader}|${off.repeat}|brief-on`);
+    if (!on) return [];
+    const t = tasks.get(off.task)!;
+    return [{ persona: off.persona, off: !primaryScore(off, t).failed, on: !primaryScore(on, t).failed }];
+  });
+  const arms = (cs: BriefCell[]) => Object.fromEntries(BRIEF_ARMS.map(a => [a, armStats(cs.filter(c => c.arm === a), tasks)]));
+  const uptakeFor = (keep: (c: BriefCell) => boolean) => uptake(cells.filter(c => c.arm === 'brief-on' && keep(c)).map(on => ({ on, off: byKey.get(`${on.task}|${on.reader}|${on.repeat}|brief-off`), t: tasks.get(on.task)! })));
+  const measure = (keep: (c: BriefCell) => boolean, m: (b: CellBrief) => number) => pairedRatio(cells.filter(c => c.arm === 'brief-off' && keep(c)).flatMap(off => {
+    const on = byKey.get(`${off.task}|${off.reader}|${off.repeat}|brief-on`);
+    return on ? [{ persona: off.persona, off: m(off.brief!), on: m(on.brief!) }] : [];
+  }));
+  const efficiency = (keep: (c: BriefCell) => boolean) => ({
+    s2_tool_calls: measure(keep, b => b.s2_tool_calls), s2_input_tokens: measure(keep, b => b.s2_input_tokens), s2_wall_ms: measure(keep, b => b.s2_wall_ms ?? 0),
+  });
+  const slice = (keep: (c: BriefCell) => boolean) => ({ success: pairedSuccess(pairs(keep)), efficiency: efficiency(keep), arms: arms(cells.filter(keep)), uptake: uptakeFor(keep) });
+  const control = Object.fromEntries((['aged', 'crowded'] as const).map(cond => {
+    const cs = cells.filter(c => c.brief!.condition === cond);
+    const failed = cs.filter(c => (c.brief!.s2_hot_facts ?? []).length > 0);
+    return [cond, { cells: cs.length, hot_memory_carried_a_needed_fact: failed.length, brief_off_failures: failed.filter(c => c.arm === 'brief-off').length, valid: cs.length > 0 && failed.length / cs.length <= CONTROL_FAILURE_CEILING }];
+  }));
+  const on = cells.filter(c => c.arm === 'brief-on');
+  const firing = Object.fromEntries((['remember', 'page', 'none'] as const).map(sp => {
+    const cs = on.filter(c => c.brief!.save_path === sp);
+    return [sp, { cells: cs.length, fired: cs.filter(c => c.brief!.guard === 'fired').length, rate: rate(cs.filter(c => c.brief!.guard === 'fired').length, cs.length) }];
+  }));
+  const saved = on.filter(c => c.brief!.save_path !== 'none');
+  const pooled = slice(() => true);
+  const onStats = pooled.arms['brief-on'];
+  const tools = pooled.efficiency.s2_tool_calls;
+  const tokens = pooled.efficiency.s2_input_tokens;
+  const checks = {
+    time_saved: tools.ratio !== null && tools.ratio <= TOOL_CALL_RATIO_MAX && tools.upper !== null && tools.upper < 1 && tokens.upper !== null && tokens.upper < 1,
+    success_non_inferior: pooled.success.lower !== null && pooled.success.lower >= -NONINFERIORITY_MARGIN,
+    hot_memory_control_valid: Object.values(control).every(x => x.valid),
+    guard_misses_within_ceiling: saved.length > 0 && saved.filter(c => c.brief!.guard === 'miss').length / saved.length <= GUARD_MISS_CEILING,
+    attention_within_cap: onStats.brief_chars.max <= BRIEF_MAX_CHARS,
+    false_push_within_ceiling: (onStats.items.false_pushes_per_session ?? 0) <= FALSE_PUSH_CEILING,
+    no_confident_wrong_rise: onStats.confident_wrong.cells <= pooled.arms['brief-off'].confident_wrong.cells,
+  };
+  const ceilings = readers.filter(r => { const x = armStats(cells.filter(c => c.reader === r && c.arm === 'brief-off'), tasks); return x.cells > 0 && x.successes === x.cells; });
+  return {
+    scorer: T0_SCORER_POSTHOC, design: 'd6-dev-v2', cells: cells.length, readers, ceilings, pooled, checks,
+    development_signal: Object.values(checks).every(Boolean) ? 'time-saved signal (development evidence only)' : 'no time-saved signal (development evidence only)',
+    success_improvement: pooled.success.lower !== null && pooled.success.lower > 0,
+    control, firing_by_save_path: firing,
+    guard_saved: { brief_on_cells_with_a_save: saved.length, misses: saved.filter(c => c.brief!.guard === 'miss').length },
+    by_condition: Object.fromEntries((['aged', 'crowded'] as const).map(cond => [cond, slice(c => c.brief!.condition === cond)])),
+    by_reader: Object.fromEntries(readers.map(r => [r, slice(c => c.reader === r)])),
+    by_kind: Object.fromEntries(['prep', 'reply'].map(k => [k, pairedSuccess(pairs(c => c.kind === k))])),
+  };
+}
+
 if (import.meta.main) {
   const argv = process.argv.slice(2);
   const outAt = argv.indexOf('--out');
@@ -210,7 +372,8 @@ if (import.meta.main) {
   const paths = argv.filter((_, i) => outAt < 0 || (i !== outAt && i !== outAt + 1));
   const byKey = new Map<string, BriefCell>();
   for (const p of paths) for (const l of readFileSync(p, 'utf8').split('\n').filter(Boolean)) { const c = JSON.parse(l) as BriefCell; byKey.set(c.key, c); }
-  const s = summarizeBrief([...byKey.values()]);
+  const cells = [...byKey.values()];
+  const s = cells.some(c => c.brief?.condition === 'aged' || c.brief?.condition === 'crowded') ? summarizeBriefV2(cells) : summarizeBrief(cells);
   const text = JSON.stringify(s, null, 2) + '\n';
   if (out) writeFileSync(out, text);
   else process.stdout.write(text);

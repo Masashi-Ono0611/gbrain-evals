@@ -2,6 +2,31 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.106] - 2026-10-15
+
+### D6 proactive brief, development v2: no time-saved signal
+
+The D6 redesign reruns brief-off against brief-on on the T0 carrier where hot memory cannot carry the facts. Session 1's
+facts are either backdated 72 hours (aged) or buried under 40 newer, unrelated facts (crowded). Each cell records its
+session-1 save path and whether hot memory held a needed fact. The primary moved to time saved (session-2 tool calls
+and input tokens) with non-inferiority on success, because the plan's exit allows "task success or user time saved".
+The [preregistration](docs/benchmarks/2026-10-15-proactive-brief-dev-v2-preregistration.md) was written after v1's
+results, approved, and frozen at `3952fb33` on gbrain v0.60.247.0 (`47f052af`, the brief's page-edit source) before
+any spend. There are six new development seeds, 20261211 and 20261213 to 20261217.
+
+The run used Opus 5.5, Sonnet 5.5 and gpt-6.1-sol, 144 cells, and reports
+[no time-saved signal](docs/benchmarks/2026-10-15-proactive-brief-dev-v2.md):
+
+- Session-2 tool calls fell 6% with the brief on (ratio 0.940, 95% interval 0.856 to 1.032), short of the required
+  20%. Session-2 input tokens fell 8% (ratio 0.918, upper bound 0.971).
+- Both arms finished 72 of 72 paired tasks, so success is non-inferior at −5 points.
+- Hot memory carried no needed fact in any cell. The brief fired in 72 of 72 brief-on cells, including all 10 page-only
+  sessions that v1 missed, and was silent in every brief-off cell. It made 0 false pushes and had no confident-wrong
+  cells.
+
+This is development evidence only and does not decide the default. v1's verdict stands. Spend was $29.60 of a new $35
+ledger.
+
 ## [0.10.105] - 2026-10-15
 
 ### Cat 40 next wave: development, preregistration and confirmation

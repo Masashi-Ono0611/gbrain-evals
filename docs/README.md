@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.105, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.106, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -80,7 +80,7 @@ gap does not isolate the effect of a graph alone.
 |---|---|
 | Can saved attacker text steer a later session, does the current value survive lower-trust writes, and does `forget --purge` really remove a claim? | [October 8 paid run with Opus 5.5, Sonnet 5.5 and GPT-6.1 Sol, for gbrain #6396 (merged as `d4dc2d4d8`, v0.60.139.0)](benchmarks/2026-10-08-memory-trust-results-paid.md) ([preregistration](benchmarks/2026-10-07-memory-trust-preregistration.md), [keyless rerun](benchmarks/2026-10-08-memory-trust-results-rerun.md), [findings](benchmarks/2026-10-07-memory-trust-bugs.md)): trust labels cut planted-claim adoption (Sonnet 10.6% without labels to 2.0% with them) and raise current-value answers (Opus 55% to 100%); no model followed an instruction-worded injection in any arm, so the write gate and suppression show no measurable benefit on top of labels and the preregistered rules set `external_mode = flag`, `agent_mode = flag`, `agent_activation = allow`; at the later head `62773f02` (amendment 4), saved preferences survive the label when saved as `user_said` (47 or 48 of 48 per model); without an origin, Opus 5.5 held back 14 of 48. An artifact asking to be saved as `user_said` did not raise attack success for any model. Cats 37 to 39 pass every keyless contract at the shipped tree, after a context_pack leak at `62773f02` (finding 37-5, fixed); on 563 LongMemEval-S sessions the gate flagged 0 of 5,124 agent-written facts and 15 of 563 transcript pages (all false flags), and `gbrain trust review` stayed empty |
 | Does the tool text for D5's `context_pack` `counterparty` and `intent` (gbrain #6703) change how models do existing tasks, and does the pulled brief leak? | [October 14 D5 brief smoke](benchmarks/2026-10-14-d5-brief-smoke.md) ([preregistration](benchmarks/2026-10-14-d5-brief-smoke-preregistration.md), [amendment](benchmarks/2026-10-14-d5-brief-smoke-amendment-1.md)): the re-smoke on master `3961bf16` and the PR head `f127b1b5` passes every check. Opus 5.5, Sonnet 5.5 and gpt-6.1-sol scored 28/30 on the head against 29/30 on master. No cell passed either parameter, and N6 found 0 findings on either build. The first run's L1 failure came from `list_write_conflicts`, fixed in gbrain #6708 |
-| Does gbrain's pushed "Before you start" brief (D6) help agents finish meeting-prep and reply tasks that need facts from an earlier session? | [October 14 D6 proactive-brief development run](benchmarks/2026-10-14-proactive-brief-dev.md) ([preregistration](benchmarks/2026-10-14-proactive-brief-dev-preregistration.md)): on gbrain v0.60.240.0, brief-on and brief-off both finished 70 of 72 paired tasks with Opus 5.5, Sonnet 5.5 and gpt-6.1-sol, so it shows no improvement signal. The brief fired in 58 of 72 brief-on cells (never when session 1 saved no fact), pushed one item of at most 397 characters, and made no false pushes. Development evidence only; it does not decide the default. |
+| Does gbrain's pushed "Before you start" brief (D6) help agents finish meeting-prep and reply tasks that need facts from an earlier session, or save them work? | [October 15 D6 development v2 run](benchmarks/2026-10-15-proactive-brief-dev-v2.md) ([preregistration](benchmarks/2026-10-15-proactive-brief-dev-v2-preregistration.md)): on gbrain v0.60.247.0, with session-1 facts aged 72 hours or crowded out of hot memory, the brief cut session-2 tool calls by 6% (ratio 0.940, 95% interval 0.856 to 1.032) and input tokens by 8%, short of the preregistered 20%, so it shows no time-saved signal. Both arms finished 72 of 72 paired tasks with Opus 5.5, Sonnet 5.5 and gpt-6.1-sol. The brief fired in 72 of 72 brief-on cells, page-only sessions included, with no false pushes. The [first development run](benchmarks/2026-10-14-proactive-brief-dev.md) ([preregistration](benchmarks/2026-10-14-proactive-brief-dev-preregistration.md)) on v0.60.240.0 found no improvement signal (70 of 72 in both arms) and missed every brief whose session 1 only edited pages. Development evidence only; neither run decides the default. |
 | Does the index stay correct after moves, renames, corrections, forgetting, an embedding outage and a restart? | [September 29 lifecycle experiment](benchmarks/2026-09-29-lifecycle.md) |
 | Which question sets test recall of passing details, corrections, as-of relationships and beliefs from chat, for gbrain and an extract-first memory server on the same records? | [October 5 workload suites (B1 to B4): results for both systems](benchmarks/2026-10-05-workload-suites.md) |
 | Does important material from a working session survive into saved pages? | [Transcript distillation](benchmarks/2026-08-16-brainbench-cat35-transcript-distill.md) |
@@ -215,6 +215,12 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-15: D6 development v2
+
+The D6 proactive-brief row now leads with the [development v2 run](benchmarks/2026-10-15-proactive-brief-dev-v2.md)
+and its preregistration, and keeps the first run's result after it. gbrain-evals v0.10.106 (the opening names it; was
+v0.10.105).
 
 ### 2026-10-15: Cat 40 next-wave confirmation
 

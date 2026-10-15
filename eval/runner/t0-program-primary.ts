@@ -50,13 +50,13 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { generateWorld, humanDate, PP_BRIEF_DEV_SEEDS, PP_DEV_SEEDS, PP_SESSION2_DAY, PP_TODAY, renderPPDoc, solvabilityProblems, worldDigest, type PPPersona, type PPTask } from '../generators/program-primary-gen.ts';
+import { generateWorld, humanDate, PP_BRIEF_DEV_SEEDS, PP_BRIEF_V2_DEV_SEEDS, PP_BRIEF_V2_SESSION2_DAY, PP_DEV_SEEDS, PP_SESSION2_DAY, PP_TODAY, renderPPDoc, solvabilityProblems, worldDigest, type PPPersona, type PPTask } from '../generators/program-primary-gen.ts';
 import { GbrainSlot, MeteringProxy, rerankProbe, type Meter } from './cat40/gbrain-arm.ts';
 import { runAgent, provider, type AgentRun, type Arm, type ProviderAttempt, type ScriptedModel, type ToolSpec } from './cat40/loop.ts';
 import { prepareBuild, type BuildInfo } from './lifecycle/builds.ts';
 import { DELIVERY_CONTRACT, dropped, renderUserTurn, runHook, type HookResult } from './t0/delivery.ts';
 import { matches, scoreAnswer, truthfulAnswer, T0_SCORER_POSTHOC, T0_SCORER_VERSION, type T0Score } from './t0/score.ts';
-import { BRIEF_ARMS, briefConfig, cellBrief, summarizeBrief, type BriefArm, type BriefCell, type CellBrief } from './t0/brief.ts';
+import { agedFactsAt, BRIEF_ARMS, BRIEF_V2_EXTRA_CONFIG, BRIEF_V2_RELEASE, briefCondition, briefConfig, cellBrief, crowdFacts, summarizeBrief, summarizeBriefV2, type BriefArm, type BriefCell, type CellBrief } from './t0/brief.ts';
 import { normalizeFinish, normalizeUsage, receipt, usageSourceOf, type UsageReceipt } from './usage-receipt.ts';
 import { requirePaidArm, paidRequested } from './paid-arm.ts';
 import { budgetOptionsFrom, startPaidRun, receiptCost, type BudgetRun } from './budget-ledger.ts';
@@ -194,7 +194,7 @@ export interface CellRecord {
   score_v1: T0Score;
   /** Brief arms only: t0-score-v3 (the D6 primary) and the brief record with the paid-arm guard. */
   score_v3?: T0Score;
-  brief?: CellBrief;
+  brief?: CellBrief & { v2_setup?: { backdated_to: string | null; backdated_fact_ids: number[]; crowd_facts_saved: number; crowd_fact_errors: number } };
   usd: { reader: number; gbrain_internal: number; total: number };
   tokens: { input_total: number; output_total: number };
   gbrain_internal?: Meter;
@@ -273,7 +273,7 @@ export async function runSessionWith(ctx: Ctx, slot: GbrainSlot, p: Pick<PPPerso
 
 async function runSession(ctx: Ctx, slot: GbrainSlot, p: PPPersona, t: PPTask, reader: string, arm: CellArm, repeat: number, n: 1 | 2, receipts: UsageReceipt[]): Promise<{ rec: SessionRecord; run: AgentRun }> {
   return runSessionWith(ctx, slot, p, t, reader, arm, repeat, n, receipts, {
-    day: n === 1 ? PP_TODAY : PP_SESSION2_DAY,
+    day: n === 1 ? PP_TODAY : isBriefArm(arm) && briefCondition(p, t) !== 'next-day' ? PP_BRIEF_V2_SESSION2_DAY : PP_SESSION2_DAY,
     drop: arm === 'ablation-push-off' || (arm === 'mutant-forced-drop' && n === 2),
     scripted: injected => (n === 1 ? (isBriefArm(arm) ? scriptedRememberer(t) : scriptedWriter(p, t)) : scriptedReader(t, injected)),
   });
@@ -298,18 +298,32 @@ export async function runCell(ctx: Ctx, p: PPPersona, t: PPTask, reader: string,
   const key = cellKey(t.id, reader, arm, repeat);
   const slot = ctx.slots.get(p.id)!;
   const receipts: UsageReceipt[] = [];
-  slot.config = briefConfig(arm);
+  const condition = isBriefArm(arm) ? briefCondition(p, t) : 'next-day';
+  slot.config = briefConfig(arm, condition === 'next-day' ? [] : BRIEF_V2_EXTRA_CONFIG);
+  const v2Setup = { backdated_to: null as string | null, backdated_fact_ids: [] as number[], crowd_facts_saved: 0, crowd_fact_errors: 0 };
   ctx.proxy.bind(slot.id, key);
   const sessions: SessionRecord[] = [];
   try {
     await slot.restore();
+    const since = new Date().toISOString();
     const s1 = await runSession(ctx, slot, p, t, reader, arm, repeat, 1, receipts);
     sessions.push(s1.rec);
     if (arm === 'mutant-forced-drop' || arm === 'mutant-stale-correction') {
       await slot.restore();
       if (arm === 'mutant-stale-correction') await writeStaleCorrection(slot, p, t);
       await slot.newSession();
-    } else await slot.newSession();
+    } else if (condition === 'aged') {
+      await slot.stop();
+      v2Setup.backdated_to = agedFactsAt();
+      v2Setup.backdated_fact_ids = await slot.backdateFactsSince(since, v2Setup.backdated_to);
+      await slot.start();
+    } else {
+      if (condition === 'crowded') for (const f of crowdFacts(p, t)) {
+        const r = await slot.client!.call('remember', { ...f, kind: 'fact', provenance: 'user, a later session', content_origin: 'user_said' });
+        if (r.startsWith('Error')) v2Setup.crowd_fact_errors++; else v2Setup.crowd_facts_saved++;
+      }
+      await slot.newSession();
+    }
     const s2 = await runSession(ctx, slot, p, t, reader, arm, repeat, 2, receipts);
     sessions.push(s2.rec);
   } finally {
@@ -326,7 +340,7 @@ export async function runCell(ctx: Ctx, p: PPPersona, t: PPTask, reader: string,
   const readerUsd = sessions.reduce((s, x) => s + x.usd, 0);
   const tokens = receipts.filter(r => r.usage).reduce((acc, r) => ({ input_total: acc.input_total + r.usage!.input_total, output_total: acc.output_total + r.usage!.output_total }), { input_total: 0, output_total: 0 });
   const s2Input = receipts.filter(r => r.question_id.endsWith(':s2') && r.usage).reduce((n, r) => n + r.usage!.input_total, 0);
-  const brief = isBriefArm(arm) ? { score_v3: scoreAnswer(t, s2.answer, { executionError, version: T0_SCORER_POSTHOC }), brief: cellBrief(arm, t, sessions, s2Input) } : {};
+  const brief = isBriefArm(arm) ? { score_v3: scoreAnswer(t, s2.answer, { executionError, version: T0_SCORER_POSTHOC }), brief: { ...cellBrief(arm, t, sessions, s2Input, condition), ...(condition === 'next-day' ? {} : { v2_setup: v2Setup }) } } : {};
   return {
     key, version: T0_VERSION, persona: p.id, task: t.id, kind: t.kind, correction_kind: t.correction_kind, reader, arm, repeat, sessions, ...brief,
     capture: { writes: writes.length, commitment: matches(g.commitment, written), new_date: matches(g.date.new, written), corrected: matches(g.correction.corrected, written) },
@@ -344,7 +358,8 @@ export function writeReceipt(out: string, attestation: Attestation | null = null
   const errors = existsSync(join(out, 'harness-errors.jsonl')) ? readFileSync(join(out, 'harness-errors.jsonl'), 'utf8').split('\n').filter(Boolean).length : 0;
   const cells = readCells([resultsPath]);
   const summary = summarize(cells);
-  const brief = cells.some(c => isBriefArm(c.arm)) ? summarizeBrief(cells as unknown as BriefCell[]) : null;
+  const v2 = cells.some(c => c.brief?.condition === 'aged' || c.brief?.condition === 'crowded');
+  const brief = cells.some(c => isBriefArm(c.arm)) ? (v2 ? summarizeBriefV2(cells as unknown as BriefCell[]) : summarizeBrief(cells as unknown as BriefCell[])) : null;
   const detected = (arm: string) => { const m = summary.mutants.filter(x => x.arm === arm); return m.length ? m.every(x => x.detected) : null; };
   writeFileSync(join(out, 'receipt.json'), JSON.stringify({
     schema: 't0-receipt/v1', runner: T0_VERSION, verdict: 'report-only', gbrain_evals_head: head, finished_at: new Date().toISOString(), ...(attestation ? { preregistration_attestation: attestation } : {}),
@@ -367,6 +382,8 @@ function flag(argv: string[], name: string): string | undefined {
 export const EST_USD_PER_CELL: Record<string, number> = { 'claude-opus-5-5': 0.45, 'claude-sonnet-5-5': 0.25, 'gpt-6.1-sol': 0.25 };
 /** Brief arms: the T0 baseline's measured mean per cell (docs/benchmarks/2026-10-08-program-primary-baseline.md) plus about 10%. */
 export const EST_USD_PER_CELL_BRIEF: Record<string, number> = { 'claude-opus-5-5': 0.42, 'claude-sonnet-5-5': 0.17, 'gpt-6.1-sol': 0.11 };
+/** D6 v2: the D6 development run's measured mean per cell (docs/benchmarks/2026-10-14-proactive-brief-dev.md) plus about 10%. */
+export const EST_USD_PER_CELL_BRIEF_V2: Record<string, number> = { 'claude-opus-5-5': 0.34, 'claude-sonnet-5-5': 0.18, 'gpt-6.1-sol': 0.1 };
 
 export async function main(argv: string[]) {
   const scripted = !paidRequested(argv);
@@ -375,8 +392,9 @@ export async function main(argv: string[]) {
   const [checkout, ref] = [spec.slice(0, spec.lastIndexOf('@')), spec.slice(spec.lastIndexOf('@') + 1)];
   const out = resolve(flag(argv, '--output') ?? `eval/reports/t0-program-primary/${scripted ? 'hermetic' : 'paid'}`);
   const seeds = flag(argv, '--seeds')?.split(',').map(Number) ?? (scripted ? [PP_DEV_SEEDS[0]] : [...PP_DEV_SEEDS]);
-  const bad = seeds.filter(s => !PP_DEV_SEEDS.includes(s) && !PP_BRIEF_DEV_SEEDS.includes(s));
-  if (bad.length) throw new Error(`only development seeds run here (${[...PP_DEV_SEEDS, ...PP_BRIEF_DEV_SEEDS].join(', ')}); a sealed seed runs in custodian mode only. Got ${bad.join(', ')}`);
+  const runnable = [...PP_DEV_SEEDS, ...PP_BRIEF_DEV_SEEDS, ...PP_BRIEF_V2_DEV_SEEDS];
+  const bad = seeds.filter(s => !runnable.includes(s));
+  if (bad.length) throw new Error(`only development seeds run here (${runnable.join(', ')}); a sealed seed runs in custodian mode only. Got ${bad.join(', ')}`);
   const readers = scripted ? ['scripted'] : (flag(argv, '--readers')?.split(',') ?? [...COUNTED_READERS]);
   if (readers.includes('gpt-5.4-mini')) throw new Error('gpt-5.4-mini never runs (model rules)');
   const arms = (flag(argv, '--arms')?.split(',') ?? (scripted ? [...ARMS] : ['baseline'])) as CellArm[];
@@ -401,7 +419,9 @@ export async function main(argv: string[]) {
   const resultsPath = join(out, 'results.jsonl');
   const done = new Set(existsSync(resultsPath) ? readFileSync(resultsPath, 'utf8').split('\n').filter(Boolean).map(l => (JSON.parse(l) as CellRecord).key) : []);
   const todo = cells.filter(c => !done.has(cellKey(c.t.id, c.reader, c.arm, c.r)));
-  const estimate = scripted ? 0 : todo.reduce((s, c) => s + ((isBriefArm(c.arm) ? EST_USD_PER_CELL_BRIEF : EST_USD_PER_CELL)[c.reader] ?? 0.5), 0);
+  const estimate = scripted ? 0 : todo.reduce((s, c) => s + ((!isBriefArm(c.arm) ? EST_USD_PER_CELL : PP_BRIEF_V2_DEV_SEEDS.includes(c.p.seed) ? EST_USD_PER_CELL_BRIEF_V2 : EST_USD_PER_CELL_BRIEF)[c.reader] ?? 0.5), 0);
+  const v2Paid = !scripted && todo.some(c => isBriefArm(c.arm) && PP_BRIEF_V2_DEV_SEEDS.includes(c.p.seed));
+  if (v2Paid && !BRIEF_V2_RELEASE) throw new Error('D6 v2 paid cells wait for the page-edit release: BRIEF_V2_RELEASE (eval/runner/t0/brief.ts) is not pinned yet');
   console.error(`[t0] ${cells.length} cells (${todo.length} to run), ${world.personas.length} personas, readers ${readers.join(',')}, arms ${arms.join(',')}, estimate $${estimate.toFixed(2)}`);
 
   let hermetic: HermeticEnv | null = null;
@@ -420,6 +440,7 @@ export async function main(argv: string[]) {
   try {
     const build = prepareBuild(resolve(checkout), { label: `t0-${ref}`, ref, description: 'gbrain under test (program primary)' }, join(root, 'builds'));
     if (!build.verified.tree_matches || !build.verified.cli_version_matches) throw new Error(`gbrain overlay for ${ref} failed verification`);
+    if (v2Paid && build.commit !== BRIEF_V2_RELEASE!.commit) throw new Error(`D6 v2 paid cells run only on the pinned release ${BRIEF_V2_RELEASE!.version} (${BRIEF_V2_RELEASE!.commit}); got ${build.commit}`);
     let countTokens: ((s: string) => number) | null = null;
     try {
       const te = await import(join(build.dir, 'src/core/chunkers/token-estimate.ts')) as { estimateTokens: (s: string) => number; cl100kAvailable: () => boolean };
