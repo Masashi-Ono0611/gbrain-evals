@@ -403,7 +403,7 @@ async function main() {
       agentEnv.OPENAI_API_KEY = 'sk-cat41-fake';
     }
     writeFileSync(CALL_LOG, '');
-    for (const f of readdirSync(LOG_DIR)) if (f.startsWith('hook-')) rmSync(`${LOG_DIR}/${f}`);
+    for (const f of readdirSync(LOG_DIR).sort()) if (f.startsWith('hook-')) rmSync(`${LOG_DIR}/${f}`);
     phase = 'session';
 
     const ctx = { harness, docsBase: arg('docs-base'), installSpec: arg('install-spec'), gbrainRef: arg('gbrain-ref'), nonce: String(state.notes.nonce ?? '') };

@@ -285,4 +285,6 @@ A reader at the ceiling in both arms is called out. Records go under
 
 ## Amendments
 
-None.
+**Amendment 1 (October 15, 2026, before any paid session).** The driver now deletes the previous run's hook-output
+files in sorted order (`readdirSync(...).sort()` in `in-container.ts`), as the repository's readdir-determinism test
+requires. This changes nothing about what a session sees or how it is scored.
