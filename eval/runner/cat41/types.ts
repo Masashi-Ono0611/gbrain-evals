@@ -98,5 +98,7 @@ export interface ContainerResult {
   provider_requests: ProviderRequest[];
   probe: Record<string, unknown> & { effects?: ProbeEffect[] };
   harness_versions: Record<string, string>;
+  /** D7: every `gbrain hook` call the harness made, with the stdout it injected (the wrapper's copy). */
+  hook_captures?: Array<{ id: string; event: string; start_ms: number; end_ms: number | null; rc: number | null; stdout: string }>;
   crash?: string;
 }

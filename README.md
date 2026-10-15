@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.106 (`VERSION`) |
+| This repository | gbrain-evals v0.10.107 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except three: the Cat 40 Hard row's, which shipped after it
@@ -303,6 +303,13 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-15: Repository row names v0.10.107
+
+gbrain-evals v0.10.107 records the D7 Cat 41 brief scenarios. In 48 native Claude Code and Codex sessions on gbrain
+v0.60.247.0, the pushed brief cut time to the first correct output by 6% against a preregistered 20%. So it shows no
+time-saved signal, and the brief stays off by default; this is development evidence only. No result row on this page
+changes. The repository row names v0.10.107 (was v0.10.106).
 
 ### 2026-10-15: Repository row names v0.10.106
 
