@@ -357,6 +357,11 @@ export interface Gbrain {
   dispatchToolCall: (engine: unknown, name: string, params: Record<string, unknown> | undefined, opts: Record<string, unknown>) => Promise<{ content: { text: string }[]; isError?: boolean }>;
   operationScopesAllowed: (scopes: readonly string[], op: Operation) => boolean;
   buildBrainTools: (opts: Record<string, unknown>) => Array<{ name: string; execute(input: unknown, ctx: unknown): Promise<unknown> }>;
+  /** gbrain's contradiction probe and its run writer, to store a report for find_contradictions (absent on builds without them). */
+  contradictions?: {
+    runContradictionProbe: (opts: Record<string, unknown>) => Promise<{ report: { duration_ms: number; per_query: Array<{ contradictions: unknown[] }> } }>;
+    writeRunRow: (engine: unknown, report: unknown, durationMs: number) => Promise<unknown>;
+  };
 }
 
 export async function loadGbrain(gut: GbrainUnderTest): Promise<Gbrain> {
@@ -367,7 +372,11 @@ export async function loadGbrain(gut: GbrainUnderTest): Promise<Gbrain> {
     importGbrain<{ operationScopesAllowed: Gbrain['operationScopesAllowed'] }>(gut, 'src/core/scope.ts'),
     importGbrain<{ buildBrainTools: Gbrain['buildBrainTools'] }>(gut, 'src/core/minions/tools/brain-allowlist.ts'),
   ]);
-  return { operations: ops.operations, PGLiteEngine: pglite.PGLiteEngine, dispatchToolCall: dispatch.dispatchToolCall, operationScopesAllowed: scope.operationScopesAllowed, buildBrainTools: tools.buildBrainTools };
+  const probe = await importGbrain<Partial<NonNullable<Gbrain['contradictions']>>>(gut, 'src/core/eval-contradictions/runner.ts').catch((): Partial<NonNullable<Gbrain['contradictions']>> => ({}));
+  const trends = await importGbrain<Partial<NonNullable<Gbrain['contradictions']>>>(gut, 'src/core/eval-contradictions/trends.ts').catch((): Partial<NonNullable<Gbrain['contradictions']>> => ({}));
+  const contradictions = probe.runContradictionProbe && trends.writeRunRow
+    ? { runContradictionProbe: probe.runContradictionProbe, writeRunRow: trends.writeRunRow } : undefined;
+  return { operations: ops.operations, PGLiteEngine: pglite.PGLiteEngine, dispatchToolCall: dispatch.dispatchToolCall, operationScopesAllowed: scope.operationScopesAllowed, buildBrainTools: tools.buildBrainTools, contradictions };
 }
 
 const CONFIG = { engine: 'pglite', database_path: ':memory:' } as OperationContext['config'];
@@ -491,7 +500,43 @@ export async function seed(g: Gbrain, engine: N6Engine, ledger: N6Ledger, config
     const r = await local(byName('put_raw_data'), { slug: d.slug, source: d.source, data: d.data });
     if (!r.ok) errors.push(`put_raw_data ${d.slug}: ${r.raw.slice(0, 200)}`);
   }
+  try { await seedContradictionReport(g, engine, ledger); } catch (err) { errors.push(`contradiction report: ${err instanceof Error ? err.message : String(err)}`); }
   return errors;
+}
+
+/**
+ * A stored contradiction report for find_contradictions (gbrain-evals D9 follow-up): gbrain's own probe, with
+ * a fixture retrieval that offers each class's protected and twin pages plus the hub together, and an oracle
+ * judge that calls every pair a contradiction and writes both sides' text into the axis. The report then
+ * copies every protected marker (chunk text, held takes through the intra-page pairs, axis), as a real
+ * report on this world would, so any stored text a scoped caller receives is a leak.
+ */
+export async function seedContradictionReport(g: Gbrain, engine: N6Engine, ledger: N6Ledger): Promise<void> {
+  if (!g.contradictions) return;
+  const groups = new Map<string, Array<{ source_id: string; slug: string }>>();
+  for (const c of ledger.classes) {
+    groups.set(c.class, [
+      { source_id: c.protected.source_id ?? ledger.granted_source, slug: c.protected.slug },
+      { source_id: c.twin.source_id ?? ledger.granted_source, slug: c.twin.slug },
+      { source_id: ledger.granted_source, slug: ledger.hub_slug },
+    ]);
+  }
+  const searchFn = async (_engine: unknown, query: string) => {
+    const refs = groups.get(query) ?? [];
+    const rows = await engine.executeRaw<{ slug: string; page_id: number; chunk_id: number; chunk_text: string }>(
+      `SELECT p.slug, p.id AS page_id, cc.id AS chunk_id, cc.chunk_text FROM content_chunks cc JOIN pages p ON p.id = cc.page_id
+        JOIN unnest($1::text[], $2::text[]) AS k(source_id, slug) ON p.source_id = k.source_id AND p.slug = k.slug
+       WHERE p.deleted_at IS NULL ORDER BY p.slug, cc.chunk_index`, [refs.map(r => r.source_id), refs.map(r => r.slug)]);
+    return rows.map((r, i) => ({ ...r, page_id: Number(r.page_id), chunk_id: Number(r.chunk_id), score: 1 - i / 100, effective_date: null, effective_date_source: null }));
+  };
+  const judgeFn = async (input: { a: { text: string }; b: { text: string } }) => ({
+    verdict: { verdict: 'contradiction', severity: 'high', axis: `${input.a.text.slice(0, 160)} || ${input.b.text.slice(0, 160)}`, confidence: 0.9, resolution_kind: 'manual_review' },
+    usage: { inputTokens: 0, outputTokens: 0 },
+  });
+  const { report } = await g.contradictions.runContradictionProbe({
+    engine, queries: [...groups.keys()], searchFn, judgeFn, noCache: true, yesOverride: true, topK: 20, budgetUsd: 1,
+  });
+  await g.contradictions.writeRunRow(engine, report, report.duration_ms);
 }
 
 /** The trusted local read that must show a class's protected markers (the positive control). Page-borne classes use get_page. */
