@@ -528,6 +528,21 @@ export class GbrainSlot {
     return r.stdout.trim();
   }
 
+  /**
+   * Simulated elapsed time on the stopped slot's brain (gbrain reads Date.now() and takes no clock): facts created at
+   * or after `since` get `created_at`, and `valid_from` when it is at or after `since`, set to `at`. gbrain's managed-writer
+   * trigger refuses operator writes to facts, so this one statement runs with triggers off (session_replication_role
+   * replica). Returns the ids it moved.
+   */
+  async backdateFactsSince(since: string, at: string): Promise<number[]> {
+    if (this.client) throw new Error(`gbrain ${this.id}: stop the server before backdating facts`);
+    const pglite = join(this.buildDir, 'node_modules/@electric-sql/pglite/dist');
+    const sql = 'UPDATE facts SET created_at = $2::timestamptz, valid_from = CASE WHEN valid_from >= $1::timestamptz THEN $2::timestamptz ELSE valid_from END WHERE created_at >= $1::timestamptz RETURNING id';
+    const script = `const { PGlite } = await import(${JSON.stringify(`${pglite}/index.js`)}); const { vector } = await import(${JSON.stringify(`${pglite}/vector/index.js`)}); const { pg_trgm } = await import(${JSON.stringify(`${pglite}/contrib/pg_trgm.js`)}); const db = await PGlite.create({ dataDir: ${JSON.stringify(join(this.dir, 'home', 'brain.pglite'))}, extensions: { vector, pg_trgm } }); await db.exec('SET session_replication_role = replica'); const r = await db.query(${JSON.stringify(sql)}, [${JSON.stringify(since)}, ${JSON.stringify(at)}]); await db.close(); process.stdout.write(JSON.stringify(r.rows.map(x => Number(x.id))));`;
+    const { stdout } = await execFileAsync('bun', ['-e', script], { encoding: 'utf8' });
+    return JSON.parse(stdout.trim()) as number[];
+  }
+
   /** Written beside the snapshot by `build`; the round preflight reads it. */
   get coverageFile() { return `${this.dir}.coverage.json`; }
 
