@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.105 (`VERSION`) |
+| This repository | gbrain-evals v0.10.106 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except three: the Cat 40 Hard row's, which shipped after it
@@ -303,6 +303,13 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-15: Repository row names v0.10.106
+
+gbrain-evals v0.10.106 records the D6 proactive-brief development v2 run. On the T0 carrier with gbrain v0.60.247.0,
+with session-1 facts aged or crowded out of hot memory, the brief cut session-2 tool calls by 6% against a
+preregistered 20%, so it shows no time-saved signal; success held at 72 of 72 in both arms. This is development
+evidence only. No result row on this page changes. The repository row names v0.10.106 (was v0.10.105).
 
 ### 2026-10-15: Cat 40 next-wave confirmation; repository row names v0.10.105
 
