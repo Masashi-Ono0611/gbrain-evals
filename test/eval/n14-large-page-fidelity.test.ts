@@ -127,6 +127,16 @@ describe('N14 scorer', () => {
     expect(v.failed).toContain('quality.native_append_embed_ratio_max=null');
   });
 
+  test('findings: an over-cap default read is gap N14-3 only while gbrain has no windowed read', () => {
+    const { text, ledger } = small('conversation');
+    const gut = { root: '/x', version: 't', overlay: { build: { commit: 'c71fe7436e673db819c1be4532504b861e14ad50' } } } as unknown as GbrainUnderTest;
+    const run = fakeRun('single-page', ledger, text, () => true);
+    const loud = { ...summarizeArm({ ...run, direct_read: { bytes: 2_042_154 } }, '2mb') };
+    const ids = (capability: NativeCapability) => n14Findings({ tiers: [], capability, summary: summarize([loud], 0, capability) } as unknown as N14RunResult, gut).map(f => f.id);
+    expect(ids(probeNativeCapability([{ name: 'get_page', params: { slug: {} } }]))).toEqual(['N14-3']);
+    expect(ids(CAPABLE)).toEqual([]);
+  });
+
   test('the receipt overlay summary names the gbrain ref, never the checkout path', () => {
     const sha = 'c71fe7436e673db819c1be4532504b861e14ad50';
     const gut = {
@@ -317,6 +327,17 @@ describe('N14 adapters through evaluateArm', () => {
     expect(v.verdict).toBe('fail');
     expect(v.failed).toContain('safety.roundtrip_byte_loss=1');
     expect(v.failed.some(f => f.startsWith('floor.native_keyword_recall_2mb='))).toBe(true);
+  });
+
+  test('an agent-facing default read is reported beside the trusted one and stays out of the egress count', async () => {
+    class AgentRead extends ReferenceAdapter {
+      async agentDirectReadBytes() { return EGRESS_CAP_BYTES + 1; }
+    }
+    const plain = summarizeArm(await evaluateArm(new ReferenceAdapter('native'), doc.ledger, doc.text), '2mb');
+    expect(plain.direct_read_agent_bytes).toBeUndefined();
+    const s = summarizeArm(await evaluateArm(new AgentRead('native'), doc.ledger, doc.text), '2mb');
+    expect(s.direct_read_agent_bytes).toBe(EGRESS_CAP_BYTES + 1);
+    expect(s.responses_over_cap).toBe(0);
   });
 
   test('a whole-page reader fails the egress contract', async () => {
