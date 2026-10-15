@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.103 (`VERSION`) |
+| This repository | gbrain-evals v0.10.104 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except two: the Cat 40 Hard row's, which shipped after it
@@ -303,11 +303,17 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 
 ## Changelog
 
-### 2026-10-15: Repository row names v0.10.103
+### 2026-10-15: Repository row names v0.10.104
 
-gbrain-evals v0.10.103 adds the N14 large-page fidelity rerun after large pages Wave A (gbrain `44eb049`, measured
-through `--gbrain`; the pin is unchanged). No result row on this page changes. The repository row names v0.10.103 (was
-v0.10.102).
+gbrain-evals v0.10.104 adds the N14 large-page fidelity rerun after large pages Wave A (gbrain `44eb049`, measured
+through `--gbrain`; the pin is unchanged). No result row on this page changes. The repository row names v0.10.104 (was
+v0.10.103).
+
+### 2026-10-14: Repository row names v0.10.103
+
+gbrain-evals v0.10.103 records the D6 proactive-brief development run. On the T0 carrier with gbrain v0.60.240.0,
+brief-on and brief-off both finished 70 of 72 paired tasks, so it shows no improvement signal; this is development
+evidence only. No result row on this page changes. The repository row names v0.10.103 (was v0.10.102).
 
 ### 2026-10-14: Repository row names v0.10.102
 

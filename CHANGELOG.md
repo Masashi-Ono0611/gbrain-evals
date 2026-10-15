@@ -2,7 +2,7 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
-## [0.10.103] - 2026-10-15
+## [0.10.104] - 2026-10-15
 
 ### N14 large-page fidelity after large pages Wave A
 
@@ -16,6 +16,29 @@ Pages over 24 MiB are refused, now with `request_too_large` (bug N14-4 fixed), a
 page: both wait for Wave B. Preregistration Amendment 1 adds the upgrade-path case and the agent-facing read. The bug
 ledger closes N14-1 and N14-3, fixes N14-4 and narrows N14-2. See the
 [Wave A report](docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a.md).
+
+## [0.10.103] - 2026-10-14
+
+### D6 proactive brief, development phase: no improvement signal
+
+Cat 40 family P gains the proactive-brief arms. The T0 runner takes `--arms brief-off,brief-on`. Brief-on sets
+`context.proactive_brief` after every restore. The paid-arm guard halts the run on any brief in a brief-off cell, and
+paid brief cells need `--preregistration`. `eval/runner/t0/brief.ts` reads the brief block, classifies each pushed item
+against the gold and summarizes the preregistered primary and diagnostics. There are six new development seeds,
+20261201 to 20261206, and a registry row `proactive-brief` (D6).
+
+The [preregistration](docs/benchmarks/2026-10-14-proactive-brief-dev-preregistration.md) was frozen and pushed before
+any spend. The run used gbrain v0.60.240.0 with Opus 5.5, Sonnet 5.5 and gpt-6.1-sol, 144 cells, and reports
+[no improvement signal](docs/benchmarks/2026-10-14-proactive-brief-dev.md):
+
+- Both arms finished 70/72 paired tasks: a difference of 0 points, 95% interval −5.5 to +5.5. Two of the four
+  discordant pairs were provider errors.
+- The guard check fails: the brief missed in 14 of 72 brief-on cells. Each miss was a Sonnet session that updated
+  pages without calling `remember`, which left the brief no fact to push.
+- The brief pushed one item per session, 397 characters at most, with 0 false pushes and no rise in confident-wrong
+  answers.
+
+This is development evidence only and does not decide the default. Spend was $27.85 of a new $45 ledger.
 
 ## [0.10.102] - 2026-10-14
 

@@ -50,6 +50,8 @@ import { insideRepository } from '../runner/sealed-confirmation-lib.ts';
 
 export const PP_GENERATOR_VERSION = 'program-primary-v1';
 export const PP_DEV_SEEDS: readonly number[] = [20261008, 20261009, 20261010, 20261011, 20261012, 20261013, 20261014, 20261015];
+/** Wave 5 D6 development seeds (proactive brief, brief-off vs brief-on): new worlds no earlier run used. */
+export const PP_BRIEF_DEV_SEEDS: readonly number[] = [20261201, 20261202, 20261203, 20261204, 20261205, 20261206];
 export const PP_TODAY = '2026-10-14';
 export const PP_SESSION2_DAY = '2026-10-15';
 export const TASKS_PER_PERSONA = 4;
