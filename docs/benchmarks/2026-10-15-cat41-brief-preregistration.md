@@ -288,3 +288,14 @@ A reader at the ceiling in both arms is called out. Records go under
 **Amendment 1 (October 15, 2026, before any paid session).** The driver now deletes the previous run's hook-output
 files in sorted order (`readdirSync(...).sort()` in `in-container.ts`), as the repository's readdir-determinism test
 requires. This changes nothing about what a session sees or how it is scored.
+
+**Amendment 2 (October 15, 2026, after the paid sessions; diagnostics only).** Two diagnostic counts in
+`summarizeD7` did not match their definitions above, and are corrected. Neither feeds a check or the label.
+
+1. The cold-replay drop count included `off` and `pull` cells. In those cells the brief switch is off, so
+   `turn_context` never carries a brief. It now counts `on` cells only, as [Latency](#latency-diagnostic) defines.
+2. The pull field counted hook calls. It now counts `context_pack` calls that name a `counterparty`, as the pull-arm
+   diagnostic defines. It also reports, for every arm, how many cells made such a call.
+
+Rerunning the analysis with these fixes leaves every check and the label unchanged.
+

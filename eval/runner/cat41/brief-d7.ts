@@ -168,6 +168,8 @@ export interface D7Cell {
   /** Per model request: reply wait from arrival gaps (provider latency plus generation); Claude Code's own API time. */
   model_waits_ms: number[]; api_ms: number | null;
   tool_calls: number; input_tokens: number; cost_usd: number;
+  /** `context_pack` calls that named a `counterparty` (the pull brief), in any arm. */
+  pull_brief_calls: number;
   delivery: ReturnType<typeof readDelivery>;
   /** Pushed needed facts that the final answer states (acted on). */
   acted_on: NeededFact[];
@@ -180,7 +182,7 @@ export function readCell(dir: string, r: ContainerResult): D7Cell | null {
   const delivery = readDelivery(r.scenario, r, dir);
   const base = { id: r.scenario, kind: p.kind, seed: p.seed, arm: p.arm, condition: spec.condition, harness: r.harness, model: r.model, repeat: r.repeat, delivery };
   const s1 = r.sessions[0];
-  if (r.setup_error || !s1) return { ...base, status: 'setup_error', success: false, confident_wrong: false, failure_kinds: [], time_to_correct_ms: 0, reached_correct: false, session_ms: 0, turns_to_correct: 0, tool_calls_to_correct: 0, model_waits_ms: [], api_ms: null, tool_calls: 0, input_tokens: 0, cost_usd: 0, acted_on: [] };
+  if (r.setup_error || !s1) return { ...base, status: 'setup_error', success: false, confident_wrong: false, failure_kinds: [], time_to_correct_ms: 0, reached_correct: false, session_ms: 0, turns_to_correct: 0, tool_calls_to_correct: 0, model_waits_ms: [], api_ms: null, tool_calls: 0, input_tokens: 0, cost_usd: 0, pull_brief_calls: 0, acted_on: [] };
   const raw = existsSync(join(dir, s1.raw_path)) ? readFileSync(join(dir, s1.raw_path), 'utf8') : '';
   const times = existsSync(join(dir, `${s1.raw_path}.times`)) ? JSON.parse(readFileSync(join(dir, `${s1.raw_path}.times`), 'utf8')) as number[] : [];
   const parsed = parseSession(r.harness, raw, 1);
@@ -200,7 +202,8 @@ export function readCell(dir: string, r: ContainerResult): D7Cell | null {
     time_to_correct_ms: first?.ms ?? s1.wall_ms, reached_correct: first !== null, session_ms: s1.wall_ms,
     turns_to_correct: first?.turns ?? tl.turns, tool_calls_to_correct: first?.tool_calls ?? tl.tool_calls,
     model_waits_ms: tl.model_waits, api_ms: tl.api_ms,
-    tool_calls: parsed.events.filter(e => e.kind !== 'text').length, input_tokens: s1.input_tokens ?? 0, cost_usd: s1.cost_usd ?? 0,
+    tool_calls: parsed.events.filter(e => e.kind !== 'text').length,
+    pull_brief_calls: parsed.events.filter(e => e.kind === 'mcp' && e.name === 'context_pack' && typeof ((e.input as { arguments?: { counterparty?: unknown } } | undefined)?.arguments?.counterparty) === 'string').length, input_tokens: s1.input_tokens ?? 0, cost_usd: s1.cost_usd ?? 0,
     acted_on: carried(task, parsed.finalText).filter(f => pushed.has(f)),
   };
 }
@@ -291,7 +294,8 @@ export function summarizeD7(cells: readonly D7Cell[]) {
     pooled, delivered_only: { label: 'diagnostic only: positive pairs whose on cell got the full brief', ...slice(positive.filter(p => briefDelivered(p.on))) },
     by_kind: group(p => p.off.kind), by_model: group(p => p.off.model), by_condition: group(p => p.off.condition),
     negative: { pairs: pairs.filter(p => p.off.kind === 'negative').length, briefs_on: onCells.filter(c => c.kind === 'negative' && c.delivery.hooks.some(h => h.brief)).length, confident_wrong: { off: scored.filter(c => c.kind === 'negative' && c.arm === 'off' && c.confident_wrong).length, on: scored.filter(c => c.kind === 'negative' && c.arm === 'on' && c.confident_wrong).length } },
-    pull: [...pull.values()].map(c => ({ key: pairKey(c), success: c.success, time_to_correct_ms: c.time_to_correct_ms, off_time_ms: off.get(pairKey(c))?.time_to_correct_ms ?? null, pull_brief_calls: c.delivery.hooks.length })),
+    pull: [...pull.values()].map(c => ({ key: pairKey(c), success: c.success, time_to_correct_ms: c.time_to_correct_ms, off_time_ms: off.get(pairKey(c))?.time_to_correct_ms ?? null, pull_brief_calls: c.pull_brief_calls })),
+    pull_brief_by_arm: Object.fromEntries(['off', 'on', 'pull'].map(arm => { const cs = scored.filter(c => c.arm === arm); return [arm, { cells: cs.length, cells_that_pulled: cs.filter(c => c.pull_brief_calls > 0).length }]; })),
     control, brief: { sessions_on: sessionsOn, items: items.length, false_pushes: items.filter(i => i.false_push).length, stale_items: items.filter(i => i.stale).length, max_chars: Math.max(0, ...briefChars), fired_on_positive: onCells.filter(c => c.kind !== 'negative' && c.delivery.hooks.some(h => h.brief)).length, positive_on_cells: onCells.filter(c => c.kind !== 'negative').length, brief_reached_model: onCells.filter(c => c.delivery.brief_reached_model === true).length },
     diagnostics: {
       surfaced: onCells.filter(c => c.kind !== 'negative' && c.delivery.hooks.some(h => (h.brief?.items ?? []).some(i => (i.class?.carries ?? []).length > 0))).length,
@@ -299,7 +303,8 @@ export function summarizeD7(cells: readonly D7Cell[]) {
       repeated_stale: { off: scored.filter(c => c.arm === 'off' && c.failure_kinds.some(k => k.startsWith('stale'))).length, on: scored.filter(c => c.arm === 'on' && c.failure_kinds.some(k => k.startsWith('stale'))).length },
       confident_wrong: { off: cw('off'), on: cw('on'), pull: cw('pull') },
     },
-    latency: { cutoff_ms: TURN_BRIEF_CUTOFF_MS, user_prompt_hook_ms: latency.sort((a, b) => a - b), replay_cold_turn_context_ms: replays.map(r => r!.turn_context![0].ms), replay_cold_brief_dropped: replays.filter(r => r!.turn_context![0].brief_items === 0 && (r!.brief_alone?.[0]?.brief_items ?? 0) > 0).length, live_vs_possible: liveVsReplay },
+    latency: { cutoff_ms: TURN_BRIEF_CUTOFF_MS, user_prompt_hook_ms: latency.sort((a, b) => a - b), replay_cold_turn_context_ms: replays.map(r => r!.turn_context![0].ms), replay_cold_brief_dropped: onCells.map(c => c.delivery.replay as { turn_context?: Array<{ brief_items: number }>; brief_alone?: Array<{ brief_items: number }> } | null).filter(r => r?.turn_context && r.turn_context[0].brief_items === 0 && (r.brief_alone?.[0]?.brief_items ?? 0) > 0).length,
+      replay_cold_on_cells_ms: onCells.filter(c => c.kind !== 'negative').map(c => (c.delivery.replay as { turn_context?: Array<{ ms: number }> } | null)?.turn_context?.[0]?.ms ?? null), live_vs_possible: liveVsReplay },
     cost_usd: cells.reduce((a, c) => a + c.cost_usd, 0),
   };
 }
