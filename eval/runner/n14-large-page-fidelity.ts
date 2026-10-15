@@ -45,6 +45,7 @@
  *   bun eval/runner/n14-large-page-fidelity.ts [--tier 2mb|20mb|200mb|1gb | --tiers 2mb,20mb]
  *     [--arms single-page,managed-parts,native] [--docs conversation,project-log,book] [--seed N] [--output <dir>] [--gbrain <checkout>[@ref]]
  *     [--concurrency N] [--rss-limit-mb N] [--record-bugs] [--json]
+ *     [--upgrade-from <checkout>[@ref]]   (2mb tier: seed each document single-page with that gbrain, then backfill and probe it with --gbrain)
  */
 import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
@@ -124,6 +125,8 @@ export interface N14Adapter {
   read(hit: SearchHit): Promise<string>;
   /** Read the document's entry page by slug with default parameters. */
   directRead(): Promise<string>;
+  /** The same default read as an agent-facing (remote) caller; its frame bytes, outside the egress count. */
+  agentDirectReadBytes?(): Promise<number>;
   /** Embed everything stale; null when the adapter has no embedder. */
   embedPass(): Promise<EmbedCount | null>;
   append(text: string): Promise<AppendOutcome>;
@@ -146,6 +149,7 @@ export interface ArmRun {
   probes: ProbeRow[];
   reads: ReadRow[];
   direct_read: { bytes: number | null; error?: string };
+  direct_read_agent?: { bytes: number | null; error?: string };
   embed_initial: (EmbedCount & { wall_ms: number }) | null;
   embed_error?: string;
   append: AppendOutcome & { wall_ms: number; embed: EmbedCount | null; appended_tokens: number; visible_rank: number | null; visible_error?: string };
@@ -227,6 +231,11 @@ export async function evaluateArm(adapter: N14Adapter, ledger: N14DocLedger, raw
   let directRead: ArmRun['direct_read'];
   try { await adapter.directRead(); directRead = { bytes: adapter.frames.at(-1)?.bytes ?? null }; }
   catch (e) { directRead = { bytes: null, error: `${errCode(e)}: ${errMsg(e).slice(0, 200)}` }; }
+  let directReadAgent: ArmRun['direct_read_agent'];
+  if (adapter.agentDirectReadBytes) {
+    try { directReadAgent = { bytes: await adapter.agentDirectReadBytes() }; }
+    catch (e) { directReadAgent = { bytes: null, error: `${errCode(e)}: ${errMsg(e).slice(0, 200)}` }; }
+  }
   memory.push(mark('reads'));
 
   let embedInitial: ArmRun['embed_initial'] = null;
@@ -277,7 +286,7 @@ export async function evaluateArm(adapter: N14Adapter, ledger: N14DocLedger, raw
     arm: adapter.arm, doc: ledger.id, bytes: ledger.bytes,
     ingest: { ...ingest, wall_ms: Math.round(ingestMs) },
     stored: { contains, total: ledger.needles.length },
-    control, probes, reads, direct_read: directRead,
+    control, probes, reads, direct_read: directRead, ...(directReadAgent ? { direct_read_agent: directReadAgent } : {}),
     embed_initial: embedInitial,
     ...(embedError ? { embed_error: embedError } : {}),
     append: { ...app, wall_ms: Math.round(appendMs), embed: appendEmbed, appended_tokens: estTokens(appendText), visible_rank: visibleRank, ...(visibleError ? { visible_error: visibleError } : {}) },
@@ -307,6 +316,8 @@ export interface ArmSummary {
   distractor_preferred: number;
   reads: { attempted: number; contains: number; correct: number; max_bytes: number | null };
   direct_read_bytes: number | null;
+  /** Default get_page of the entry page as an agent-facing caller (exploratory, Amendment 1); not in the egress count. */
+  direct_read_agent_bytes?: number | null;
   max_frame_bytes: number;
   responses_over_cap: number;
   append: { status: string; code?: string; wall_ms: number | null; embed_inputs: number | null; embed_tokens: number | null; appended_tokens: number; embed_ratio: number | null; chunks_rewritten: number; chunks_deleted: number; visible: boolean; path: string } | null;
@@ -342,6 +353,7 @@ export function summarizeArm(run: ArmRun, tier: TierId): ArmSummary {
     distractor_preferred: run.probes.filter(p => p.distractor_rank !== null && (p.hit_rank === null || p.distractor_rank < p.hit_rank)).length,
     reads: { attempted: attempted.length, contains: attempted.filter(r => r.contains).length, correct: attempted.filter(r => r.correct).length, max_bytes: attempted.length ? Math.max(0, ...attempted.map(r => r.bytes ?? 0)) : null },
     direct_read_bytes: run.direct_read.bytes,
+    ...(run.direct_read_agent ? { direct_read_agent_bytes: run.direct_read_agent.bytes } : {}),
     max_frame_bytes: run.frames.max_bytes,
     responses_over_cap: run.frames.over_cap,
     append: {
@@ -529,10 +541,18 @@ export class GbrainAdapter implements N14Adapter {
   #parts: PartPlan[] = [];
   #preamble = '';
   #capability!: NativeCapability;
+  #runBackfill: ((engine: unknown) => Promise<unknown>) | null = null;
+  /** The `runOversizedBackfill` receipt when this adapter's ingest is the upgrade backfill (Amendment 1). */
+  backfill: unknown = null;
 
   private constructor(arm: Arm, embedder: Embedder) { this.arm = arm; this.#embedder = embedder; }
 
-  static async open(root: string, arm: Arm, embedder: Embedder): Promise<GbrainAdapter> {
+  /**
+   * `dataDir` opens a file-backed brain instead of an in-memory one. `upgrade`
+   * makes ingest run the gbrain under test's oversized-page backfill on a brain
+   * an older gbrain seeded, instead of writing the document.
+   */
+  static async open(root: string, arm: Arm, embedder: Embedder, opts: { dataDir?: string; upgrade?: boolean } = {}): Promise<GbrainAdapter> {
     const a = new GbrainAdapter(arm, embedder);
     const gut: GbrainUnderTest = { root, version: 'child', overlay: null };
     const { PGLiteEngine } = await importGbrain<{ PGLiteEngine: new () => PGLiteEngineType }>(gut, 'src/core/pglite-engine.ts');
@@ -540,12 +560,16 @@ export class GbrainAdapter implements N14Adapter {
     a.#gw = await importGbrain<GatewayModule>(gut, 'src/core/ai/gateway.ts');
     a.#runEmbedCore = (await importGbrain<{ runEmbedCore: RunEmbedCore }>(gut, 'src/commands/embed.ts')).runEmbedCore;
     a.#runExport = (await importGbrain<{ runExport: RunExport }>(gut, 'src/commands/export.ts')).runExport;
+    if (opts.upgrade) {
+      const { runOversizedBackfill } = await importGbrain<{ runOversizedBackfill: (engine: unknown) => Promise<unknown> }>(gut, 'src/core/oversized-backfill.ts');
+      a.#runBackfill = runOversizedBackfill;
+    }
     a.#engine = new PGLiteEngine();
-    await a.#engine.connect({});
+    await a.#engine.connect(opts.dataDir ? { database_path: opts.dataDir } : {});
     await a.#engine.initSchema();
     for (const [k, v] of Object.entries({ 'search.cache.enabled': 'false', 'search.reranker.enabled': 'false', 'search.expansion': 'false' })) await a.#engine.setConfig(k, v);
     const logger = { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} };
-    a.#ctx = { engine: a.#engine, config: { engine: 'pglite', database_path: ':memory:' }, logger, dryRun: false, remote: false, sourceId: 'default' };
+    a.#ctx = { engine: a.#engine, config: { engine: 'pglite', database_path: opts.dataDir ?? ':memory:' }, logger, dryRun: false, remote: false, sourceId: 'default' };
     a.#ops = new Map(operations.map(o => [o.name, o]));
     a.#capability = probeNativeCapability(operations);
     return a;
@@ -574,9 +598,17 @@ export class GbrainAdapter implements N14Adapter {
   async ingest(ledger: N14DocLedger, raw: string): Promise<IngestOutcome> {
     this.#ledger = ledger;
     this.#raw = raw;
-    await this.#put(CONTROL_SLUG, ledger.control.content);
     let writeErrors = 0;
     let first: { code: string; message: string } | null = null;
+    if (this.#runBackfill) {
+      try {
+        this.backfill = await this.#runBackfill(this.#engine);
+        const failed = (this.backfill as { failed?: Array<{ error: string }> }).failed ?? [];
+        if (failed.length) { writeErrors = failed.length; first = { code: 'backfill_failed', message: failed[0].error }; }
+      } catch (e) { writeErrors++; first = { code: errCode(e), message: errMsg(e).slice(0, 500) }; }
+      return await this.#ingestOutcome(writeErrors, first);
+    }
+    await this.#put(CONTROL_SLUG, ledger.control.content);
     const attempt = async (slug: string, content: string) => {
       try { await this.#put(slug, content); }
       catch (e) { writeErrors++; first ??= { code: errCode(e), message: errMsg(e).slice(0, 500) }; }
@@ -592,6 +624,10 @@ export class GbrainAdapter implements N14Adapter {
     } else {
       await attempt(ledger.slug, raw);
     }
+    return await this.#ingestOutcome(writeErrors, first);
+  }
+
+  async #ingestOutcome(writeErrors: number, first: { code: string; message: string } | null): Promise<IngestOutcome> {
     const docPages = await this.sql<{ n: number; chunks: number; skip: string | null }>(
       `SELECT count(*)::int AS n, coalesce(sum((SELECT count(*) FROM content_chunks c WHERE c.page_id = p.id)), 0)::int AS chunks,
               max(p.frontmatter->'embed_skip'->>'reason') AS skip
@@ -635,6 +671,10 @@ export class GbrainAdapter implements N14Adapter {
 
   async directRead(): Promise<string> {
     return JSON.stringify(await this.call('get_page', { slug: this.#ledger.slug }));
+  }
+
+  async agentDirectReadBytes(): Promise<number> {
+    return frameBytes(await this.#ops.get('get_page')!.handler({ ...this.#ctx, remote: true }, { slug: this.#ledger.slug }));
   }
 
   async #ensureGateway(): Promise<void> {
@@ -778,8 +818,10 @@ function countingVector(text: string, dims: number): number[] {
 
 // ─── Child process ───────────────────────────────────────────────────────
 
-interface ChildSpec { root: string; arm: Arm; docPath: string; ledgerPath: string; outPath: string; embed: boolean }
-interface ChildResult { ok: true; run: ArmRun; capability: NativeCapability }
+/** `phase` (Amendment 1 upgrade path): `seed` writes the document single-page into the file-backed brain at `dataDir`; `upgrade` opens it, backfills and probes. */
+interface ChildSpec { root: string; arm: Arm; docPath: string; ledgerPath: string; outPath: string; embed: boolean; dataDir?: string; phase?: 'seed' | 'upgrade' }
+interface ChildResult { ok: true; run: ArmRun; capability: NativeCapability; backfill?: unknown }
+interface SeedResult { ok: true; seed: IngestOutcome }
 
 function memMark(t0: number): (phase: string) => MemMark {
   return (phase: string) => ({ phase, t_ms: Math.round(performance.now() - t0), rss_mb: Math.round(process.memoryUsage().rss / 1048576), max_rss_mb: Math.round(process.resourceUsage().maxRSS / 1024) });
@@ -789,12 +831,17 @@ async function childMain(specPath: string): Promise<void> {
   const spec = JSON.parse(readFileSync(specPath, 'utf8')) as ChildSpec;
   await withHermeticEnv('n14-child', async () => {
     const ledger = JSON.parse(readFileSync(spec.ledgerPath, 'utf8')) as N14DocLedger;
-    const adapter = await GbrainAdapter.open(spec.root, spec.arm, spec.embed ? { kind: 'counting' } : { kind: 'none' });
+    const adapter = await GbrainAdapter.open(spec.root, spec.arm, spec.embed ? { kind: 'counting' } : { kind: 'none' }, { dataDir: spec.dataDir, upgrade: spec.phase === 'upgrade' });
     try {
       const raw = readFileSync(spec.docPath, 'utf8');
+      if (spec.phase === 'seed') {
+        const seed: SeedResult = { ok: true, seed: await adapter.ingest(ledger, raw) };
+        writeFileSync(spec.outPath, JSON.stringify(seed));
+        return;
+      }
       const t0 = performance.now();
       const run = await evaluateArm(adapter, ledger, raw, { embed: spec.embed, probeMemory: memMark(t0) });
-      const result: ChildResult = { ok: true, run, capability: adapter.capability };
+      const result: ChildResult = { ok: true, run, capability: adapter.capability, ...(adapter.backfill ? { backfill: adapter.backfill } : {}) };
       writeFileSync(spec.outPath, JSON.stringify(result));
     } finally {
       await adapter.close();
@@ -843,7 +890,15 @@ async function runChild(spec: ChildSpec, rssLimitMb: number, timeoutMs: number):
 
 // ─── Run ─────────────────────────────────────────────────────────────────
 
-export interface TierRun { tier: TierId; docs: N14DocLedger[]; presence: PresenceCheck[]; arms: ArmSummary[]; children: Array<{ tier: TierId; doc: string; arm: Arm; wall_ms: number; rss_peak_mb: number; crash: string | null; control: ArmRun['control'] | null; tail?: string }> }
+/** One upgrade-path row (Amendment 1, exploratory): seeded by the older gbrain, backfilled and probed by the gbrain under test. */
+export interface UpgradeRow {
+  tier: TierId; doc: string;
+  seed: IngestOutcome | null; seed_crash: string | null;
+  backfill: unknown; marker_removed: boolean | null;
+  summary: ArmSummary | null; crash: string | null; wall_ms: number; rss_peak_mb: number;
+}
+
+export interface TierRun { tier: TierId; docs: N14DocLedger[]; presence: PresenceCheck[]; arms: ArmSummary[]; upgrade?: UpgradeRow[]; children: Array<{ tier: TierId; doc: string; arm: Arm; wall_ms: number; rss_peak_mb: number; crash: string | null; control: ArmRun['control'] | null; tail?: string }> }
 
 export interface N14RunResult {
   tiers: TierRun[];
@@ -856,7 +911,7 @@ export interface N14RunResult {
   runs: Array<{ tier: TierId; run: ArmRun }>;
 }
 
-export interface N14Options { gut: GbrainUnderTest; tiers: TierId[]; arms: Arm[]; docs?: DocKind[]; seed: number; concurrency: number; rssLimitMb: number; workDir?: string; log?: (s: string) => void }
+export interface N14Options { gut: GbrainUnderTest; upgradeFrom?: GbrainUnderTest; tiers: TierId[]; arms: Arm[]; docs?: DocKind[]; seed: number; concurrency: number; rssLimitMb: number; workDir?: string; log?: (s: string) => void }
 
 async function pool<T, R>(items: readonly T[], n: number, fn: (x: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);
@@ -940,6 +995,28 @@ async function runN14Hermetic(opts: N14Options): Promise<N14RunResult> {
           else acc.score(`${tier}:${arm}:${p.id}`, p.hit_rank !== null ? 1 : 0);
         }
       }
+      if (opts.upgradeFrom && tier === '2mb') {
+        const from = opts.upgradeFrom;
+        tierRun.upgrade = await pool(docs, opts.concurrency, async d => {
+          const dataDir = join(dir, `${d.ledger.id}.upgrade-brain`);
+          log(`[${tier}] ${d.ledger.id} / upgrade: seeding with gbrain ${from.version}`);
+          const s = await runChild({ root: from.root, arm: 'single-page', docPath: d.docPath, ledgerPath: d.ledgerPath, outPath: join(dir, `${d.ledger.id}.upgrade-seed.json`), embed: false, dataDir, phase: 'seed' }, opts.rssLimitMb, timeoutMs);
+          const seed = (s.result as unknown as SeedResult | null)?.seed ?? null;
+          const row: UpgradeRow = { tier, doc: d.ledger.id, seed, seed_crash: s.crash, backfill: null, marker_removed: null, summary: null, crash: null, wall_ms: s.wall_ms, rss_peak_mb: s.rss_peak_mb };
+          if (!seed) return row;
+          const u = await runChild({ root: opts.gut.root, arm: 'native', docPath: d.docPath, ledgerPath: d.ledgerPath, outPath: join(dir, `${d.ledger.id}.upgrade.result.json`), embed: false, dataDir, phase: 'upgrade' }, opts.rssLimitMb, timeoutMs);
+          log(`[${tier}] ${d.ledger.id} / upgrade: ${u.crash ? `CRASH ${u.crash}` : 'done'} in ${(u.wall_ms / 1000).toFixed(1)} s, peak RSS ${u.rss_peak_mb} MB`);
+          row.crash = u.crash;
+          row.wall_ms += u.wall_ms;
+          row.rss_peak_mb = Math.max(row.rss_peak_mb, u.rss_peak_mb);
+          if (u.result) {
+            row.backfill = u.result.backfill ?? null;
+            row.summary = summarizeArm(u.result.run, tier);
+            row.marker_removed = u.result.run.ingest.embed_skip === null;
+          }
+          return row;
+        });
+      }
     }
   } catch (e) {
     harnessError = `harness: ${errMsg(e)}`;
@@ -976,7 +1053,7 @@ export function n14Findings(r: N14RunResult, gut: GbrainUnderTest): BugEntry[] {
   if (refused) {
     out.push({
       id: 'N14-2', category: 'large-page-fidelity', classification: 'feature-gap', status: 'open', gbrain_sha: sha,
-      contract: 'gbrain documents a 5 MB per-page write limit (MAX_FILE_SIZE, src/core/import-screen.ts; file_too_large / request_too_large in src/core/error-registry.ts) and tells the user to split the file',
+      contract: 'gbrain documents a per-page write limit (MAX_FILE_SIZE 5 MB in src/core/import-screen.ts before v0.60.242.0; the 24 MiB page ceiling from v0.60.242.0; request_too_large in src/core/error-registry.ts) and tells the user to split the file',
       surface: 'put_page -> persistence preparation (request_too_large)',
       repro: repro(refused.tier, 'single-page'),
       expected: 'one large document can be written as one page',
@@ -994,7 +1071,7 @@ export function n14Findings(r: N14RunResult, gut: GbrainUnderTest): BugEntry[] {
       actual: `put_page of the ${capacity.tier} ${capacity.doc} on an empty brain returned queue_capacity (write capacity exhausted), a retryable code for a request no amount of waiting can admit; keyword recall ${capacity.keyword_recall.hits}/${capacity.keyword_recall.total}`,
     });
   }
-  const loud = single.find(a => (a.direct_read_bytes ?? 0) > EGRESS_CAP_BYTES);
+  const loud = r.capability.present ? undefined : single.find(a => (a.direct_read_bytes ?? 0) > EGRESS_CAP_BYTES);
   if (loud) {
     out.push({
       id: 'N14-3', category: 'large-page-fidelity', classification: 'feature-gap', status: 'open', gbrain_sha: sha,
@@ -1145,9 +1222,12 @@ async function main(): Promise<void> {
   }
   const startedAt = new Date().toISOString();
   const gut = resolveGbrainUnderTest(gbrainSpecFrom(argv));
+  const upgradeSpec = argValue(argv, '--upgrade-from');
+  const upgradeFrom = upgradeSpec ? resolveGbrainUnderTest(upgradeSpec) : undefined;
+  if (upgradeFrom && !tiers.includes('2mb')) throw new Error('--upgrade-from runs on the 2mb tier; add --tiers 2mb');
   log(`# BrainBench N14: large-page fidelity (gbrain ${gut.version}${gut.overlay ? `, overlay ${gut.overlay.build.commit.slice(0, 7)}` : ', pinned'}; tiers ${tiers.join(', ')}; arms ${arms.join(', ')})`);
   const t0 = performance.now();
-  const r = await runN14({ gut, tiers, arms, docs, seed, concurrency, rssLimitMb, log });
+  const r = await runN14({ gut, upgradeFrom, tiers, arms, docs, seed, concurrency, rssLimitMb, log });
   const hermeticMs = Math.round(performance.now() - t0);
   let paidData: Record<string, unknown> | null = null;
   let paidCost: RunSummary | null = null;
@@ -1196,6 +1276,8 @@ async function main(): Promise<void> {
       native_capability: r.capability,
       thresholds: THRESHOLDS,
       gbrain_overlay: overlaySummary(gut),
+      ...(upgradeFrom ? { upgrade_from: { gbrain_version: upgradeFrom.version, overlay: overlaySummary(upgradeFrom), path: 'file-backed PGLite seeded single-page by upgrade_from (embed off), then opened by the gbrain under test: initSchema, runOversizedBackfill, the native arm probes without an embed pass' } } : {}),
+      direct_read_agent: 'exploratory (Amendment 1): the entry page default get_page also made with remote: true; its frame is reported per arm and is not in the egress count',
       hermetic_wall_ms: hermeticMs,
     },
     hashes: { ledger_sha256: r.ledgerSha256 },
@@ -1209,9 +1291,10 @@ async function main(): Promise<void> {
       verdict_failures: r.verdict?.failed ?? null,
       arms: r.summary?.arms ?? r.tiers.flatMap(t => t.arms),
       children: r.tiers.flatMap(t => t.children),
+      ...(upgradeFrom ? { upgrade: r.tiers.flatMap(t => t.upgrade ?? []) } : {}),
       presence: r.tiers.flatMap(t => t.presence),
       documents: r.tiers.flatMap(t => t.docs.map(d => ({ tier: t.tier, id: d.id, bytes: d.bytes, lines: d.lines, sections: d.sections.length, sha256: d.sha256, needles: d.needles.length, append_bytes: d.append.bytes }))),
-      probes: r.runs.map(x => ({ tier: x.tier, arm: x.run.arm, doc: x.run.doc, rows: x.run.probes, reads: x.run.reads, append: x.run.append, roundtrip: x.run.roundtrip, frames: x.run.frames, memory: x.run.memory, ingest: x.run.ingest, direct_read: x.run.direct_read, embed_initial: x.run.embed_initial, embed_error: x.run.embed_error ?? null })),
+      probes: r.runs.map(x => ({ tier: x.tier, arm: x.run.arm, doc: x.run.doc, rows: x.run.probes, reads: x.run.reads, append: x.run.append, roundtrip: x.run.roundtrip, frames: x.run.frames, memory: x.run.memory, ingest: x.run.ingest, direct_read: x.run.direct_read, direct_read_agent: x.run.direct_read_agent ?? null, embed_initial: x.run.embed_initial, embed_error: x.run.embed_error ?? null })),
       findings: findings.map(f => ({ id: f.id, classification: f.classification, surface: f.surface, actual: f.actual, repro: f.repro })),
       ...(paidData ?? {}),
       harness_error: r.harnessError,
@@ -1229,6 +1312,17 @@ async function main(): Promise<void> {
     log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
     for (const x of s.arms) {
       log(`| ${x.tier} | ${x.doc} | ${x.arm} | ${x.ingest.status}${x.ingest.code ? ` (${x.ingest.code})` : ''}${x.ingest.embed_skip ? ` embed_skip=${x.ingest.embed_skip}` : ''} | ${x.ingest.chunks} | ${pct(x.keyword_recall)} | ${x.min_decile_recall.toFixed(2)} | ${pct(x.delivered_recall)} | ${x.reads.correct}/${x.reads.attempted} | ${x.max_frame_bytes} | ${x.append?.embed_ratio ?? 'n/a'} | ${x.append?.chunks_rewritten ?? 'n/a'} | ${x.roundtrip} | ${x.ingest.wall_ms === null ? 'n/a' : (x.ingest.wall_ms / 1000).toFixed(1)} | ${x.ingest.rss_over_baseline_mb ?? 'n/a'} |`);
+    }
+  }
+  const upgrades = r.tiers.flatMap(t => t.upgrade ?? []);
+  if (upgrades.length) {
+    log('\nupgrade path (exploratory): seeded by the older gbrain, backfilled and probed by the gbrain under test');
+    log('| doc | seed | backfill reindexed/candidates (held) | marker removed | chunks | keyword recall@10 | min decile | reads ok | max frame B | round trip |');
+    log('|---|---|---|---|---|---|---|---|---|---|');
+    for (const u of upgrades) {
+      const b = u.backfill as { reindexed?: number; candidates?: number; held_for_approval?: number } | null;
+      const x = u.summary;
+      log(`| ${u.doc} | ${u.seed ? `${u.seed.status}${u.seed.embed_skip ? ` embed_skip=${u.seed.embed_skip}` : ''}, ${u.seed.chunks} chunks` : `crash ${u.seed_crash}`} | ${b ? `${b.reindexed}/${b.candidates} (${b.held_for_approval})` : 'n/a'} | ${u.marker_removed ?? 'n/a'} | ${x?.ingest.chunks ?? 'n/a'} | ${x ? pct(x.keyword_recall) : 'n/a'} | ${x ? x.min_decile_recall.toFixed(2) : 'n/a'} | ${x ? `${x.reads.correct}/${x.reads.attempted}` : 'n/a'} | ${x?.max_frame_bytes ?? 'n/a'} | ${x?.roundtrip ?? (u.crash ? `crash ${u.crash}` : 'n/a')} |`);
     }
   }
   log(`\ngbrain findings: ${findings.length ? '' : 'none'}`);
