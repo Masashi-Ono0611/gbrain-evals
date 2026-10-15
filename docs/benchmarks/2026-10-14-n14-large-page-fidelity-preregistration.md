@@ -102,4 +102,15 @@ The counting embedder returns hash vectors: it measures how many inputs gbrain s
 
 ## Amendments
 
-None.
+### Amendment 1 (2026-10-15): Wave A rerun
+
+This amendment was written before any run against gbrain `44eb0493bfd5…` (master, v0.60.242.0). That commit contains large pages Wave A: #6707 (the windowed read contract), #6715 (crash fixes) and #6733 (the 24 MiB ceiling, large-page embedding and `gbrain reindex --oversized`). No rule, threshold, model or arm definition changes.
+
+1. **Scope.** The hermetic arm runs at 2 MB and 20 MB with all three arms. The paid arm does not run, because no budget is approved. The 200 MB chat runs on the single-page and native arms only, to check the refusal over the 24 MiB ceiling (bug N14-4). Managed parts is not rerun at 200 MB.
+2. **Native arm.** The capability probe is expected to find `get_page` declaring `body` with a `window` mode and `around_chunk_id` (#6707), and no `append_page` or upload session. As preregistered, the native arm then writes each document with one `put_page`, reads hits with `get_page {slug, body: 'window', around_chunk_id}` and appends with a whole-page `put_page` rewrite.
+3. **Upgrade-path case (exploratory, not gating).** For each 2 MB document, the baseline gbrain `c71fe74` seeds a file-backed PGLite brain with the document as a single page, which it stores with `embed_skip: oversized` and no chunks, plus the control page. The gbrain under test then opens the brain, which runs its migrations, and runs `runOversizedBackfill` (the code behind `gbrain reindex --oversized`).
+   - Reported: the backfill receipt (candidates, reindexed, held for approval, remaining, failed), whether the marker was removed, and the chunk count.
+   - The native arm's probes then run on the upgraded page: keyword recall@10 by decile, windowed-read correctness, largest response, round-trip sha256 and the append.
+   - There is no embed pass: the backfill holds pages over 1 MiB for approval, and the hermetic arm spends nothing.
+   - Expected: recall equal to the native arm on a fresh brain.
+4. **Agent-facing default read (exploratory).** At Wave A, what a default `get_page` returns depends on the caller. A trusted local read stays full. An agent-facing read gets `auto`, which above 256 KB is an outline plus the first window. This harness calls as a trusted local caller, so its default read of a single page returns the whole page. The runner also makes the entry page's default read with `remote: true` and reports that response size beside the trusted one, outside the egress count. The egress safety contract is unchanged: it counts every response of the trusted-local harness, the default read included.
