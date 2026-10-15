@@ -2,6 +2,34 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.102] - 2026-10-14
+
+### D5 brief parameters: the re-smoke passes
+
+After gbrain #6708 fixed `list_write_conflicts`, the D5 brief Cat 40 smoke ran again under a dated
+[Amendment 1](docs/benchmarks/2026-10-14-d5-brief-smoke-amendment-1.md). It compared master `3961bf16` (v0.60.232.0)
+with gbrain #6703's head `f127b1b5`, using the same rules, tasks, models and arm.
+
+It passes every preregistered check:
+
+- Success was 29/30 on master and 28/30 on the head, within R1. Sol lost B01 and F01 and gained F02, and none of those
+  cells used a brief parameter.
+- Tool calls were at or below master for every model.
+- No cell passed `counterparty` or `intent`.
+- There were 0 output leaks and 0 unsafe writes.
+- N6 found 0 findings of any kind on either build.
+
+Spend was $6.78 of a new $10 ledger. See the [re-smoke verdict](docs/benchmarks/2026-10-14-d5-brief-smoke/resmoke-1/VERDICT.md).
+The first run's verdict stands for its builds.
+
+### The Cat 40 runner scrubs what it writes
+
+Every file the Cat 40 runner writes under `--out` now goes through `scrubMachinePaths`. That covers
+`experiment.json`, the receipt, results, attempts, transcripts, judge requests, served instructions and tools, and
+`run.log`. The gbrain checkout is recorded as `gbrain@<sha>`, the slot root as `<slots>`, and other paths
+repo-relative. A resume still binds to an `experiment.json` written before this change. The re-smoke record is the
+first written this way, with no hand edits.
+
 ## [0.10.101] - 2026-10-14
 
 ### D5 brief parameters: Cat 40 smoke on gbrain #6703
