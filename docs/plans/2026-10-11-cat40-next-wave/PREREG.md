@@ -542,3 +542,18 @@ tasks and the analysis (including Amendment 1) are unchanged.
   cell had run. Sealed ledger committed: $570.40.
 - **Program total** is at most $1,316.96 (public, final) + $2,000 = **$3,316.96**, within the $3,400 Garry approved on
   2026-10-12 ("Double the budget"). The split between ledgers was the executor's.
+
+## Run record, sealed and final (appended 2026-10-15)
+
+- **Sealed worlds S1, S2** (2026-10-14 15:11 to 2026-10-15 07:36 UTC): custody VM `ubirun-gbra39cust-1791990007-ad3fffe3`
+  (owner tag `gbra39cust`), harness `06a46d95` detached, ledger `.budget/cat40-next-confirm-sealed.sqlite` ($2,000 cap
+  after the cap note, $1,546.29 committed). Worlds verified by sha256 on the VM and by `check-world`; the transit
+  copies on the Capy machine were deleted. Oracle 287/300 on each world. F5-on wave slots: 0 owner-phrase links on all
+  10, refused by gate 3; F5-off wave slots per Amendment 1 passed. All 8 sealed arm runs: 300 canonical cells, 0
+  harness errors. Outputs pulled with the seed redacted on the VM; only aggregates are published.
+  - **Primary, sealed (build without F5):** wave − fs +10.67 pp [+7.00, +14.50] ("ahead"); S1 +13.33, S2 +8.00.
+  - **Wave − baseline, sealed:** success −1.17 [−4.33, +2.00]; wrong values −0.67 [−2.67, +1.33]: **D3 fails** on
+    sealed (it passes on public, −3.50 [−5.67, −1.33]).
+  - **Descriptive baseline − fs, sealed:** +11.83 [+8.00, +15.83].
+- **Program spend:** $2,863.25 of $3,400 (public $1,316.96, sealed $1,546.29).
+- **Report:** `docs/benchmarks/2026-10-15-cat40-next-confirm/README.md`.
