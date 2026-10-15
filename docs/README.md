@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.104, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.105, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -215,6 +215,12 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-15: Cat 40 next-wave confirmation
+
+The repository README gains the Cat 40 next-wave row, linking the
+[confirmation report](benchmarks/2026-10-15-cat40-next-confirm/README.md). gbrain-evals v0.10.105 (the opening names
+it; was v0.10.104).
 
 ### 2026-10-15: N14 after large pages Wave A
 

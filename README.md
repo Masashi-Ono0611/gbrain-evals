@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.104 (`VERSION`) |
+| This repository | gbrain-evals v0.10.105 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except three: the Cat 40 Hard row's, which shipped after it
@@ -303,6 +303,13 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-15: Cat 40 next-wave confirmation; repository row names v0.10.105
+
+gbrain-evals v0.10.105 adds the Cat 40 next-wave development record, preregistration and confirmation. A new row under
+Current results reports what ships: Part 1 without F5 ahead of plain files by +10.67 points on two sealed worlds, the
+pre-wave baseline ahead on both generators, and the public build with F5 marked not shipped because F5 failed its
+precision ship condition. The repository row names v0.10.105 (was v0.10.104).
 
 ### 2026-10-15: Repository row names v0.10.104
 
