@@ -104,7 +104,7 @@ The counting embedder returns hash vectors: it measures how many inputs gbrain s
 
 ### Amendment 1 (2026-10-15): Wave A rerun
 
-This amendment was written before any run against gbrain `44eb0493bfd5…` (master, v0.60.242.0). That commit contains large pages Wave A: #6707 (the windowed read contract), #6715 (crash fixes) and #6733 (the 24 MiB ceiling, large-page embedding and `gbrain reindex --oversized`). No rule, threshold, model or arm definition changes.
+This amendment was written before any run against gbrain `44eb0493ff2776f04d6616b1a526657702f7544a` (master, v0.60.242.0). That commit contains large pages Wave A: #6707 (the windowed read contract), #6715 (crash fixes) and #6733 (the 24 MiB ceiling, large-page embedding and `gbrain reindex --oversized`). No rule, threshold, model or arm definition changes.
 
 1. **Scope.** The hermetic arm runs at 2 MB and 20 MB with all three arms. The paid arm does not run, because no budget is approved. The 200 MB chat runs on the single-page and native arms only, to check the refusal over the 24 MiB ceiling (bug N14-4). Managed parts is not rerun at 200 MB.
 2. **Native arm.** The capability probe is expected to find `get_page` declaring `body` with a `window` mode and `around_chunk_id` (#6707), and no `append_page` or upload session. As preregistered, the native arm then writes each document with one `put_page`, reads hits with `get_page {slug, body: 'window', around_chunk_id}` and appends with a whole-page `put_page` rewrite.
