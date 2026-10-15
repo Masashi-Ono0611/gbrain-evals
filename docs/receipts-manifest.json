@@ -5294,6 +5294,38 @@
         "/by_model/gpt-6.1-sol/d5/brief_param_calls": 0
       },
       "note": "Per-model success, tool calls and brief-parameter calls on master 3961bf16 and gbrain #6703 head f127b1b5, rebuilt by score.py from the per-cell results and transcripts."
+    },
+    {
+      "claim_id": "d6-proactive-brief-dev",
+      "readme_anchor": "docs/benchmarks/2026-10-14-proactive-brief-dev.md: Decision rule",
+      "artifact_path": "docs/benchmarks/2026-10-14-proactive-brief-dev/development/brief-summary.json",
+      "artifact_sha256": "800af9267daa83fb6c53a7f346ffdc5d9656ce48fa1a489aef8e9c1e18f28434",
+      "status": "covered",
+      "expected": {
+        "/cells": 144,
+        "/development_signal": "no improvement signal (development evidence only)",
+        "/checks/improvement": false,
+        "/checks/guard_misses_within_ceiling": false,
+        "/checks/attention_within_cap": true,
+        "/checks/false_push_within_ceiling": true,
+        "/checks/no_confident_wrong_rise": true,
+        "/pooled/primary/pairs": 72,
+        "/pooled/primary/off_successes": 70,
+        "/pooled/primary/on_successes": 70,
+        "/pooled/primary/delta": 0,
+        "/pooled/arms/brief-on/guard/fired": 58,
+        "/pooled/arms/brief-on/guard/miss": 14,
+        "/pooled/arms/brief-off/guard/silent": 72,
+        "/pooled/arms/brief-on/brief_chars/max": 397,
+        "/pooled/arms/brief-on/items/pushed": 58,
+        "/pooled/arms/brief-on/items/false_pushes": 0,
+        "/pooled/arms/brief-off/confident_wrong/cells": 1,
+        "/pooled/arms/brief-on/confident_wrong/cells": 1,
+        "/pooled/uptake/pushed_facts": 93,
+        "/pooled/uptake/in_deliverable": 91,
+        "/pooled/uptake/paired_off_in_deliverable": 89
+      },
+      "note": "D6 development run (gbrain v0.60.240.0, 144 cells): paired success, guard, brief size, false pushes, confident-wrong and uptake, computed by eval/runner/t0/brief.ts from development/results.jsonl.gz."
     }
   ]
 }
