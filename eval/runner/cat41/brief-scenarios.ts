@@ -61,6 +61,8 @@ export const D7_FIXTURE: D7Fixture = JSON.parse(readFileSync(D7_FIXTURE_FILE, 'u
 export const D7_AGED_HOURS = 72;
 export const D7_SESSION_TIMEOUT_MS = 600_000;
 export const D7_PROVENANCE = 'user said in chat (call notes)';
+/** The release under test (preregistration, "The freeze"): paid D7 sessions run only on this commit. */
+export const D7_RELEASE = { version: '0.60.247.0', commit: '47f052af0c7f92f259daa9b1b51bb90370dcf520' } as const;
 /** Codex runs the first world only (preregistration, "Sessions"). */
 export const D7_CODEX_SEEDS: readonly number[] = [D7_FIXTURE.seeds[0]];
 

@@ -32,7 +32,7 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { mkdtempSync } from 'node:fs';
 import { SCENARIOS, scenarioById, SEED_FACTS, SEED_PAGES, type Scenario } from './cat41/scenarios.ts';
-import { D7_SCENARIOS } from './cat41/brief-scenarios.ts';
+import { D7_RELEASE, D7_SCENARIOS } from './cat41/brief-scenarios.ts';
 import { classifyRun, gateMetrics, summarize, SCORER_VERSION, type CellSummary, type OverheadRow, type RunScore } from './cat41/classify.ts';
 import { registryEntry } from '../registry.ts';
 import { evaluatePromotion, describeOutcome } from './promotion.ts';
@@ -195,6 +195,10 @@ async function cmdRun(argv: string[]) {
   const estimate = jobs.filter(j => !existsSync(join(out, 'runs', `${j.s.id}--${j.h}--r${j.r}-a0`, 'result.json'))).reduce((a, j) => a + ESTIMATE_USD[j.h], 0);
   requirePaidArm(argv, { arm: 'cat41 agent sessions', estimateUsd: estimate, ledgerPath: budgetOptionsFrom(argv).ledgerPath });
   const prereg = flag(argv, 'preregistration');
+  if (scenarioIds.some(id => id.startsWith('d7_')) && argv.includes('--paid')) {
+    if (!prereg) throw new Error('paid D7 sessions need --preregistration <the committed, frozen D7 preregistration>');
+    if (commit !== D7_RELEASE.commit) throw new Error(`paid D7 sessions run only on gbrain ${D7_RELEASE.version} (${D7_RELEASE.commit}); got ${commit}`);
+  }
   const attestation = prereg ? attestPreregistration(prereg, REPO) : null;
   const opts = budgetOptionsFrom(argv);
   const budget = opts.runId ? BudgetRun.join({ runId: opts.runId, ledgerPath: opts.ledgerPath, programCapUsd: opts.programCapUsd }) : BudgetRun.open({ runner: 'cat41-agent-operator', budgetUsd: opts.budgetUsd!, estimateUsd: estimate, ledgerPath: opts.ledgerPath, programCapUsd: opts.programCapUsd });

@@ -89,27 +89,57 @@ export const TIME_RATIO_MAX = TOOL_CALL_RATIO_MAX;
 export const POSITIVE_KINDS = ['reply', 'prep', 'task_start'] as const;
 const FILE_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'Bash']);
 
-/** Output events of one session, in order, with the ms (since the harness process started) at which each line arrived. */
-export function outputEvents(harness: Harness, raw: string, times: number[]): Array<{ ms: number; text: string }> {
-  const out: Array<{ ms: number; text: string }> = [];
+/**
+ * One session's timeline from its transcript and per-line arrival times (ms since the harness process started).
+ * `outputs`: assistant text and file-writing tool inputs, each with the model turns and tool calls up to it.
+ * `model_waits`: per model request, the gap from what the model was waiting on (session start, or the previous tool
+ * result) to the first line of its reply: provider latency plus generation, an approximation from arrival gaps.
+ */
+export function sessionTimeline(harness: Harness, raw: string, times: number[]) {
+  const outputs: Array<{ ms: number; text: string; turns: number; tool_calls: number }> = [];
+  const waits: number[] = [];
+  let waitingSince: number | null = null;
+  let turns = 0, tools = 0;
+  let lastMsg: string | null = null;
+  let apiMs = null as number | null;
+  const reply = (ms: number, id: string | null) => {
+    if (id !== null && id === lastMsg) return;
+    lastMsg = id;
+    turns++;
+    if (waitingSince !== null) { waits.push(ms - waitingSince); waitingSince = null; }
+  };
   raw.split('\n').forEach((line, i) => {
     const t = line.trim();
     if (!t.startsWith('{')) return;
     let ev: Record<string, unknown>;
     try { ev = JSON.parse(t); } catch { return; }
     const ms = times[i] ?? times.at(-1) ?? 0;
-    if (harness === 'claude' && ev.type === 'assistant') {
-      for (const b of ((ev.message as { content?: Array<Record<string, unknown>> } | undefined)?.content ?? [])) {
-        if (b.type === 'text' && typeof b.text === 'string') out.push({ ms, text: b.text });
-        else if (b.type === 'tool_use' && FILE_TOOLS.has(String(b.name))) out.push({ ms, text: Object.values((b.input ?? {}) as Record<string, unknown>).map(v => typeof v === 'string' ? v : JSON.stringify(v)).join('\n') });
-      }
-    } else if (harness === 'codex' && ev.type === 'item.completed') {
+    if (harness === 'claude') {
+      if (ev.type === 'system' && ev.subtype === 'init') waitingSince = ms;
+      else if (ev.type === 'assistant') {
+        const msg = (ev.message ?? {}) as { id?: string; content?: Array<Record<string, unknown>> };
+        reply(ms, msg.id ?? `line${i}`);
+        for (const b of msg.content ?? []) {
+          if (b.type === 'tool_use') tools++;
+          if (b.type === 'text' && typeof b.text === 'string') outputs.push({ ms, text: b.text, turns, tool_calls: tools });
+          else if (b.type === 'tool_use' && FILE_TOOLS.has(String(b.name))) outputs.push({ ms, text: Object.values((b.input ?? {}) as Record<string, unknown>).map(v => typeof v === 'string' ? v : JSON.stringify(v)).join('\n'), turns, tool_calls: tools });
+        }
+      } else if (ev.type === 'user' && ((ev.message as { content?: Array<{ type?: string }> } | undefined)?.content ?? []).some(b => b.type === 'tool_result')) {
+        waitingSince = ms; lastMsg = null;
+      } else if (ev.type === 'result' && typeof ev.duration_api_ms === 'number') apiMs = ev.duration_api_ms;
+    } else {
+      if (ev.type === 'turn.started') waitingSince = ms;
       const it = (ev.item ?? {}) as Record<string, unknown>;
-      if (it.type === 'agent_message' && typeof it.text === 'string') out.push({ ms, text: it.text });
-      else if (it.type === 'command_execution' && typeof it.command === 'string') out.push({ ms, text: it.command });
+      const toolItem = it.type === 'command_execution' || it.type === 'mcp_tool_call' || it.type === 'web_search';
+      if (ev.type === 'item.started' || ev.type === 'item.completed') {
+        if (waitingSince !== null && (ev.type === 'item.started' || !toolItem)) reply(ms, null);
+        if (ev.type === 'item.completed' && toolItem) { tools++; waitingSince = ms; }
+        if (ev.type === 'item.completed' && it.type === 'agent_message' && typeof it.text === 'string') outputs.push({ ms, text: it.text, turns, tool_calls: tools });
+        else if (ev.type === 'item.completed' && it.type === 'command_execution' && typeof it.command === 'string') outputs.push({ ms, text: it.command, turns, tool_calls: tools });
+      }
     }
   });
-  return out;
+  return { outputs, model_waits: waits, turns, tool_calls: tools, api_ms: apiMs };
 }
 
 /** The scenario's correctness rule on a text: positive kinds need every needed current value with no failure (task_start: commitment and new date). */
@@ -133,6 +163,10 @@ export interface D7Cell {
   success: boolean; confident_wrong: boolean; failure_kinds: string[];
   /** ms from the harness process start to the first output with every needed current value; censored at the session's end when none. */
   time_to_correct_ms: number; reached_correct: boolean; session_ms: number;
+  /** Model turns and tool calls up to the first correct output (the session's totals when censored). */
+  turns_to_correct: number; tool_calls_to_correct: number;
+  /** Per model request: reply wait from arrival gaps (provider latency plus generation); Claude Code's own API time. */
+  model_waits_ms: number[]; api_ms: number | null;
   tool_calls: number; input_tokens: number; cost_usd: number;
   delivery: ReturnType<typeof readDelivery>;
   /** Pushed needed facts that the final answer states (acted on). */
@@ -146,23 +180,26 @@ export function readCell(dir: string, r: ContainerResult): D7Cell | null {
   const delivery = readDelivery(r.scenario, r, dir);
   const base = { id: r.scenario, kind: p.kind, seed: p.seed, arm: p.arm, condition: spec.condition, harness: r.harness, model: r.model, repeat: r.repeat, delivery };
   const s1 = r.sessions[0];
-  if (r.setup_error || !s1) return { ...base, status: 'setup_error', success: false, confident_wrong: false, failure_kinds: [], time_to_correct_ms: 0, reached_correct: false, session_ms: 0, tool_calls: 0, input_tokens: 0, cost_usd: 0, acted_on: [] };
+  if (r.setup_error || !s1) return { ...base, status: 'setup_error', success: false, confident_wrong: false, failure_kinds: [], time_to_correct_ms: 0, reached_correct: false, session_ms: 0, turns_to_correct: 0, tool_calls_to_correct: 0, model_waits_ms: [], api_ms: null, tool_calls: 0, input_tokens: 0, cost_usd: 0, acted_on: [] };
   const raw = existsSync(join(dir, s1.raw_path)) ? readFileSync(join(dir, s1.raw_path), 'utf8') : '';
   const times = existsSync(join(dir, `${s1.raw_path}.times`)) ? JSON.parse(readFileSync(join(dir, `${s1.raw_path}.times`), 'utf8')) as number[] : [];
   const parsed = parseSession(r.harness, raw, 1);
   const crashed = !!parsed.harnessError || !parsed.finalText.trim();
+  const tl = sessionTimeline(r.harness, raw, times);
   let cumulative = '';
-  let at: number | null = null;
-  for (const e of outputEvents(r.harness, raw, times)) {
+  let first: (typeof tl.outputs)[number] | null = null;
+  for (const e of tl.outputs) {
     cumulative += `\n${e.text}`;
-    if (correctOn(p.kind, task, cumulative).complete) { at = e.ms; break; }
+    if (correctOn(p.kind, task, cumulative).complete) { first = e; break; }
   }
   const final = correctOn(p.kind, task, parsed.finalText);
   const pushed = new Set(delivery.hooks.flatMap(h => h.brief?.items ?? []).flatMap(i => i.class?.carries ?? []));
   return {
     ...base, status: crashed ? 'harness_crash' : 'scored',
     success: final.success, confident_wrong: final.confident_wrong, failure_kinds: final.kinds,
-    time_to_correct_ms: at ?? s1.wall_ms, reached_correct: at !== null, session_ms: s1.wall_ms,
+    time_to_correct_ms: first?.ms ?? s1.wall_ms, reached_correct: first !== null, session_ms: s1.wall_ms,
+    turns_to_correct: first?.turns ?? tl.turns, tool_calls_to_correct: first?.tool_calls ?? tl.tool_calls,
+    model_waits_ms: tl.model_waits, api_ms: tl.api_ms,
     tool_calls: parsed.events.filter(e => e.kind !== 'text').length, input_tokens: s1.input_tokens ?? 0, cost_usd: s1.cost_usd ?? 0,
     acted_on: carried(task, parsed.finalText).filter(f => pushed.has(f)),
   };
@@ -189,6 +226,14 @@ export function readPasses(dirs: string[]): D7Cell[] {
   return [...latest.values()].map(x => x.cell);
 }
 
+const median = (xs: number[]) => { const v = [...xs].sort((a, b) => a - b); return v.length ? (v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2) : null; };
+const perRequest = (cs: D7Cell[]) => { const w = cs.flatMap(c => c.model_waits_ms); return { requests: w.length, median: median(w), max: w.length ? Math.max(...w) : null }; };
+/** The live brief carried every item the uncut brief would have (replay `brief_alone`), and at least one. */
+export const briefDelivered = (c: D7Cell) => {
+  const live = c.delivery.hooks.find(h => h.event === 'user-prompt')?.brief?.items.length ?? 0;
+  const possible = (c.delivery.replay as { brief_alone?: Array<{ brief_items: number }> } | null)?.brief_alone?.[0]?.brief_items ?? null;
+  return live > 0 && possible !== null && live >= possible;
+};
 const pairKey = (c: D7Cell) => `${c.kind}|${c.seed}|${c.harness}|${c.model}|${c.repeat}`;
 
 /** The preregistered D7 summary: primary (time to first correct action, success non-inferiority), checks and diagnostics. */
@@ -202,6 +247,10 @@ export function summarizeD7(cells: readonly D7Cell[]) {
     time: pairedRatio(ps.map(p => ({ persona: p.key, off: p.off.time_to_correct_ms, on: p.on.time_to_correct_ms }))),
     success: pairedSuccess(ps.map(p => ({ persona: p.key, off: p.off.success, on: p.on.success }))),
     tool_calls: pairedRatio(ps.map(p => ({ persona: p.key, off: p.off.tool_calls, on: p.on.tool_calls }))),
+    turns_to_correct: pairedRatio(ps.map(p => ({ persona: p.key, off: p.off.turns_to_correct, on: p.on.turns_to_correct }))),
+    tool_calls_to_correct: pairedRatio(ps.map(p => ({ persona: p.key, off: p.off.tool_calls_to_correct, on: p.on.tool_calls_to_correct }))),
+    model_wait_ms: pairedRatio(ps.map(p => ({ persona: p.key, off: p.off.model_waits_ms.reduce((a, b) => a + b, 0), on: p.on.model_waits_ms.reduce((a, b) => a + b, 0) }))),
+    model_wait_ms_per_request: { off: perRequest(ps.map(p => p.off)), on: perRequest(ps.map(p => p.on)) },
     input_tokens: pairedRatio(ps.map(p => ({ persona: p.key, off: p.off.input_tokens, on: p.on.input_tokens }))),
     reached_correct: { off: ps.filter(p => p.off.reached_correct).length, on: ps.filter(p => p.on.reached_correct).length },
   });
@@ -239,7 +288,8 @@ export function summarizeD7(cells: readonly D7Cell[]) {
   return {
     version: 'd7-summary-v1', cells: cells.length, scored: scored.length, not_scored: cells.filter(c => c.status !== 'scored').map(c => ({ id: c.id, harness: c.harness, model: c.model, status: c.status })),
     verdict, checks,
-    pooled, by_kind: group(p => p.off.kind), by_model: group(p => p.off.model), by_condition: group(p => p.off.condition),
+    pooled, delivered_only: { label: 'diagnostic only: positive pairs whose on cell got the full brief', ...slice(positive.filter(p => briefDelivered(p.on))) },
+    by_kind: group(p => p.off.kind), by_model: group(p => p.off.model), by_condition: group(p => p.off.condition),
     negative: { pairs: pairs.filter(p => p.off.kind === 'negative').length, briefs_on: onCells.filter(c => c.kind === 'negative' && c.delivery.hooks.some(h => h.brief)).length, confident_wrong: { off: scored.filter(c => c.kind === 'negative' && c.arm === 'off' && c.confident_wrong).length, on: scored.filter(c => c.kind === 'negative' && c.arm === 'on' && c.confident_wrong).length } },
     pull: [...pull.values()].map(c => ({ key: pairKey(c), success: c.success, time_to_correct_ms: c.time_to_correct_ms, off_time_ms: off.get(pairKey(c))?.time_to_correct_ms ?? null, pull_brief_calls: c.delivery.hooks.length })),
     control, brief: { sessions_on: sessionsOn, items: items.length, false_pushes: items.filter(i => i.false_push).length, stale_items: items.filter(i => i.stale).length, max_chars: Math.max(0, ...briefChars), fired_on_positive: onCells.filter(c => c.kind !== 'negative' && c.delivery.hooks.some(h => h.brief)).length, positive_on_cells: onCells.filter(c => c.kind !== 'negative').length, brief_reached_model: onCells.filter(c => c.delivery.brief_reached_model === true).length },

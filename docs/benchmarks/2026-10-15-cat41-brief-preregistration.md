@@ -1,8 +1,10 @@
 # Preregistration: the proactive brief in native agent sessions, Cat 41 scenarios (wave 5 D7)
 
-**Status: draft, not frozen.** Nothing here has been spent. The draft goes to review first. Freezing it is a later
-commit that fills in [the freeze](#the-freeze) and records that no paid session ran before it. After that commit,
-every change is an amendment, appended at the bottom with its reason and committed before any session it governs.
+**Status: frozen.** The draft was committed on October 15, 2026 (Pacific) and reviewed the same day. Garry's
+coordinating thread approved it, under the standing auto-approve rule, with four additions written in below. It was
+frozen on October 15, 2026 (Pacific) by the commit that fills in [the freeze](#the-freeze). No paid D7 session ran
+before that commit. After it, every change is an amendment, appended at the bottom with its reason and committed
+before any session it governs.
 
 D6 is closed: both development runs showed no gain, so the sealed seed is skipped and the brief stays off by default
 ([first run](2026-10-14-proactive-brief-dev.md); [v2](2026-10-15-proactive-brief-dev-v2.md), no time-saved signal).
@@ -62,8 +64,9 @@ lowering task success and within the attention, false-push and confident-wrong l
    brief (one item of two) when its hook took 918 ms. A rerun of the same cell delivered both. D7 logs this for every
    cell (see [Latency](#latency-diagnostic)).
 
-**Prediction.** Item 2 and v2's small savings make a time ratio near 0.9 likely, short of the 0.80 bar. The brief
-saves a search for two facts, but agents still open the contact's page.
+**Prediction.** We expect a time ratio near 0.9, short of the 0.80 bar, because of item 2 and v2's small savings.
+The brief saves a search for two facts, but agents still open the contact's page. The design keeps 15 pairs with no
+repeats. Repeats would narrow the interval, but they cannot move a true ratio near 0.9 under 0.80.
 
 ## Worlds and scenarios (frozen at the freeze)
 
@@ -88,10 +91,11 @@ The four scenarios per world:
 | `task_start` | second reply task | "Help me get started on my follow-up for X: work out what I owe them and by when, then write the short cover email I'll send with it." | commitment, new date |
 | `negative` | the namesake of the second prep task's contact | "Y just emailed me: "Hi …, quick check-in: anything new on your side since we last spoke?" Draft my reply." | none: the brief should stay silent, and the reply must not use the other contact's values |
 
-`task_start`'s wording includes "follow-up", which is in the reply lexicon, so the scenario exercises the same gate.
-The free smoke replayed the same request without that word ("Help me get started on what I owe X …"), and the brief
-stayed silent in 8 of 8 cells. A commitment-start prompt outside the lexicon therefore gets no push at this release.
-That is reported as a coverage finding and is not measured with paid sessions.
+`task_start` is **lexicon-dependent**. Its wording includes "follow-up", which is in the reply lexicon, so the
+scenario exercises the same gate as `reply`. The free smoke replayed the same request without that word ("Help me get
+started on what I owe X …"), and the brief stayed silent in 8 of 8 cells. A commitment-start prompt outside the
+lexicon therefore gets no push at this release. The report labels `task_start` lexicon-dependent wherever it appears,
+and reports the gap as a product finding (see [Product findings](#product-findings-reported-whatever-the-result)).
 
 **Conditions.** World 20261222 ages `reply` and `task_start` and crowds `prep` and `negative`. World 20261226 swaps
 them.
@@ -144,6 +148,9 @@ messages and commands).
 
 A session that never gets there is counted at its full session time (censored).
 
+**The product as shipped.** The primary scores every `on` cell as it ran. A brief that gbrain dropped or cut short
+at its 300 ms turn deadline still counts against the brief.
+
 **Part 1, time saved (`pairedRatio`).** The pooled ratio of time to the first correct action, brief-on total over
 brief-off total, across the 15 positive pairs. Its 95% interval uses the delta method on the log ratio, with each pair
 as its own cluster. Time is saved when the ratio is **≤ 0.80 and the upper bound is < 1**. This is the same effect size
@@ -170,6 +177,11 @@ The paired difference across the 15 positive pairs must have a 95% lower bound *
 
 If check 3 or 4 fails, the label is "inconclusive". Otherwise it is "no time-saved signal (development evidence only)".
 
+**Delivered-only analysis (diagnostic only).** The report repeats Part 1 and Part 2 over the positive pairs whose
+`on` cell got the full brief. A full brief means the live UserPromptSubmit brief had at least one item and no fewer
+items than the uncut brief replayed on the same brain. This slice shows what a deadline-proof brief would do. It is
+not a check and never changes the label.
+
 **What a label allows.** Neither label flips the default by itself. "Time saved" puts a default-on proposal in front
 of Garry, with this run as its evidence. "No time-saved signal" closes wave 5's brief work at default-off.
 
@@ -182,7 +194,14 @@ of Garry, with this run as its evidence. "No time-saved signal" closes wave 5's 
 - **Confident-wrong:** a stale assertion, a namesake value, or, in `negative`, the other contact's values.
 - Brief firing per scenario, items and characters. Whether the brief text reached the model is visible only in the
   smoke's captured requests.
-- Session-1 tool calls, input tokens, session time and cost, per arm.
+- **Work to the first correct output:** model turns and tool calls up to that output (the session's totals when
+  censored), as paired ratios beside the primary.
+- **Provider latency:** for each model request, the wait from what the model was waiting on (the session's start or
+  the previous tool result) to the first line of its reply, taken from line arrival times. That is provider latency
+  plus generation. The report gives the paired ratio of total model wait, the median and maximum per request in each
+  arm, and Claude Code's own API time. It uses these to say whether the primary's wall-clock ratio moved with the
+  agent's work (turns and tool calls) or with API jitter.
+- Session tool calls, input tokens, session time and cost, per arm.
 - The pull arm: whether agents called `context_pack` with `counterparty`, and time and success against Sonnet's `off`
   cells.
 
@@ -197,6 +216,16 @@ stdout. After the session, `brief-db.ts replay` times the scenario prompt on the
 The report gives the hook wall times and the cold and warm replay times. It counts cells where the live brief had fewer
 items than the uncut brief (dropped or partial), and cold replays that dropped the brief. This bears on the smoke miss
 and is not a check.
+
+## Product findings (reported whatever the result)
+
+The report states these two findings from the free smoke, with the paid run's latency data beside them, whatever the
+verdict:
+
+1. **The task-start intent gap.** A request to start on what the user owes a named contact gets no brief unless it
+   uses a lexicon word. Without "follow-up", the brief fired 0 of 8 times.
+2. **Cold-hook latency drops.** On a fresh brain, the first `turn_context` replay took 169 to 339 ms and dropped the
+   brief in 3 of 9 positive cells. One live Codex hook took 918 ms and delivered one of the brief's two items.
 
 ## Free smoke on the pinned release
 
@@ -245,8 +274,14 @@ A reader at the ceiling in both arms is called out. Records go under
 
 ## The freeze
 
-To be filled by the freezing commit: the gbrain release (v0.60.247.0, `47f052af0c7f92f259daa9b1b51bb90370dcf520`), the
-image and harness pins above, and the statement that no paid D7 session ran before it.
+- **Release under test:** gbrain v0.60.247.0, commit `47f052af0c7f92f259daa9b1b51bb90370dcf520` (tag `v0.60.247.0`),
+  pinned in `D7_RELEASE` (`eval/runner/cat41/brief-scenarios.ts`). `cat41-agent-operator.ts run` refuses paid D7
+  sessions on any other commit or without `--preregistration`.
+- **Pins:** image `gbrain-evals-cat41:v1` (Claude Code 2.1.285, codex-cli 0.160.0, Bun 1.4.2, Node 24.18.0).
+- **Models:** `claude-sonnet-5-5` and `claude-opus-5-5` in Claude Code; `gpt-6.1-sol` in Codex.
+- **Worlds:** `brief-worlds.json` as committed with this freeze (`d7-worlds-v1`, seeds 20261222 and 20261226).
+- **Analysis:** `summarizeD7` (`d7-summary-v1`) as committed with this freeze.
+- No paid D7 session ran before this commit. The free smoke used the container's fake provider, with fake keys.
 
 ## Amendments
 

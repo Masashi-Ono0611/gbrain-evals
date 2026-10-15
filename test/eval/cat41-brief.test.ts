@@ -4,7 +4,7 @@ import { generatePersona, PP_BRIEF_DEV_SEEDS, PP_BRIEF_V2_DEV_SEEDS, PP_D7_DEV_S
 import { truthfulAnswer } from '../../eval/runner/t0/score.ts';
 import { D7_ARMS, D7_FIXTURE_FILE, D7_SCENARIOS, parseD7Id } from '../../eval/runner/cat41/brief-scenarios.ts';
 import { negativePrompt, renderFixture, taskStartPrompt, taskStartPromptPlain } from '../../eval/runner/cat41/brief-worlds.ts';
-import { correctOn, d7Spec, injectedText, outputEvents } from '../../eval/runner/cat41/brief-d7.ts';
+import { correctOn, d7Spec, injectedText, sessionTimeline } from '../../eval/runner/cat41/brief-d7.ts';
 import { SCENARIOS, scenarioById } from '../../eval/runner/cat41/scenarios.ts';
 
 describe('D7 Cat 41 brief scenarios', () => {
@@ -69,16 +69,30 @@ describe('D7 Cat 41 brief scenarios', () => {
     expect(correctOn('negative', task, `I'll send ${task.gold.commitment.label} soon.`)).toMatchObject({ success: false, confident_wrong: true });
   });
 
-  test('output events carry each line\'s arrival time; only text and file-writing tool inputs count', () => {
+  test('timeline: outputs carry arrival time, model turns and tool calls; model waits come from arrival gaps', () => {
     const raw = [
       JSON.stringify({ type: 'system', subtype: 'init' }),
-      JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'mcp__gbrain__search', input: { query: 'x' } }] } }),
-      JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'first' }, { type: 'tool_use', name: 'Write', input: { file_path: 'a.md', content: 'body' } }] } }),
+      JSON.stringify({ type: 'assistant', message: { id: 'm1', content: [{ type: 'tool_use', name: 'mcp__gbrain__search', input: { query: 'x' } }] } }),
+      JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 't1', content: 'r' }] } }),
+      JSON.stringify({ type: 'assistant', message: { id: 'm2', content: [{ type: 'text', text: 'first' }] } }),
+      JSON.stringify({ type: 'assistant', message: { id: 'm2', content: [{ type: 'tool_use', name: 'Write', input: { file_path: 'a.md', content: 'body' } }] } }),
+      JSON.stringify({ type: 'result', duration_api_ms: 900 }),
       '',
     ].join('\n');
-    expect(outputEvents('claude', raw, [10, 20, 30])).toEqual([{ ms: 30, text: 'first' }, { ms: 30, text: 'a.md\nbody' }]);
-    const codex = [JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: 'done' } }), ''].join('\n');
-    expect(outputEvents('codex', codex, [42])).toEqual([{ ms: 42, text: 'done' }]);
+    const tl = sessionTimeline('claude', raw, [100, 400, 500, 1200, 1300, 1400]);
+    expect(tl.outputs).toEqual([{ ms: 1200, text: 'first', turns: 2, tool_calls: 1 }, { ms: 1300, text: 'a.md\nbody', turns: 2, tool_calls: 2 }]);
+    expect(tl.model_waits).toEqual([300, 700]);
+    expect(tl.api_ms).toBe(900);
+    const codex = [
+      JSON.stringify({ type: 'turn.started' }),
+      JSON.stringify({ type: 'item.started', item: { type: 'command_execution', command: 'gbrain search x' } }),
+      JSON.stringify({ type: 'item.completed', item: { type: 'command_execution', command: 'gbrain search x' } }),
+      JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: 'done' } }),
+      '',
+    ].join('\n');
+    const ct = sessionTimeline('codex', codex, [0, 250, 600, 1000]);
+    expect(ct.outputs).toEqual([{ ms: 600, text: 'gbrain search x', turns: 1, tool_calls: 1 }, { ms: 1000, text: 'done', turns: 2, tool_calls: 1 }]);
+    expect(ct.model_waits).toEqual([250, 400]);
   });
 
   test('injected text: user-prompt JSON additionalContext, session-start plain text', () => {
