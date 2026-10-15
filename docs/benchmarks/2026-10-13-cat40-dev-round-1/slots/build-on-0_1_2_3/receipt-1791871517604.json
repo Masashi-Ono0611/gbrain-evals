@@ -77,7 +77,7 @@
       "mentions.owner_phrases": "true"
     },
     "keyless_slots": false,
-    "slot_dir": "/home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3",
+    "slot_dir": "<slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3",
     "restore_probe": [
       {
         "slot": "slot0",
@@ -134,13 +134,13 @@
   "slot_builds": [
     {
       "slot": "slot0",
-      "dir": "/home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot0",
+      "dir": "<slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot0",
       "steps": [
         {
           "step": "init",
           "code": 0,
           "ms": 4538,
-          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v243)...\n  238 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot0/home/.gbrain/content/8d4bbf17-0830-4709-a2fb-1e6e84c77777/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v243)...\n  238 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot0/home/.gbrain/content/8d4bbf17-0830-4709-a2fb-1e6e84c77777/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
         },
         {
           "step": "config-set mentions.owner_phrases",
@@ -152,7 +152,7 @@
           "step": "sources-add",
           "code": 0,
           "ms": 893,
-          "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot0/vault\",\n  \"source_incarnation\": \"fc42fe67-fc4f-48b0-8eb8-21310358abbc\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"d4140587-d3fb-43a4-8a27-a70f51173657\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+          "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot0/vault\",\n  \"source_incarnation\": \"fc42fe67-fc4f-48b0-8eb8-21310358abbc\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"d4140587-d3fb-43a4-8a27-a70f51173657\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
         },
         {
           "step": "sources-default",
@@ -292,13 +292,13 @@
     },
     {
       "slot": "slot1",
-      "dir": "/home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot1",
+      "dir": "<slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot1",
       "steps": [
         {
           "step": "init",
           "code": 0,
           "ms": 4220,
-          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v243)...\n  238 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot1/home/.gbrain/content/9f907502-fcdf-413d-91df-ab168b299224/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v243)...\n  238 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot1/home/.gbrain/content/9f907502-fcdf-413d-91df-ab168b299224/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
         },
         {
           "step": "config-set mentions.owner_phrases",
@@ -310,7 +310,7 @@
           "step": "sources-add",
           "code": 0,
           "ms": 936,
-          "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot1/vault\",\n  \"source_incarnation\": \"23e50a8d-a6fe-4900-9493-8c63b662a44e\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"3e3e6a9b-f3a1-48ad-954d-5dfa7b487b32\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+          "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot1/vault\",\n  \"source_incarnation\": \"23e50a8d-a6fe-4900-9493-8c63b662a44e\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"3e3e6a9b-f3a1-48ad-954d-5dfa7b487b32\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
         },
         {
           "step": "sources-default",
@@ -450,13 +450,13 @@
     },
     {
       "slot": "slot2",
-      "dir": "/home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot2",
+      "dir": "<slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot2",
       "steps": [
         {
           "step": "init",
           "code": 0,
           "ms": 4337,
-          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v243)...\n  238 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot2/home/.gbrain/content/fb35d657-9fe7-462f-acf0-50ada6825429/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v243)...\n  238 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot2/home/.gbrain/content/fb35d657-9fe7-462f-acf0-50ada6825429/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
         },
         {
           "step": "config-set mentions.owner_phrases",
@@ -468,7 +468,7 @@
           "step": "sources-add",
           "code": 0,
           "ms": 957,
-          "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot2/vault\",\n  \"source_incarnation\": \"42110280-95c7-49c2-9def-ce975e0953be\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"2cc202ba-d84f-4dd1-868d-15589cd5ee0e\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+          "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot2/vault\",\n  \"source_incarnation\": \"42110280-95c7-49c2-9def-ce975e0953be\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"2cc202ba-d84f-4dd1-868d-15589cd5ee0e\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
         },
         {
           "step": "sources-default",
@@ -614,13 +614,13 @@
     },
     {
       "slot": "slot3",
-      "dir": "/home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot3",
+      "dir": "<slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot3",
       "steps": [
         {
           "step": "init",
           "code": 0,
           "ms": 4359,
-          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v243)...\n  238 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot3/home/.gbrain/content/88d10330-4f99-4b11-bae8-64d6bf4cac9e/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v243)...\n  238 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot3/home/.gbrain/content/88d10330-4f99-4b11-bae8-64d6bf4cac9e/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
         },
         {
           "step": "config-set mentions.owner_phrases",
@@ -632,7 +632,7 @@
           "step": "sources-add",
           "code": 0,
           "ms": 891,
-          "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot3/vault\",\n  \"source_incarnation\": \"6c0f4417-6579-4273-99f8-2d742f80482d\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"773e0b1b-31f4-4574-8dad-ca222275250c\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+          "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<slots>/slots-a798de1f966d-6f08629e-noanalyze-bcd94eb6c3/slot3/vault\",\n  \"source_incarnation\": \"6c0f4417-6579-4273-99f8-2d742f80482d\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"773e0b1b-31f4-4574-8dad-ca222275250c\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
         },
         {
           "step": "sources-default",
@@ -793,7 +793,7 @@
     "--gbrain-ref",
     "a798de1f966dcce401546170b9c1882b1fb56904",
     "--gbrain-root",
-    "/home/ubi/cat40/gbrain-dev-next",
+    "<slots>",
     "--slots",
     "10",
     "--no-pglite-analyze",
@@ -853,7 +853,7 @@
     "input_tokens": 84203910,
     "output_tokens": 0,
     "basis": "budget ledger cat40-slot-build-2026-10-13T01-45-39-934Z-3c164c06: 15 paid requests, 0 charged at their reservation because usage was unavailable",
-    "ledger": "/home/ubi/work/gbrain-evals/.budget/cat40-dev-next.sqlite",
+    "ledger": ".budget/cat40-dev-next.sqlite",
     "program_cap_usd": 1800,
     "overshoot_usd": 0,
     "event_loop_lag_ms": {

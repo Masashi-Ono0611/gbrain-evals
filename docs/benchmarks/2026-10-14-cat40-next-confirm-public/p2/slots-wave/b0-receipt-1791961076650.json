@@ -77,7 +77,7 @@
       "mentions.owner_phrases": "true"
     },
     "keyless_slots": false,
-    "slot_dir": "/home/ubi/cat40/next-confirm-wave/slots-4e10136b4b7b-885b294f-noanalyze-bcd94eb6c3",
+    "slot_dir": "<slots>/slots-4e10136b4b7b-885b294f-noanalyze-bcd94eb6c3",
     "restore_probe": [
       {
         "slot": "slot0",
@@ -104,13 +104,13 @@
   "slot_builds": [
     {
       "slot": "slot0",
-      "dir": "/home/ubi/cat40/next-confirm-wave/slots-4e10136b4b7b-885b294f-noanalyze-bcd94eb6c3/slot0",
+      "dir": "<slots>/slots-4e10136b4b7b-885b294f-noanalyze-bcd94eb6c3/slot0",
       "steps": [
         {
           "step": "init",
           "code": 0,
           "ms": 4322,
-          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v243)...\n  238 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /home/ubi/cat40/next-confirm-wave/slots-4e10136b4b7b-885b294f-noanalyze-bcd94eb6c3/slot0/home/.gbrain/content/d7cfe5db-42c2-4f8c-a267-2f60b5b5a7ef/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v243)...\n  238 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <slots>/slots-4e10136b4b7b-885b294f-noanalyze-bcd94eb6c3/slot0/home/.gbrain/content/d7cfe5db-42c2-4f8c-a267-2f60b5b5a7ef/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
         },
         {
           "step": "config-set mentions.owner_phrases",
@@ -122,7 +122,7 @@
           "step": "sources-add",
           "code": 0,
           "ms": 959,
-          "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/home/ubi/cat40/next-confirm-wave/slots-4e10136b4b7b-885b294f-noanalyze-bcd94eb6c3/slot0/vault\",\n  \"source_incarnation\": \"fba15e09-1cc4-4b7d-ad9a-91bf5a71816a\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"b83390b6-6212-4c95-b328-e9c4a4b1b8e1\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+          "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<slots>/slots-4e10136b4b7b-885b294f-noanalyze-bcd94eb6c3/slot0/vault\",\n  \"source_incarnation\": \"fba15e09-1cc4-4b7d-ad9a-91bf5a71816a\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"b83390b6-6212-4c95-b328-e9c4a4b1b8e1\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
         },
         {
           "step": "sources-default",
@@ -283,7 +283,7 @@
     "--gbrain-ref",
     "4e10136b4b7b79cb99408dca1136d3350f5de5e4",
     "--gbrain-root",
-    "/home/ubi/cat40/next-confirm-wave",
+    "<slots>",
     "--slots",
     "5",
     "--no-pglite-analyze",
@@ -321,7 +321,7 @@
     "input_tokens": 20868448,
     "output_tokens": 0,
     "basis": "budget ledger cat40-slot-build-2026-10-14T05-59-47-625Z-3b900f2e: 4 paid requests, 0 charged at their reservation because usage was unavailable",
-    "ledger": "/home/ubi/work/gbrain-evals/.budget/cat40-next-confirm-public.sqlite",
+    "ledger": ".budget/cat40-next-confirm-public.sqlite",
     "program_cap_usd": 1700,
     "overshoot_usd": 0,
     "event_loop_lag_ms": {

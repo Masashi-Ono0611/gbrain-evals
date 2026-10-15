@@ -77,7 +77,7 @@
       "mentions.owner_phrases": "true"
     },
     "keyless_slots": false,
-    "slot_dir": "/home/ubi/cat40/next-confirm-wave/slots-4e10136b4b7b-885b294f-noanalyze-bcd94eb6c3",
+    "slot_dir": "<slots>/slots-4e10136b4b7b-885b294f-noanalyze-bcd94eb6c3",
     "restore_probe": [],
     "rerank_probe": null,
     "operator_analyze": false,
@@ -113,7 +113,7 @@
     "--gbrain-ref",
     "4e10136b4b7b79cb99408dca1136d3350f5de5e4",
     "--gbrain-root",
-    "/home/ubi/cat40/next-confirm-wave",
+    "<slots>",
     "--slots",
     "5",
     "--no-pglite-analyze",
@@ -139,7 +139,7 @@
     "input_tokens": 3656451,
     "output_tokens": 0,
     "basis": "budget ledger cat40-slot-build-2026-10-13T22-06-17-824Z-d15c9c0b: 1 paid requests, 0 charged at their reservation because usage was unavailable",
-    "ledger": "/home/ubi/work/gbrain-evals/.budget/cat40-next-confirm-public.sqlite",
+    "ledger": ".budget/cat40-next-confirm-public.sqlite",
     "program_cap_usd": 1700,
     "overshoot_usd": 0,
     "event_loop_lag_ms": {

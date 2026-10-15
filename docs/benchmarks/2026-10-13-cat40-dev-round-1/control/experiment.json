@@ -18,7 +18,7 @@
     "--arms": "gbrain",
     "--gbrain-repo": "../gbrain",
     "--gbrain-ref": "a798de1f966dcce401546170b9c1882b1fb56904",
-    "--gbrain-root": "/home/ubi/cat40/gbrain-dev-next",
+    "--gbrain-root": "<slots>",
     "--slots": "10",
     "--no-pglite-analyze": true,
     "--concurrency": "10",

@@ -77,7 +77,7 @@
     "config": {},
     "build_config": {},
     "keyless_slots": false,
-    "slot_dir": "/home/ubi/cat40/next-confirm-baseline/slots-09d21554d7ab-7485a765-noanalyze",
+    "slot_dir": "<slots>/slots-09d21554d7ab-7485a765-noanalyze",
     "restore_probe": [
       {
         "slot": "slot0",
@@ -174,7 +174,7 @@
     "--gbrain-ref",
     "09d21554d7ab75cc5643a7f5a0e7f163aa4dae5b",
     "--gbrain-root",
-    "/home/ubi/cat40/next-confirm-baseline",
+    "<slots>",
     "--slots",
     "5",
     "--no-pglite-analyze",
@@ -238,7 +238,7 @@
     "input_tokens": 214958930,
     "output_tokens": 1497910,
     "basis": "budget ledger cat40-model-ladder-2026-10-14T06-01-38-925Z-65d1816c: 7807 paid requests, 0 charged at their reservation because usage was unavailable",
-    "ledger": "/home/ubi/work/gbrain-evals/.budget/cat40-next-confirm-public.sqlite",
+    "ledger": ".budget/cat40-next-confirm-public.sqlite",
     "program_cap_usd": 1700,
     "overshoot_usd": 0.000823,
     "event_loop_lag_ms": {

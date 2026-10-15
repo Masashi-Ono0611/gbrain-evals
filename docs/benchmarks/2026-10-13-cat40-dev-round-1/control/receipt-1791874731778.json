@@ -84,7 +84,7 @@
     },
     "build_config": {},
     "keyless_slots": false,
-    "slot_dir": "/home/ubi/cat40/gbrain-dev-next/slots-a798de1f966d-6f08629e-noanalyze",
+    "slot_dir": "<slots>/slots-a798de1f966d-6f08629e-noanalyze",
     "restore_probe": [
       {
         "slot": "slot0",
@@ -278,7 +278,7 @@
     "--gbrain-ref",
     "a798de1f966dcce401546170b9c1882b1fb56904",
     "--gbrain-root",
-    "/home/ubi/cat40/gbrain-dev-next",
+    "<slots>",
     "--slots",
     "10",
     "--no-pglite-analyze",
@@ -417,7 +417,7 @@
     "input_tokens": 217642124,
     "output_tokens": 1466888,
     "basis": "budget ledger cat40-model-ladder-2026-10-13T05-58-12-716Z-61467ff1: 7785 paid requests, 0 charged at their reservation because usage was unavailable",
-    "ledger": "/home/ubi/work/gbrain-evals/.budget/cat40-dev-next.sqlite",
+    "ledger": ".budget/cat40-dev-next.sqlite",
     "program_cap_usd": 1800,
     "overshoot_usd": 0.00103,
     "event_loop_lag_ms": {

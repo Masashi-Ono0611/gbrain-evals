@@ -75,7 +75,7 @@
     "config": {},
     "build_config": {},
     "keyless_slots": false,
-    "slot_dir": "/home/ubi/cat40/next-confirm-baseline/slots-09d21554d7ab-7485a765-noanalyze",
+    "slot_dir": "<slots>/slots-09d21554d7ab-7485a765-noanalyze",
     "restore_probe": [
       {
         "slot": "slot2",
@@ -100,19 +100,19 @@
   "slot_builds": [
     {
       "slot": "slot2",
-      "dir": "/home/ubi/cat40/next-confirm-baseline/slots-09d21554d7ab-7485a765-noanalyze/slot2",
+      "dir": "<slots>/slots-09d21554d7ab-7485a765-noanalyze/slot2",
       "steps": [
         {
           "step": "init",
           "code": 0,
           "ms": 4222,
-          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v242)...\n  237 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /home/ubi/cat40/next-confirm-baseline/slots-09d21554d7ab-7485a765-noanalyze/slot2/home/.gbrain/content/2b2e8ef9-82dd-48c1-b44b-565fe53981b9/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v242)...\n  237 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <slots>/slots-09d21554d7ab-7485a765-noanalyze/slot2/home/.gbrain/content/2b2e8ef9-82dd-48c1-b44b-565fe53981b9/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
         },
         {
           "step": "sources-add",
           "code": 0,
           "ms": 2002,
-          "tail": "  \"local_path\": \"/home/ubi/cat40/next-confirm-baseline/slots-09d21554d7ab-7485a765-noanalyze/slot2/vault\",\n  \"source_incarnation\": \"c6e4b0a2-eceb-4b6a-bde9-49eefa9a4b8b\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"58c9d234-dade-4326-886d-cadaca517114\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}\n[models] OpenAI account offers gpt-6.1-sol but src/core/model-pricing.ts has no row for it — staying on the newest PRICED family so budget caps keep working. Add the pricing row to adopt it."
+          "tail": "  \"local_path\": \"<slots>/slots-09d21554d7ab-7485a765-noanalyze/slot2/vault\",\n  \"source_incarnation\": \"c6e4b0a2-eceb-4b6a-bde9-49eefa9a4b8b\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"58c9d234-dade-4326-886d-cadaca517114\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}\n[models] OpenAI account offers gpt-6.1-sol but src/core/model-pricing.ts has no row for it — staying on the newest PRICED family so budget caps keep working. Add the pricing row to adopt it."
         },
         {
           "step": "sources-default",
@@ -271,7 +271,7 @@
     "--gbrain-ref",
     "09d21554d7ab75cc5643a7f5a0e7f163aa4dae5b",
     "--gbrain-root",
-    "/home/ubi/cat40/next-confirm-baseline",
+    "<slots>",
     "--slots",
     "5",
     "--no-pglite-analyze",
@@ -307,7 +307,7 @@
     "input_tokens": 21097054,
     "output_tokens": 0,
     "basis": "budget ledger cat40-slot-build-2026-10-14T05-01-42-177Z-94da3a4b: 4 paid requests, 0 charged at their reservation because usage was unavailable",
-    "ledger": "/home/ubi/work/gbrain-evals/.budget/cat40-next-confirm-public.sqlite",
+    "ledger": ".budget/cat40-next-confirm-public.sqlite",
     "program_cap_usd": 1700,
     "overshoot_usd": 0,
     "event_loop_lag_ms": {

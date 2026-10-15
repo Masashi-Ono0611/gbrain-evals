@@ -75,7 +75,7 @@
     "config": {},
     "build_config": {},
     "keyless_slots": false,
-    "slot_dir": "/home/ubi/cat40/gbrain-dev-r3/slots-a3384b989a85-6f08629e-noanalyze",
+    "slot_dir": "<slots>/slots-a3384b989a85-6f08629e-noanalyze",
     "restore_probe": [
       {
         "slot": "slot7",
@@ -116,19 +116,19 @@
   "slot_builds": [
     {
       "slot": "slot7",
-      "dir": "/home/ubi/cat40/gbrain-dev-r3/slots-a3384b989a85-6f08629e-noanalyze/slot7",
+      "dir": "<slots>/slots-a3384b989a85-6f08629e-noanalyze/slot7",
       "steps": [
         {
           "step": "init",
           "code": 0,
           "ms": 3730,
-          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v242)...\n  237 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /home/ubi/cat40/gbrain-dev-r3/slots-a3384b989a85-6f08629e-noanalyze/slot7/home/.gbrain/content/533bb28f-d90b-48fa-bfdc-d3df20049183/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v242)...\n  237 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <slots>/slots-a3384b989a85-6f08629e-noanalyze/slot7/home/.gbrain/content/533bb28f-d90b-48fa-bfdc-d3df20049183/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
         },
         {
           "step": "sources-add",
           "code": 0,
           "ms": 1659,
-          "tail": "  \"local_path\": \"/home/ubi/cat40/gbrain-dev-r3/slots-a3384b989a85-6f08629e-noanalyze/slot7/vault\",\n  \"source_incarnation\": \"1ed04ace-ec8e-4bda-88c7-9320df247d92\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"d1071ece-0e14-4e93-b7f6-710da395a2c4\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}\n[models] OpenAI account offers gpt-6.1-sol but src/core/model-pricing.ts has no row for it — staying on the newest PRICED family so budget caps keep working. Add the pricing row to adopt it."
+          "tail": "  \"local_path\": \"<slots>/slots-a3384b989a85-6f08629e-noanalyze/slot7/vault\",\n  \"source_incarnation\": \"1ed04ace-ec8e-4bda-88c7-9320df247d92\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"d1071ece-0e14-4e93-b7f6-710da395a2c4\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}\n[models] OpenAI account offers gpt-6.1-sol but src/core/model-pricing.ts has no row for it — staying on the newest PRICED family so budget caps keep working. Add the pricing row to adopt it."
         },
         {
           "step": "sources-default",
@@ -272,19 +272,19 @@
     },
     {
       "slot": "slot8",
-      "dir": "/home/ubi/cat40/gbrain-dev-r3/slots-a3384b989a85-6f08629e-noanalyze/slot8",
+      "dir": "<slots>/slots-a3384b989a85-6f08629e-noanalyze/slot8",
       "steps": [
         {
           "step": "init",
           "code": 0,
           "ms": 3825,
-          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v242)...\n  237 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /home/ubi/cat40/gbrain-dev-r3/slots-a3384b989a85-6f08629e-noanalyze/slot8/home/.gbrain/content/5d754983-2db6-44e1-93ec-979f38f1b6fc/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v242)...\n  237 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <slots>/slots-a3384b989a85-6f08629e-noanalyze/slot8/home/.gbrain/content/5d754983-2db6-44e1-93ec-979f38f1b6fc/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
         },
         {
           "step": "sources-add",
           "code": 0,
           "ms": 1910,
-          "tail": "  \"local_path\": \"/home/ubi/cat40/gbrain-dev-r3/slots-a3384b989a85-6f08629e-noanalyze/slot8/vault\",\n  \"source_incarnation\": \"a94f20f2-2f41-4562-ae56-df808eb9e1d7\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"5926b22b-dc4f-46f3-a349-38af0f104e49\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}\n[models] OpenAI account offers gpt-6.1-sol but src/core/model-pricing.ts has no row for it — staying on the newest PRICED family so budget caps keep working. Add the pricing row to adopt it."
+          "tail": "  \"local_path\": \"<slots>/slots-a3384b989a85-6f08629e-noanalyze/slot8/vault\",\n  \"source_incarnation\": \"a94f20f2-2f41-4562-ae56-df808eb9e1d7\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"5926b22b-dc4f-46f3-a349-38af0f104e49\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}\n[models] OpenAI account offers gpt-6.1-sol but src/core/model-pricing.ts has no row for it — staying on the newest PRICED family so budget caps keep working. Add the pricing row to adopt it."
         },
         {
           "step": "sources-default",
@@ -422,19 +422,19 @@
     },
     {
       "slot": "slot9",
-      "dir": "/home/ubi/cat40/gbrain-dev-r3/slots-a3384b989a85-6f08629e-noanalyze/slot9",
+      "dir": "<slots>/slots-a3384b989a85-6f08629e-noanalyze/slot9",
       "steps": [
         {
           "step": "init",
           "code": 0,
           "ms": 3878,
-          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v242)...\n  237 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /home/ubi/cat40/gbrain-dev-r3/slots-a3384b989a85-6f08629e-noanalyze/slot9/home/.gbrain/content/d9adce07-43b1-49a5-ad26-6e8f83c9ed72/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+          "tail": "If `claude` is not found: install Claude Code first, or use the per-harness blocks in that doc.\nMore: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v242)...\n  237 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <slots>/slots-a3384b989a85-6f08629e-noanalyze/slot9/home/.gbrain/content/d9adce07-43b1-49a5-ad26-6e8f83c9ed72/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
         },
         {
           "step": "sources-add",
           "code": 0,
           "ms": 1921,
-          "tail": "  \"local_path\": \"/home/ubi/cat40/gbrain-dev-r3/slots-a3384b989a85-6f08629e-noanalyze/slot9/vault\",\n  \"source_incarnation\": \"adfddc1f-d795-4cd7-a2c1-802e6fe55cc6\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"a2a938d8-d6bb-461f-bd0f-db74f97535f5\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}\n[models] OpenAI account offers gpt-6.1-sol but src/core/model-pricing.ts has no row for it — staying on the newest PRICED family so budget caps keep working. Add the pricing row to adopt it."
+          "tail": "  \"local_path\": \"<slots>/slots-a3384b989a85-6f08629e-noanalyze/slot9/vault\",\n  \"source_incarnation\": \"adfddc1f-d795-4cd7-a2c1-802e6fe55cc6\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"a2a938d8-d6bb-461f-bd0f-db74f97535f5\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}\n[models] OpenAI account offers gpt-6.1-sol but src/core/model-pricing.ts has no row for it — staying on the newest PRICED family so budget caps keep working. Add the pricing row to adopt it."
         },
         {
           "step": "sources-default",
@@ -593,7 +593,7 @@
     "--gbrain-ref",
     "a3384b989a85f1f5fbb582c596e47af798a6157d",
     "--gbrain-root",
-    "/home/ubi/cat40/gbrain-dev-r3",
+    "<slots>",
     "--slots",
     "10",
     "--no-pglite-analyze",
@@ -640,7 +640,7 @@
     "input_tokens": 63152908,
     "output_tokens": 0,
     "basis": "budget ledger cat40-slot-build-2026-10-13T13-48-40-231Z-68a2af0c: 11 paid requests, 0 charged at their reservation because usage was unavailable",
-    "ledger": "/home/ubi/work/gbrain-evals/.budget/cat40-dev-next.sqlite",
+    "ledger": ".budget/cat40-dev-next.sqlite",
     "program_cap_usd": 1800,
     "overshoot_usd": 0,
     "event_loop_lag_ms": {

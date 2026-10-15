@@ -25,7 +25,7 @@
     "--gbrain-label": "gbrain-next-wave",
     "--gbrain-repo": "../gbrain",
     "--gbrain-ref": "4e10136b4b7b79cb99408dca1136d3350f5de5e4",
-    "--gbrain-root": "/home/ubi/cat40/next-confirm-wave",
+    "--gbrain-root": "<slots>",
     "--slots": "5",
     "--no-pglite-analyze": true,
     "--gbrain-config": "entity.names_references=true,entity.record_types=contract,amendment,entity.row_page_status=true,search.long_page_unit=section,search.long_page_min_chars=20000,mcp.instructions_governing_rule=in_effect",
