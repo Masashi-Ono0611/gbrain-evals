@@ -2,6 +2,30 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.105] - 2026-10-15
+
+### Cat 40 next wave: development, preregistration and confirmation
+
+This release adds the Cat 40 next-wave development harness, development rounds 1 to 3, the d1b gate, the frozen
+preregistration (`docs/plans/2026-10-11-cat40-next-wave/PREREG.md`, with Amendment 1 and a cap note), and the
+counted confirmation on four new 50,000-document worlds: public P1 and P2, and sealed S1 and S2, whose seeds stay in
+owner custody. It also includes the #133 plan and its F2 frozen record.
+
+The two generators ended up testing two different builds. On the public worlds, the build with F5 (owner-phrase
+resolution) was ahead of plain files by +12.50 points [+9.17, +15.83] and ahead of the baseline by +4.00, with fewer
+wrong values (−3.50, D3 passes). F5 then failed its precision ship condition on `messy-company-v1` (6 of 22 links), so
+Part 1 ships without it. On the sealed worlds, where F5 resolves nothing, the build without F5 was ahead of files by
++10.67 [+7.00, +14.50]. It was level with the baseline (−1.17 [−4.33, +2.00]), and D3 fails there. Development round 3
+had measured the same no-F5 configuration as level with control. The baseline is ahead of files on both generators
+(+8.50 public, +11.83 sealed). The wave's gain over the baseline depends on F5 and probably doesn't transfer to real
+brains. No single build ran on both generators, so no single general claim is made. Program spend was $2,863.25 of
+$3,400.
+
+The harness changes are limited to the confirmation program (`eval/runner/cat40/next-confirm.ts`,
+`next_confirm_analysis.py`), the confirmation seeds, a write-tool race fix in `hard.ts`/`arms.ts` with a forced-probe
+test, and the development tooling. See the
+[confirmation report](docs/benchmarks/2026-10-15-cat40-next-confirm/README.md).
+
 ## [0.10.104] - 2026-10-15
 
 ### N14 large-page fidelity after large pages Wave A

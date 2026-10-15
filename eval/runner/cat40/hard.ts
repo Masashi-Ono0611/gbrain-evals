@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { runAgent, provider, type AgentRun, type Arm, type ScriptedModel } from './loop.ts';
-import { FsArm, MemoryArm, OracleArm, FileStore, isWriteCall, callTargets, type ToolLimits } from './arms.ts';
+import { FsArm, MemoryArm, OracleArm, FileStore, isWriteCall, isWriteName, callTargets, type ToolLimits } from './arms.ts';
 import { PgArm, type PgStore } from './pg-arm.ts';
 import { GbrainArm, GbrainFsArm, cellLabel, type CellArm, type GbrainPool, type GbrainSlot, type MeteringProxy } from './gbrain-arm.ts';
 import { scoreHardTask, HARD_SCORER_VERSION } from './score-hard.ts';
@@ -138,9 +138,10 @@ export function identityRefusal(recorded: Record<string, unknown> | undefined, n
   }
 }
 
-/** Worlds that must use the frozen generator: the smoke, held-out and confirmation seeds, and every sealed world (the confirmation's world S). */
+/** Worlds that must use the frozen generator: the smoke, held-out and confirmation seeds (both waves), and every sealed world. */
 export function requiresFreeze(world: HardWorld): boolean {
-  return world.seed === HARD_SEEDS.smoke || world.seed === HARD_SEEDS.heldout || world.seed === HARD_SEEDS.confirmation || world.version.startsWith('hard-sealed');
+  return world.seed === HARD_SEEDS.smoke || world.seed === HARD_SEEDS.heldout || world.seed === HARD_SEEDS.confirmation
+    || (HARD_SEEDS.next_confirmation as readonly number[]).includes(world.seed) || world.version.startsWith('hard-sealed');
 }
 
 // ─── Prompts and sessions ───────────────────────────────────────────
@@ -206,19 +207,33 @@ export function oracleOversize(world: HardWorld, tasks: HardTask[], models: stri
  * Hermetic scripted agent for Hard. Recording sessions save the statement as
  * a note and submit RECORDED; the final session looks once and submits an
  * empty set, 0 or UNKNOWN. The scripted oracle submits the answer key, so the
- * success path through the scorer is exercised. It proves plumbing, not quality.
+ * success path through the scorer is exercised. The gbrain arm's final session
+ * calls search (the question, then the first account's name), entity (names
+ * rows and one full card) and context_pack on the
+ * task's accounts (`names`), so a keyless smoke serializes each surface a wave
+ * key changes. It proves plumbing, not quality.
  */
-export function scriptedHardAgent(task: HardTask, armName: string, session: number, total: number): ScriptedModel {
+export function scriptedHardAgent(task: HardTask, armName: string, session: number, total: number, names: string[] = []): ScriptedModel {
   const recording = session < total - 1;
   const gold = task.answer_kind === 'set' ? JSON.stringify((task.gold.members ?? []).map(m => m.names[0])) : task.answer_kind === 'count' ? String(task.gold.count)
     : task.answer_kind === 'values' ? JSON.stringify(task.gold.items!.map(it => it.answer[0])) : task.gold.answer![0];
   const blank = task.answer_kind === 'set' || task.answer_kind === 'values' ? '[]' : task.answer_kind === 'count' ? '0' : 'UNKNOWN';
   return history => {
     if (armName === 'oracle') return { name: 'submit_answer', args: { answer: gold, sources: task.gold.evidence } };
+    if (armName === 'gbrain' && !recording && names.length) {
+      const calls = [
+        { name: 'search', args: { query: task.question } },
+        { name: 'search', args: { query: names[0] } },
+        { name: 'entity', args: { names } },
+        { name: 'entity', args: { name: names[0] } },
+        { name: 'context_pack', args: { entities: names.slice(0, 8).join(',') } },
+      ];
+      return calls[history.length] ?? { name: 'submit_answer', args: { answer: blank, sources: [] } };
+    }
     if (history.length === 0) {
       if (recording) {
         const text = task.sessions![session];
-        if (armName === 'gbrain-fs') return { name: 'put_page', args: { slug: `notes/session-${session + 1}`, content: text } };
+        if (armName === 'gbrain-fs' || armName === 'gbrain') return { name: 'put_page', args: { slug: `notes/session-${session + 1}`, content: text } };
         return armName === 'memory' ? { name: 'memory', args: { command: 'create', path: `/memories/notes/session-${session + 1}.md`, file_text: text } } : { name: 'write_file', args: { path: `notes/session-${session + 1}.md`, content: text } };
       }
       return armName === 'memory' ? { name: 'memory', args: { command: 'view', path: '/memories/notes' } } : { name: 'list_dir', args: { path: 'notes' } };
@@ -298,6 +313,9 @@ export async function runHardCell(ctx: HardCtx, model: string, armName: CellArm,
     ctx.proxy!.bind(slot.id, attemptId);
     arm = armName === 'gbrain' ? new GbrainArm(slot) : new GbrainFsArm(slot, new FileStore(ctx.files.all), { limits: ctx.toolLimits });
   } else throw new HardStop('HARD_ARM_NOT_APPLICABLE', `arm ${armName}`, 'use oracle,fs,pg,memory,gbrain');
+  // Taken while the slot is live: after restoreOrQuarantine the pool may hand the slot to another cell, whose restart
+  // clears the client, so the scoring and H5 write diagnostic below must not ask the slot again.
+  const writeTools = arm.writeTools();
   const messages = hardSessions(ctx.world, task, armName);
   const runs: AgentRun[] = [];
   const sessions: SessionRecord[] = [];
@@ -308,7 +326,7 @@ export async function runHardCell(ctx: HardCtx, model: string, armName: CellArm,
       if (k > 0 && slot) { const t = Date.now(); await slot.newSession(); timings.session_start_ms += Date.now() - t; }
       const run = await runAgent({
         model, arm, system: hardSystemPrompt(ctx.world, arm), user: messages[k], maxTurns: ctx.maxTurns, maxToolChars: ctx.maxToolChars, classifyStops: true,
-        scripted: ctx.scripted ? scriptedHardAgent(task, armName, armName === 'oracle' ? 0 : k, messages.length) : undefined,
+        scripted: ctx.scripted ? scriptedHardAgent(task, armName, armName === 'oracle' ? 0 : k, messages.length, (task.accounts ?? []).map(id => ctx.world.entities.find(e => e.id === id)?.name).filter((n): n is string => !!n)) : undefined,
       });
       timings.agent_ms += run.ms;
       const e = (arm as { takeEmbedUsage?: () => { usd: number } }).takeEmbedUsage?.().usd ?? 0;
@@ -329,8 +347,9 @@ export async function runHardCell(ctx: HardCtx, model: string, armName: CellArm,
       finally { timings.restore_ms = Date.now() - t; ctx.proxy!.unbind(slot.id, attemptId); }
     }
   }
-  hardTranscripts.set(attemptId, runs.flatMap((r, k) => r.tools.map(t => ({ session: k + 1, name: t.name, args: t.args, result: t.result.slice(0, 40_000) }))));
-  const isWrite = (name: string, args: Record<string, unknown>) => isWriteCall(arm, name, args);
+  // Whole results: the firing counters (firing.ts) read fields gbrain appends after long evidence, e.g. a long page's `delivered`.
+  hardTranscripts.set(attemptId, runs.flatMap((r, k) => r.tools.map(t => ({ session: k + 1, name: t.name, args: t.args, result: t.result }))));
+  const isWrite = (name: string, args: Record<string, unknown>) => isWriteName(writeTools, name, args);
   const wrote = runs.some(r => r.tools.some(t => isWrite(t.name, t.args)));
   const scored = runs.length === messages.length ? scoreHardTask(ctx.world, task, runs, { wrote }) : scoreHardTask(ctx.world, task, [{ final: null, stop: 'harness_error' } as unknown as AgentRun], { wrote });
   const stop: HardStopKind = failure?.stop ?? (runs.at(-1)!.stop as HardStopKind);

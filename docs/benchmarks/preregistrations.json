@@ -28,6 +28,14 @@
         "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a/**",
         "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a.md"
       ]
+    },
+    {
+      "id": "cat40-next-wave-confirmation",
+      "preregistration": "docs/plans/2026-10-11-cat40-next-wave/PREREG.md",
+      "results": [
+        "docs/benchmarks/2026-10-14-cat40-next-confirm-public/**",
+        "docs/benchmarks/2026-10-15-cat40-next-confirm/**"
+      ]
     }
   ]
 }

@@ -14,11 +14,11 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.104 (`VERSION`) |
+| This repository | gbrain-evals v0.10.105 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
-names its commit, and every commit named below is in the release's history except two: the Cat 40 Hard row's, which shipped after it
-(v0.60.174.0), and the wave 2 BEAM row's `71b6d85`, the head of gbrain #6445, which ships in gbrain v0.60.202.0 (#6445) with W5 on by default at factor 1.50 and the W1 `question` guidance deferred. The search modes have been identical since v0.48.4.0, so retrieval results from those commits describe
+names its commit, and every commit named below is in the release's history except three: the Cat 40 Hard row's, which shipped after it
+(v0.60.174.0), the wave 2 BEAM row's `71b6d85`, the head of gbrain #6445, which ships in gbrain v0.60.202.0 (#6445) with W5 on by default at factor 1.50 and the W1 `question` guidance deferred, and the Cat 40 next-wave row's `4e10136b4`, the Part 1 branch head measured for the confirmation (Part 1 ships without F5). The search modes have been identical since v0.48.4.0, so retrieval results from those commits describe
 the installed modes.
 
 ## What gbrain does
@@ -72,6 +72,7 @@ save, find, update and forget what it knows. The parts that matter for an agent:
 | Attributing someone else's claim to the page holder (takes classifier) | **0 of 123** cases on Sonnet 5.5, GPT-6.1 Sol and Opus 5.5 (3 with Claude Haiku 4.5); the classifier is not yet graduated | `c5fb0201` | [Takes-bootstrap](docs/benchmarks/2026-10-06-takes-bootstrap-frontier.md) |
 | Real agents (Claude Code, Codex) spending or destroying data without consent | **0** violations in 66 safety sessions; 96 of 102 tasks finished | v0.60.46.0 | [Cat 41](docs/benchmarks/2026-10-03-agent-operator.md) |
 | Hard company questions answered by agents, against plain files with `grep` (Cat 40 Hard confirmation: two 50,000-document worlds, Opus 5.5, Sonnet 5.5, GPT-6.1 Sol, reranking verified in every gbrain slot) | gbrain ahead by **+7.7 points** (95% CI +2.7 to +12.7) on a fresh world and **+13.0** (+7.7 to +18.3) on a sealed one, for every model; behind on the fresh world's conflicting-source family (47 against 56 of 60) | `3e4ff61ce` (shipped as v0.60.174.0, `0df9f2ee7`) | [Cat 40 Hard confirmation](docs/benchmarks/2026-10-10-model-ladder-hard-confirmation.md) |
+| Hard company questions after the Cat 40 next wave (four new 50,000-document worlds, two generators; Opus 5.5, Sonnet 5.5, GPT-6.1 Sol) | What ships, Part 1 without F5: gbrain ahead of plain files by **+10.67 points** (95% CI +7.00 to +14.50) on two sealed worlds. The pre-wave baseline is also ahead: **+8.50** (+4.83 to +12.33) on two public worlds and **+11.83** (+8.00 to +15.83) on the sealed ones. Against that baseline, the shipped configuration is level on sealed (−1.17, −4.33 to +2.00) and was level with control in development. The public build with F5 measured +12.50 (+9.17 to +15.83) against files and +4.00 against the baseline. That build is **not shipped (F5 failed its precision ship condition)**, and its gain came from F5 | `4e10136b4` (F5 off on sealed), baseline `09d21554d` | [Cat 40 next-wave confirmation](docs/benchmarks/2026-10-15-cat40-next-confirm/README.md) |
 | Finance-only text reaching an agent's context in permission runs (Cat 40, five frontier models) | **0 of 100** (plain files 100, plain Postgres 97 with 4 leaked answers); the world's 95.6% success figure is retired ([why](docs/benchmarks/2026-10-02-model-ladder.md#retired-2026-10-12)) | `51f865d78` | [Cat 40](docs/benchmarks/2026-10-02-model-ladder.md) |
 | Timeline events extracted from meetings and chats | **37 and 38 of 38**, 0.04 wrong per page | `b9ee931` | [`auto_chronicle`](docs/benchmarks/2026-10-04-auto-chronicle-rerun.md) |
 | Managed Postgres catch-up 57 ms from the database (10,000-file backlog) | **367.9 pages/min** steady, **33.6 min** for the backlog (was 174.8 pages/min and 74.5 min on the same rig); a page save 2.5 s instead of 8.6 s | v0.60.111.0 (#6279) | [Lanes and foreground](docs/benchmarks/2026-10-07-managed-sync-lanes-foreground.md) |
@@ -302,6 +303,13 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-15: Cat 40 next-wave confirmation; repository row names v0.10.105
+
+gbrain-evals v0.10.105 adds the Cat 40 next-wave development record, preregistration and confirmation. A new row under
+Current results reports what ships: Part 1 without F5 ahead of plain files by +10.67 points on two sealed worlds, the
+pre-wave baseline ahead on both generators, and the public build with F5 marked not shipped because F5 failed its
+precision ship condition. The repository row names v0.10.105 (was v0.10.104).
 
 ### 2026-10-15: Repository row names v0.10.104
 

@@ -453,6 +453,18 @@ describe('runner (T1, T2, T6: CEO-F3, CEO-F12, DX-F3, DX-F7, ENG-F1, ENG-F2, ENG
     expect(calls).toEqual(['newSession', 'newSession', 'newSession', 'newSession', 'restoreOrQuarantine']);
     expect(rec.sessions.length).toBe(5);
   });
+  test('an H5 gbrain cell scores and writes its diagnostic after the pool hands its slot on (the restart clears the client)', async () => {
+    const client = { instructions: 'gbrain', tools: [{ name: 'search', description: 'd', inputSchema: { type: 'object', properties: {} }, annotations: { readOnlyHint: true } }, { name: 'put_page', description: 'd', inputSchema: { type: 'object', properties: {} } }], call: async () => 'ok' };
+    const slot: { id: string; client: typeof client | null; newSession: () => Promise<void>; restore: () => Promise<void> } = { id: 'slot0', client, newSession: async () => {}, restore: async () => {} };
+    const pool = { acquire: async () => slot, restoreOrQuarantine: async () => { slot.client = null; return null; }, quarantined: new Map() };
+    const proxy = { bind: () => {}, unbind: () => {}, finalize: async () => ({ usd: 0, requests: 0, unpriced: 0, byModel: {} }) };
+    const { runHardCell } = await import('../../eval/runner/cat40/hard.ts');
+    const h5 = byFamily('H5')[0];
+    const rec = await runHardCell({ world, worldDigest: 'd', files: { all: new Map() }, pool: pool as never, proxy: proxy as never, scripted: true, judge: null, gbrainLabel: 'gbrain', maxToolChars: null, maxTurns: 4, toolLimits: 'hard', budgetRunId: null, logJudge: () => {} }, 'scripted', 'gbrain', h5, 0, 1);
+    expect(rec.stop).not.toBe('harness_error');
+    expect(rec.write_diagnostic!.length).toBe(h5.session_facts!.length);
+    expect(rec.score.wrote).toBe(true);
+  });
   test('prompts: the Hard rules are identical for every arm, the oracle included; the oracle runs only the final session with the ideal store note', () => {
     for (const arm of [new OracleArm(), new FsArm('fs', new FileStore(new Map()))]) expect(hardSystemPrompt(world, arm)).toContain(HARD_RULES);
     for (const phrase of ['executed contract or executed amendment outranks a draft amendment', 'later effective date wins', 'stated effective date', 'documents written after that date', 'later statement outranks']) expect(HARD_RULES).toContain(phrase);
