@@ -2,6 +2,25 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.108] - 2026-10-15
+
+### D9 remote `find_contradictions`: N6 holds at 0 leaks; N2's verdict carries forward
+
+gbrain v0.60.250.0 (#6784) gives remote, source-scoped and `min_trust` callers stored contradiction findings, re-reading
+each side live under the caller's read policy. N6 could not test this before, because the op returned nothing to scoped
+callers and its world had no stored report. The N6 runner now seeds one (`seedContradictionReport`), built by gbrain's own
+contradiction probe with an oracle judge, so the report copies every protected marker. The
+[D9 report](docs/benchmarks/2026-10-15-d9-find-contradictions.md) has three N6 runs on seed 20260930:
+
+- v0.60.250.0 (`3c16e9ba4`): 540 `find_contradictions` probes, 160 with signal, 0 leaks; the whole run passes with
+  0 content and 0 existence leaks.
+- master before the release (`ea93c770b`): the op was suspended, so 0 signal and 0 leaks.
+- A forced probe that skips the live re-read: 288 content and 192 existence leaks, all on `find_contradictions`.
+
+The keyless N2 arm at v0.60.250.0 offers the same 2,680 pairs as the wave 14 re-pin (`77cf8e111`), and no commit since
+changes the judge or probe, so the paid compatible-pair result (4 of 51, 7.8%, under the 0.10 cap) carries forward. A
+remote caller now reads 100 of N2's 190 stored findings, where it read 0 before. Spend was $0.
+
 ## [0.10.107] - 2026-10-15
 
 ### D7 Cat 41 brief scenarios: no time-saved signal; the brief stays default-off
