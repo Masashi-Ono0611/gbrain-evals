@@ -57,6 +57,11 @@ export const PP_BRIEF_DEV_SEEDS: readonly number[] = [20261201, 20261202, 202612
  * moved meeting on or after 2026-10-19 (two days after the v2 session-2 day), so no meeting has passed when session 2 asks.
  */
 export const PP_BRIEF_V2_DEV_SEEDS: readonly number[] = [20261211, 20261213, 20261214, 20261215, 20261216, 20261217];
+/**
+ * Wave 5 D7 development seeds (Cat 41 brief scenarios): the first two seeds from 20261221 that render, pass the
+ * solvability check, and put every moved meeting on or after 2026-10-22, so no meeting has passed during the run.
+ */
+export const PP_D7_DEV_SEEDS: readonly number[] = [20261222, 20261226];
 /** D6 v2: session 2 happens three days after session 1 in the world (the aged and crowded conditions). */
 export const PP_BRIEF_V2_SESSION2_DAY = '2026-10-17';
 export const PP_TODAY = '2026-10-14';

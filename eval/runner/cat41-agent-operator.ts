@@ -32,6 +32,7 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { mkdtempSync } from 'node:fs';
 import { SCENARIOS, scenarioById, SEED_FACTS, SEED_PAGES, type Scenario } from './cat41/scenarios.ts';
+import { D7_SCENARIOS } from './cat41/brief-scenarios.ts';
 import { classifyRun, gateMetrics, summarize, SCORER_VERSION, type CellSummary, type OverheadRow, type RunScore } from './cat41/classify.ts';
 import { registryEntry } from '../registry.ts';
 import { evaluatePromotion, describeOutcome } from './promotion.ts';
@@ -77,7 +78,8 @@ export function fillCosts(r: ContainerResult): ContainerResult {
   return r;
 }
 
-function dockerRun(args: { scenario: string; harness: Harness; model: string; repeat: number; buildDir: string; out: string; docsBase: string; installSpec: string; gbrainRef: string; timeoutMs: number }): Promise<{ code: number; stderr: string }> {
+/** One container run. `extra`: driver flags passed through (the D7 smoke's `--fake-harness-provider`). */
+export function dockerRun(args: { scenario: string; harness: Harness; model: string; repeat: number; buildDir: string; out: string; docsBase: string; installSpec: string; gbrainRef: string; timeoutMs: number; extra?: string[] }): Promise<{ code: number; stderr: string }> {
   mkdirSync(args.out, { recursive: true });
   const name = `cat41-${args.scenario}-${args.harness}-${args.repeat}-${process.pid}`.replace(/_/g, '-');
   const uid = process.getuid?.() ?? 1000;
@@ -86,7 +88,7 @@ function dockerRun(args: { scenario: string; harness: Harness; model: string; re
     '-v', `${args.buildDir}:/opt/gbrain:ro`, '-v', `${join(REPO, 'eval/runner')}:/opt/runner:ro`, '-v', `${args.out}:/out`,
     IMAGE, 'bun', '/opt/runner/cat41/in-container.ts',
     '--scenario', args.scenario, '--harness', args.harness, '--model', args.model, '--repeat', String(args.repeat),
-    '--docs-base', args.docsBase, '--install-spec', args.installSpec, '--gbrain-ref', args.gbrainRef, '--host-uid', String(uid)];
+    '--docs-base', args.docsBase, '--install-spec', args.installSpec, '--gbrain-ref', args.gbrainRef, '--host-uid', String(uid), ...(args.extra ?? [])];
   return new Promise(resolvePromise => {
     const p = spawn('docker', argv, { stdio: ['ignore', 'ignore', 'pipe'], env: process.env });
     let stderr = '';
@@ -124,7 +126,7 @@ export function scoreDir(out: string): { scores: RunScore[]; cells: CellSummary[
     if (!prev || attempt > prev.attempt) latest.set(key, { score, attempt });
   }
   const scores = [...latest.values()].map(x => x.score).sort((a, b) => a.scenario.localeCompare(b.scenario) || a.harness.localeCompare(b.harness) || a.repeat - b.repeat);
-  return { scores, cells: summarize(SCENARIOS, scores) };
+  return { scores, cells: summarize([...SCENARIOS, ...D7_SCENARIOS], scores) };
 }
 
 function table(cells: CellSummary[]): string {

@@ -10,6 +10,7 @@
  * request log, the wrapper's command log and file-system probes.
  */
 import type { Effect, Harness, ProbeEffect } from './types.ts';
+import { D7_SCENARIOS } from './brief-scenarios.ts';
 
 // ─── The user's notes (fictional) ────────────────────────────────────
 
@@ -39,6 +40,8 @@ export interface CmdResult { code: number; stdout: string; stderr: string }
 export interface Box {
   /** The agent user's home; the brain lives under `<home>/.gbrain`. */
   readonly home: string;
+  /** The harness this run drives. */
+  readonly harness: Harness;
   /** Fake model provider base URL (OpenAI-compatible at `/v1`, Anthropic at `/anthropic`). */
   readonly providerUrl: string;
   /** Run the gbrain build under test as the agent user, without the wrapper's call log. */
@@ -93,6 +96,11 @@ export interface Scenario {
   harnesses?: readonly Harness[];
   /** Runs only when named in `--scenarios`, never as part of `all` (the wave 2 TTHW cells). */
   optIn?: true;
+  /**
+   * The scenario's setup wires the harness itself (`gbrain setup <harness>`): the driver keeps the harness's own config
+   * (merging only its API key helper) and every session loads the harness's own MCP registrations and hooks.
+   */
+  wiresHarness?: true;
   /** Every session-phase provider request counts against consent, unbilled ones (model lists) included (scorer v7). */
   anyProviderRequest?: true;
   /** What the user's request authorizes. `max_usd` bounds a paid authorization. */
@@ -793,8 +801,9 @@ export function capOf(argv: string[]): number | null {
   return null;
 }
 
+/** A gate scenario, or a D7 brief scenario (brief-scenarios.ts; named in --scenarios, never part of the gate set). */
 export function scenarioById(id: string): Scenario {
-  const s = SCENARIOS.find(x => x.id === id);
+  const s = SCENARIOS.find(x => x.id === id) ?? D7_SCENARIOS.find(x => x.id === id);
   if (!s) throw new Error(`unknown scenario ${id}; known: ${SCENARIOS.map(x => x.id).join(', ')}`);
   return s;
 }
