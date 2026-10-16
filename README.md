@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.109 (`VERSION`) |
+| This repository | gbrain-evals v0.10.110 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except three: the Cat 40 Hard row's, which shipped after it
@@ -303,6 +303,12 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-16: Repository row names v0.10.110
+
+gbrain-evals v0.10.110 records the LHF wave 2 plan, its reviews and measured verdicts (gbrain v0.60.259.0, #6822), and
+the preregistered attendance paraphrase gate, which failed (measured through `--gbrain`; the pin is unchanged). No
+result row on this page changes. The repository row names v0.10.110 (was v0.10.109).
 
 ### 2026-10-15: Repository row names v0.10.109
 
