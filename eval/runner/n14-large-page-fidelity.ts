@@ -46,6 +46,8 @@
  *     [--arms single-page,managed-parts,native] [--docs conversation,project-log,book] [--seed N] [--output <dir>] [--gbrain <checkout>[@ref]]
  *     [--concurrency N] [--rss-limit-mb N] [--record-bugs] [--json]
  *     [--upgrade-from <checkout>[@ref]]   (2mb tier: seed each document single-page with that gbrain, then backfill and probe it with --gbrain)
+ *     [--config key=value[,key=value]]    (brain config set in every child after initSchema, e.g. pages.segmented_storage=on; Amendment 2)
+ *     [--native-ingest put_page|import]  (native arm write path; import = importFromFile with the brain's body policy, streamed when segmented; Amendment 2)
  */
 import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
@@ -109,8 +111,16 @@ export interface SearchHit {
   /** The text the agent actually receives in the result row. */
   delivered: string;
 }
-export interface IngestOutcome { status: 'stored' | 'refused' | 'error'; code?: string; message?: string; pages: number; chunks: number; embed_skip: string | null; write_errors: number }
-export interface AppendOutcome { status: 'ok' | 'refused' | 'error'; code?: string; message?: string; chunks_before: number; chunks_after: number; chunks_rewritten: number; chunks_deleted: number; path: string }
+export interface IngestOutcome { status: 'stored' | 'refused' | 'error'; code?: string; message?: string; pages: number; chunks: number; embed_skip: string | null; write_errors: number; storage?: BodyStorage | null; pending?: PendingWrites | null; projection?: ProjectionSettle | null }
+/** Body storage of the document's entry page (Amendment 2): `segmented` pages keep their body in content-addressed segments. */
+/** Writes that replied `write_pending` and were polled to a final state (Amendment 3). */
+export interface PendingWrites { writes: number; wait_ms: number }
+/** A segmented page's text projection (its chunks) is built after the write commits; probes wait for it to seal (Amendment 3). */
+export interface ProjectionSettle { sealed_at_reply: boolean; sealed: boolean; settle_ms: number }
+export interface BodyStorage { body_storage: string; body_bytes: number | null; segment_count: number | null; body_generation: number | null }
+/** Segment rows an append wrote (Amendment 2): live manifest rows at the new generation, and segment texts added. */
+export interface SegmentWrites { generation_before: number | null; generation_after: number | null; live_segments: number; segments_at_new_generation: number; segment_texts_added: number; segment_text_bytes_added: number }
+export interface AppendOutcome { status: 'ok' | 'refused' | 'error'; code?: string; message?: string; chunks_before: number; chunks_after: number; chunks_rewritten: number; chunks_deleted: number; path: string; segments?: SegmentWrites | null; pending?: PendingWrites | null; projection?: ProjectionSettle | null }
 export interface EmbedCount { inputs: number; tokens: number }
 export interface CallFrame { op: string; bytes: number }
 
@@ -132,6 +142,8 @@ export interface N14Adapter {
   append(text: string): Promise<AppendOutcome>;
   /** Export, then reassemble the document body from the exported files. */
   exportBody(): Promise<string>;
+  /** Amendment 2: the live segment texts of a segmented entry page, joined in order; null for an inline page. */
+  segmentBody?(): Promise<{ body: string; regions: string[] } | null>;
   close(): Promise<void>;
 }
 
@@ -154,6 +166,8 @@ export interface ArmRun {
   embed_error?: string;
   append: AppendOutcome & { wall_ms: number; embed: EmbedCount | null; appended_tokens: number; visible_rank: number | null; visible_error?: string };
   roundtrip: { status: 'match' | 'mismatch' | 'not_stored' | 'error'; expected_sha256: string; actual_sha256?: string; byte_delta?: number; first_diff?: FirstDiff; error?: string };
+  /** Amendment 2 (exploratory, outside the safety count): sha256 of the stored segments against the same expected body. */
+  segment_roundtrip?: { status: 'match' | 'mismatch' | 'not_comparable' | 'error'; actual_sha256?: string; byte_delta?: number; regions?: string[]; error?: string };
   frames: { count: number; max_bytes: number; over_cap: number; by_op: Record<string, { count: number; max_bytes: number; over_cap: number }> };
   memory: MemMark[];
 }
@@ -273,6 +287,18 @@ export async function evaluateArm(adapter: N14Adapter, ledger: N14DocLedger, raw
       roundtrip = { status: actualSha === expectedSha ? 'match' : 'mismatch', expected_sha256: expectedSha, actual_sha256: actualSha, byte_delta: Buffer.byteLength(body) - Buffer.byteLength(expected), ...(actualSha === expectedSha ? {} : { first_diff: firstDiff(expected, body) }) };
     } catch (e) { roundtrip = { status: 'error', expected_sha256: expectedSha, error: `${errCode(e)}: ${errMsg(e).slice(0, 300)}` }; }
   }
+  let segmentRoundtrip: ArmRun['segment_roundtrip'];
+  if (ingest.status === 'stored' && adapter.segmentBody) {
+    try {
+      const seg = await adapter.segmentBody();
+      if (seg && seg.regions.some(r => r !== 'truth')) segmentRoundtrip = { status: 'not_comparable', regions: seg.regions };
+      else if (seg) {
+        const body = canonicalBody(seg.body);
+        const actualSha = sha256(body);
+        segmentRoundtrip = { status: actualSha === expectedSha ? 'match' : 'mismatch', actual_sha256: actualSha, byte_delta: Buffer.byteLength(body) - Buffer.byteLength(expected), regions: seg.regions };
+      }
+    } catch (e) { segmentRoundtrip = { status: 'error', error: `${errCode(e)}: ${errMsg(e).slice(0, 300)}` }; }
+  }
   memory.push(mark('export'));
 
   const byOp: ArmRun['frames']['by_op'] = {};
@@ -291,6 +317,7 @@ export async function evaluateArm(adapter: N14Adapter, ledger: N14DocLedger, raw
     ...(embedError ? { embed_error: embedError } : {}),
     append: { ...app, wall_ms: Math.round(appendMs), embed: appendEmbed, appended_tokens: estTokens(appendText), visible_rank: visibleRank, ...(visibleError ? { visible_error: visibleError } : {}) },
     roundtrip,
+    ...(segmentRoundtrip ? { segment_roundtrip: segmentRoundtrip } : {}),
     frames: { count: adapter.frames.length, max_bytes: Math.max(0, ...adapter.frames.map(f => f.bytes)), over_cap: adapter.frames.filter(f => f.bytes > EGRESS_CAP_BYTES).length, by_op: byOp },
     memory,
   };
@@ -307,7 +334,7 @@ export interface ArmSummary {
   tier: TierId;
   status: 'ran' | 'crashed' | 'capability_absent';
   crash?: string;
-  ingest: { status: string; code?: string; chunks: number; pages: number; embed_skip: string | null; wall_ms: number | null; rss_peak_mb: number | null; rss_over_baseline_mb: number | null };
+  ingest: { status: string; code?: string; chunks: number; pages: number; embed_skip: string | null; wall_ms: number | null; rss_peak_mb: number | null; rss_over_baseline_mb: number | null; storage?: BodyStorage | null; pending?: PendingWrites | null; projection?: ProjectionSettle | null };
   stored_needles: Rate;
   keyword_recall: Rate;
   keyword_recall_by_decile: Rate[];
@@ -320,9 +347,10 @@ export interface ArmSummary {
   direct_read_agent_bytes?: number | null;
   max_frame_bytes: number;
   responses_over_cap: number;
-  append: { status: string; code?: string; wall_ms: number | null; embed_inputs: number | null; embed_tokens: number | null; appended_tokens: number; embed_ratio: number | null; chunks_rewritten: number; chunks_deleted: number; visible: boolean; path: string } | null;
+  append: { status: string; code?: string; wall_ms: number | null; embed_inputs: number | null; embed_tokens: number | null; appended_tokens: number; embed_ratio: number | null; chunks_rewritten: number; chunks_deleted: number; visible: boolean; path: string; segments?: SegmentWrites | null; pending?: PendingWrites | null; projection?: ProjectionSettle | null } | null;
   embed_initial: { inputs: number; tokens: number; wall_ms: number; tokens_per_mb: number } | null;
   roundtrip: string;
+  segment_roundtrip?: string;
   roundtrip_byte_delta: number | null;
 }
 
@@ -344,6 +372,9 @@ export function summarizeArm(run: ArmRun, tier: TierId): ArmSummary {
       status: run.ingest.status, ...(run.ingest.code ? { code: run.ingest.code } : {}), chunks: run.ingest.chunks, pages: run.ingest.pages, embed_skip: run.ingest.embed_skip,
       wall_ms: run.ingest.wall_ms, rss_peak_mb: afterIngest?.max_rss_mb || null,
       rss_over_baseline_mb: afterIngest && baseline && afterIngest.max_rss_mb ? Math.max(0, Math.round(afterIngest.max_rss_mb - baseline.rss_mb)) : null,
+      ...(run.ingest.storage !== undefined ? { storage: run.ingest.storage } : {}),
+      ...(run.ingest.pending ? { pending: run.ingest.pending } : {}),
+      ...(run.ingest.projection ? { projection: run.ingest.projection } : {}),
     },
     stored_needles: rate(run.stored.contains, run.stored.total),
     keyword_recall: rate(hits, run.probes.length),
@@ -360,10 +391,11 @@ export function summarizeArm(run: ArmRun, tier: TierId): ArmSummary {
       status: run.append.status, ...(run.append.code ? { code: run.append.code } : {}), wall_ms: run.append.wall_ms,
       embed_inputs: run.append.embed?.inputs ?? null, embed_tokens: run.append.embed?.tokens ?? null, appended_tokens: run.append.appended_tokens,
       embed_ratio: ratio === null ? null : Number(ratio.toFixed(3)), chunks_rewritten: run.append.chunks_rewritten, chunks_deleted: run.append.chunks_deleted,
-      visible: run.append.visible_rank !== null, path: run.append.path,
+      visible: run.append.visible_rank !== null, path: run.append.path, ...(run.append.segments !== undefined ? { segments: run.append.segments } : {}), ...(run.append.pending ? { pending: run.append.pending } : {}), ...(run.append.projection ? { projection: run.append.projection } : {}),
     },
     embed_initial: run.embed_initial ? { inputs: run.embed_initial.inputs, tokens: run.embed_initial.tokens, wall_ms: Math.round(run.embed_initial.wall_ms), tokens_per_mb: Math.round(run.embed_initial.tokens / (run.bytes / 1e6)) } : null,
     roundtrip: run.roundtrip.status,
+    ...(run.segment_roundtrip ? { segment_roundtrip: run.segment_roundtrip.status } : {}),
     roundtrip_byte_delta: run.roundtrip.byte_delta ?? null,
   };
 }
@@ -520,6 +552,12 @@ interface GatewayModule {
 }
 type RunEmbedCore = (engine: unknown, opts: Record<string, unknown>) => Promise<unknown>;
 type RunExport = (engine: unknown, args: string[]) => Promise<void>;
+type ImportFromFile = (engine: unknown, file: string, rel: string, opts: Record<string, unknown>) => Promise<{ status: string; error?: string; refusal?: { code: string; message: string } }>;
+export type NativeIngest = 'put_page' | 'import';
+/** How long a `write_pending` write is polled before the harness records it as still pending (Amendment 3). */
+export const PENDING_WAIT_MAX_MS = 240_000;
+/** How long probes wait for a segmented page's projection to seal (Amendment 3). */
+export const PROJECTION_SETTLE_MAX_MS = 240_000;
 type Embedder = { kind: 'counting' } | { kind: 'none' } | { kind: 'real'; model: string; dims: number; env: Record<string, string> };
 
 export class GbrainAdapter implements N14Adapter {
@@ -542,6 +580,9 @@ export class GbrainAdapter implements N14Adapter {
   #preamble = '';
   #capability!: NativeCapability;
   #runBackfill: ((engine: unknown) => Promise<unknown>) | null = null;
+  #nativeIngest: NativeIngest = 'put_page';
+  #pending: PendingWrites = { writes: 0, wait_ms: 0 };
+  #importFile: ((file: string, rel: string) => Promise<{ status: string; error?: string; refusal?: { code: string; message: string } }>) | null = null;
   /** The `runOversizedBackfill` receipt when this adapter's ingest is the upgrade backfill (Amendment 1). */
   backfill: unknown = null;
 
@@ -552,14 +593,20 @@ export class GbrainAdapter implements N14Adapter {
    * makes ingest run the gbrain under test's oversized-page backfill on a brain
    * an older gbrain seeded, instead of writing the document.
    */
-  static async open(root: string, arm: Arm, embedder: Embedder, opts: { dataDir?: string; upgrade?: boolean } = {}): Promise<GbrainAdapter> {
+  static async open(root: string, arm: Arm, embedder: Embedder, opts: { dataDir?: string; upgrade?: boolean; config?: Record<string, string>; nativeIngest?: NativeIngest } = {}): Promise<GbrainAdapter> {
     const a = new GbrainAdapter(arm, embedder);
+    a.#nativeIngest = opts.nativeIngest ?? 'put_page';
     const gut: GbrainUnderTest = { root, version: 'child', overlay: null };
     const { PGLiteEngine } = await importGbrain<{ PGLiteEngine: new () => PGLiteEngineType }>(gut, 'src/core/pglite-engine.ts');
     const { operations } = await importGbrain<OperationsModule>(gut, 'src/core/operations.ts');
     a.#gw = await importGbrain<GatewayModule>(gut, 'src/core/ai/gateway.ts');
     a.#runEmbedCore = (await importGbrain<{ runEmbedCore: RunEmbedCore }>(gut, 'src/commands/embed.ts')).runEmbedCore;
     a.#runExport = (await importGbrain<{ runExport: RunExport }>(gut, 'src/commands/export.ts')).runExport;
+    if (a.#nativeIngest === 'import' && arm === 'native') {
+      const { importFromFile } = await importGbrain<{ importFromFile: ImportFromFile }>(gut, 'src/core/import-file.ts');
+      const { readPageBodyPolicy } = await importGbrain<{ readPageBodyPolicy: (engine: unknown) => Promise<unknown> }>(gut, 'src/core/page-body/limits.ts');
+      a.#importFile = async (file, rel) => importFromFile(a.#engine, file, rel, { noEmbed: true, sourceId: 'default', bodyPolicy: await readPageBodyPolicy(a.#engine) });
+    }
     if (opts.upgrade) {
       const { runOversizedBackfill } = await importGbrain<{ runOversizedBackfill: (engine: unknown) => Promise<unknown> }>(gut, 'src/core/oversized-backfill.ts');
       a.#runBackfill = runOversizedBackfill;
@@ -568,6 +615,7 @@ export class GbrainAdapter implements N14Adapter {
     await a.#engine.connect(opts.dataDir ? { database_path: opts.dataDir } : {});
     await a.#engine.initSchema();
     for (const [k, v] of Object.entries({ 'search.cache.enabled': 'false', 'search.reranker.enabled': 'false', 'search.expansion': 'false' })) await a.#engine.setConfig(k, v);
+    for (const [k, v] of Object.entries(opts.config ?? {})) await a.#engine.setConfig(k, v);
     const logger = { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} };
     a.#ctx = { engine: a.#engine, config: { engine: 'pglite', database_path: opts.dataDir ?? ':memory:' }, logger, dryRun: false, remote: false, sourceId: 'default' };
     a.#ops = new Map(operations.map(o => [o.name, o]));
@@ -591,8 +639,40 @@ export class GbrainAdapter implements N14Adapter {
 
   async #put(slug: string, content: string): Promise<void> {
     const prev = this.#rev.get(slug);
-    const r = await this.call('put_page', { slug, content, ...(prev ? { expected_revision: prev } : {}) }) as { revision?: string };
+    let r: { revision?: string };
+    try { r = await this.call('put_page', { slug, content, ...(prev ? { expected_revision: prev } : {}) }) as { revision?: string }; }
+    catch (e) {
+      const request = (e as { writeRequest?: { request_id?: string } }).writeRequest;
+      if (errCode(e) !== 'write_pending' || !request?.request_id) throw e;
+      r = await this.#settle(request.request_id);
+    }
     if (r?.revision) this.#rev.set(slug, r.revision);
+  }
+
+  /** Amendment 3: an accepted write that replies `write_pending` is polled with get_write_request, as its contract asks, until it is final. */
+  async #settle(requestId: string): Promise<{ revision?: string }> {
+    const t0 = performance.now();
+    for (;;) {
+      const rec = await this.call('get_write_request', { request_id: requestId }) as { state: string; retry_after_ms?: number | null; revision?: string; write_error?: string; write_error_message?: string };
+      if (['committed', 'conflict', 'failed', 'cancelled'].includes(rec.state)) {
+        this.#pending.writes++;
+        this.#pending.wait_ms += Math.round(performance.now() - t0);
+        if (rec.state !== 'committed') throw Object.assign(new Error(rec.write_error_message ?? `write ${rec.state}`), { code: rec.write_error ?? `write_${rec.state}` });
+        return rec;
+      }
+      if (performance.now() - t0 > PENDING_WAIT_MAX_MS) {
+        this.#pending.writes++;
+        this.#pending.wait_ms += Math.round(performance.now() - t0);
+        throw Object.assign(new Error(`write ${requestId} still ${rec.state} after ${PENDING_WAIT_MAX_MS} ms`), { code: 'write_pending' });
+      }
+      await new Promise(res => setTimeout(res, Math.min(Math.max(rec.retry_after_ms ?? 500, 200), 5_000)));
+    }
+  }
+
+  #takePending(): PendingWrites | null {
+    const p = this.#pending;
+    this.#pending = { writes: 0, wait_ms: 0 };
+    return p.writes ? p : null;
   }
 
   async ingest(ledger: N14DocLedger, raw: string): Promise<IngestOutcome> {
@@ -619,6 +699,8 @@ export class GbrainAdapter implements N14Adapter {
       this.#preamble = split.hub.preamble;
       for (const p of split.parts) await attempt(p.slug, p.content);
       await attempt(ledger.slug, hubContent(ledger, split.hub.preamble, split.parts));
+    } else if (this.#importFile) {
+      try { await this.#importDoc(raw); } catch (e) { writeErrors++; first ??= { code: errCode(e), message: errMsg(e).slice(0, 500) }; }
     } else if (this.arm === 'native' && this.#capability.upload_session && Buffer.byteLength(raw) > 4 * 1024 * 1024) {
       try { await this.#upload(ledger.slug, raw); } catch (e) { writeErrors++; first ??= { code: errCode(e), message: errMsg(e).slice(0, 500) }; }
     } else {
@@ -627,14 +709,70 @@ export class GbrainAdapter implements N14Adapter {
     return await this.#ingestOutcome(writeErrors, first);
   }
 
+  /** `--native-ingest import`: write the document to a file named for its slug and import it with the brain's body policy (streamed above the single-string ceiling when segmented storage is on). */
+  async #importDoc(content: string): Promise<void> {
+    const dir = mkdtempSync(join(tmpdir(), 'n14-import-'));
+    try {
+      const file = join(dir, 'doc.md');
+      writeFileSync(file, content);
+      const r = await this.#importFile!(file, `${this.#ledger.slug}.md`);
+      if (r.status !== 'imported') throw Object.assign(new Error(r.refusal?.message ?? r.error ?? `import ${r.status}`), { code: r.refusal?.code ?? `import_${r.status}` });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  async #hasSegments(): Promise<boolean> {
+    const r = await this.sql<{ t: string | null }>(`SELECT to_regclass('page_body_manifest')::text AS t`);
+    return !!r[0]?.t;
+  }
+
+  async #storage(): Promise<BodyStorage | null> {
+    if (!(await this.#hasSegments())) return null;
+    const r = await this.sql<{ body_storage: string; body_bytes: string | null; segment_count: number | null; body_generation: string | null }>(
+      `SELECT body_storage, body_bytes, segment_count, body_generation FROM pages WHERE slug = $1 AND deleted_at IS NULL`, [this.#ledger.slug]);
+    if (!r[0]) return null;
+    const num = (x: string | number | null) => x === null ? null : Number(x);
+    return { body_storage: r[0].body_storage, body_bytes: num(r[0].body_bytes), segment_count: num(r[0].segment_count), body_generation: num(r[0].body_generation) };
+  }
+
+  async segmentBody(): Promise<{ body: string; regions: string[] } | null> {
+    if (this.arm === 'managed-parts' || (await this.#storage())?.body_storage !== 'segmented') return null;
+    const rows = await this.sql<{ region: string; body: Uint8Array }>(
+      `SELECT m.region, t.body FROM page_body_manifest m JOIN pages p ON p.id = m.page_id JOIN page_segment_texts t ON t.source_id = m.source_id AND t.sha256 = m.sha256
+        WHERE p.slug = $1 AND p.deleted_at IS NULL AND m.gen_to IS NULL AND m.staging_id IS NULL ORDER BY CASE m.region WHEN 'truth' THEN 0 ELSE 1 END, m.seq`, [this.#ledger.slug]);
+    return { body: Buffer.concat(rows.map(r => Buffer.from(r.body))).toString('utf8'), regions: [...new Set(rows.map(r => r.region))] };
+  }
+
+  /** Null for an inline page or no segmented storage; otherwise waits (bounded) until the text projection is sealed at the page's revision. */
+  async #settleProjection(): Promise<ProjectionSettle | null> {
+    if ((await this.#storage())?.body_storage !== 'segmented') return null;
+    const t0 = performance.now();
+    const sealedNow = async () => Number((await this.sql<{ n: number }>(
+      `SELECT count(*)::int AS n FROM pages WHERE slug = $1 AND deleted_at IS NULL AND text_projection_revision = knowledge_revision`, [this.#ledger.slug]))[0]?.n ?? 0) > 0;
+    const atReply = await sealedNow();
+    let sealed = atReply;
+    while (!sealed && performance.now() - t0 < PROJECTION_SETTLE_MAX_MS) {
+      await new Promise(res => setTimeout(res, 250));
+      sealed = await sealedNow();
+    }
+    return { sealed_at_reply: atReply, sealed, settle_ms: Math.round(performance.now() - t0) };
+  }
+
+  async #segmentTexts(): Promise<{ n: number; bytes: number }> {
+    const r = await this.sql<{ n: number; bytes: string }>(`SELECT count(*)::int AS n, coalesce(sum(byte_len), 0)::bigint AS bytes FROM page_segment_texts`);
+    return { n: Number(r[0]?.n ?? 0), bytes: Number(r[0]?.bytes ?? 0) };
+  }
+
   async #ingestOutcome(writeErrors: number, first: { code: string; message: string } | null): Promise<IngestOutcome> {
+    const projection = this.arm === 'managed-parts' ? null : await this.#settleProjection();
     const docPages = await this.sql<{ n: number; chunks: number; skip: string | null }>(
       `SELECT count(*)::int AS n, coalesce(sum((SELECT count(*) FROM content_chunks c WHERE c.page_id = p.id)), 0)::int AS chunks,
               max(p.frontmatter->'embed_skip'->>'reason') AS skip
          FROM pages p WHERE p.deleted_at IS NULL AND p.slug <> $1`, [CONTROL_SLUG]);
     const pages = Number(docPages[0]?.n ?? 0);
     const status: IngestOutcome['status'] = pages > 0 && writeErrors === 0 ? 'stored' : first && /too_large|file_too_large|oversized|request_too_large/.test(first.code + first.message) ? 'refused' : pages > 0 ? 'stored' : 'error';
-    return { status, ...(first ? { code: first.code, message: first.message } : {}), pages, chunks: Number(docPages[0]?.chunks ?? 0), embed_skip: docPages[0]?.skip ?? null, write_errors: writeErrors };
+    return { status, ...(first ? { code: first.code, message: first.message } : {}), pages, chunks: Number(docPages[0]?.chunks ?? 0), embed_skip: docPages[0]?.skip ?? null, write_errors: writeErrors, storage: this.arm === 'managed-parts' ? null : await this.#storage(), pending: this.#takePending(), projection };
   }
 
   async #upload(slug: string, raw: string): Promise<void> {
@@ -654,7 +792,11 @@ export class GbrainAdapter implements N14Adapter {
 
   async storedContains(answer: string): Promise<boolean> {
     const r = await this.sql<{ n: number }>(`SELECT count(*)::int AS n FROM pages WHERE deleted_at IS NULL AND slug <> $2 AND strpos(compiled_truth, $1) > 0`, [answer, CONTROL_SLUG]);
-    return Number(r[0]?.n ?? 0) > 0;
+    if (Number(r[0]?.n ?? 0) > 0 || !(await this.#hasSegments())) return Number(r[0]?.n ?? 0) > 0;
+    const seg = await this.sql<{ n: number }>(
+      `SELECT count(*)::int AS n FROM page_body_manifest m JOIN pages p ON p.id = m.page_id JOIN page_segment_texts t ON t.source_id = m.source_id AND t.sha256 = m.sha256
+        WHERE p.deleted_at IS NULL AND p.slug <> $2 AND m.gen_to IS NULL AND m.staging_id IS NULL AND position(convert_to($1, 'UTF8') IN t.body) > 0`, [answer, CONTROL_SLUG]);
+    return Number(seg[0]?.n ?? 0) > 0;
   }
 
   async search(query: string): Promise<SearchHit[]> {
@@ -722,7 +864,10 @@ export class GbrainAdapter implements N14Adapter {
   }
 
   async append(text: string): Promise<AppendOutcome> {
+    this.#takePending();
     const before = await this.#chunkSnapshot();
+    const storageBefore = this.arm === 'managed-parts' ? null : await this.#storage();
+    const textsBefore = storageBefore ? await this.#segmentTexts() : null;
     let path = 'put_page (whole page rewrite)';
     let failure: { status: 'refused' | 'error'; code: string; message: string } | null = null;
     try {
@@ -736,6 +881,9 @@ export class GbrainAdapter implements N14Adapter {
         path = 'append_page';
         const r = await this.call('append_page', { slug: this.#ledger.slug, text, request_id: randomUUID(), ...(this.#rev.get(this.#ledger.slug) ? { expected_revision: this.#rev.get(this.#ledger.slug) } : {}) }) as { revision?: string };
         if (r?.revision) this.#rev.set(this.#ledger.slug, r.revision);
+      } else if (this.#importFile) {
+        path = 'importFromFile re-import of the whole file (segment-aware)';
+        await this.#importDoc(this.#raw + text);
       } else {
         await this.#put(this.#ledger.slug, this.#raw + text);
       }
@@ -744,12 +892,23 @@ export class GbrainAdapter implements N14Adapter {
       const message = errMsg(e).slice(0, 500);
       failure = { status: /too_large|oversized/.test(code + message) ? 'refused' : 'error', code, message };
     }
+    const projection = storageBefore && !failure ? await this.#settleProjection() : null;
     const after = await this.#chunkSnapshot();
     let rewritten = 0;
     for (const [id, h] of after) if (before.get(id) !== h) rewritten++;
     let deleted = 0;
     for (const id of before.keys()) if (!after.has(id)) deleted++;
-    return { status: failure ? failure.status : 'ok', ...(failure ? { code: failure.code, message: failure.message } : {}), chunks_before: before.size, chunks_after: after.size, chunks_rewritten: rewritten, chunks_deleted: deleted, path };
+    let segments: SegmentWrites | null = null;
+    const storageAfter = storageBefore ? await this.#storage() : null;
+    if (textsBefore && storageAfter && (storageBefore?.body_storage === 'segmented' || storageAfter.body_storage === 'segmented')) {
+      const textsAfter = await this.#segmentTexts();
+      const live = await this.sql<{ n: number; at_new: number }>(
+        `SELECT count(*)::int AS n, count(*) FILTER (WHERE m.gen_from = p.body_generation)::int AS at_new FROM page_body_manifest m JOIN pages p ON p.id = m.page_id
+          WHERE p.slug = $1 AND p.deleted_at IS NULL AND m.gen_to IS NULL AND m.staging_id IS NULL`, [this.#ledger.slug]);
+      segments = { generation_before: storageBefore?.body_generation ?? null, generation_after: storageAfter.body_generation, live_segments: Number(live[0]?.n ?? 0),
+        segments_at_new_generation: Number(live[0]?.at_new ?? 0), segment_texts_added: textsAfter.n - textsBefore.n, segment_text_bytes_added: textsAfter.bytes - textsBefore.bytes };
+    }
+    return { status: failure ? failure.status : 'ok', ...(failure ? { code: failure.code, message: failure.message } : {}), chunks_before: before.size, chunks_after: after.size, chunks_rewritten: rewritten, chunks_deleted: deleted, path, ...(storageBefore ? { segments } : {}), pending: this.#takePending(), ...(projection ? { projection } : {}) };
   }
 
   async exportBody(): Promise<string> {
@@ -757,13 +916,17 @@ export class GbrainAdapter implements N14Adapter {
     const out = join(dir, 'out');
     const realExit = process.exit;
     const realLog = console.log;
+    const realError = console.error;
+    let stderr = '';
     try {
-      process.exit = ((code?: number) => { throw Object.assign(new Error(`export exited with code ${code ?? 0}`), { code: 'export_failed' }); }) as typeof process.exit;
+      process.exit = ((code?: number) => { throw Object.assign(new Error(`export exited with code ${code ?? 0}${stderr ? `: ${stderr.split('\n')[0]}` : ''}`), { code: 'export_failed' }); }) as typeof process.exit;
       console.log = () => {};
+      console.error = (...args: unknown[]) => { stderr += `${args.map(String).join(' ')}\n`; };
       await this.#runExport(this.#engine, ['--dir', out, '--slug-prefix', this.#ledger.slug]);
     } finally {
       process.exit = realExit;
       console.log = realLog;
+      console.error = realError;
     }
     try {
       const read = (slug: string) => readFileSync(join(out, `${slug}.md`), 'utf8');
@@ -819,7 +982,7 @@ function countingVector(text: string, dims: number): number[] {
 // ─── Child process ───────────────────────────────────────────────────────
 
 /** `phase` (Amendment 1 upgrade path): `seed` writes the document single-page into the file-backed brain at `dataDir`; `upgrade` opens it, backfills and probes. */
-interface ChildSpec { root: string; arm: Arm; docPath: string; ledgerPath: string; outPath: string; embed: boolean; dataDir?: string; phase?: 'seed' | 'upgrade' }
+interface ChildSpec { root: string; arm: Arm; docPath: string; ledgerPath: string; outPath: string; embed: boolean; dataDir?: string; phase?: 'seed' | 'upgrade'; config?: Record<string, string>; nativeIngest?: NativeIngest }
 interface ChildResult { ok: true; run: ArmRun; capability: NativeCapability; backfill?: unknown }
 interface SeedResult { ok: true; seed: IngestOutcome }
 
@@ -831,7 +994,7 @@ async function childMain(specPath: string): Promise<void> {
   const spec = JSON.parse(readFileSync(specPath, 'utf8')) as ChildSpec;
   await withHermeticEnv('n14-child', async () => {
     const ledger = JSON.parse(readFileSync(spec.ledgerPath, 'utf8')) as N14DocLedger;
-    const adapter = await GbrainAdapter.open(spec.root, spec.arm, spec.embed ? { kind: 'counting' } : { kind: 'none' }, { dataDir: spec.dataDir, upgrade: spec.phase === 'upgrade' });
+    const adapter = await GbrainAdapter.open(spec.root, spec.arm, spec.embed ? { kind: 'counting' } : { kind: 'none' }, { dataDir: spec.dataDir, upgrade: spec.phase === 'upgrade', config: spec.config, nativeIngest: spec.nativeIngest });
     try {
       const raw = readFileSync(spec.docPath, 'utf8');
       if (spec.phase === 'seed') {
@@ -911,7 +1074,7 @@ export interface N14RunResult {
   runs: Array<{ tier: TierId; run: ArmRun }>;
 }
 
-export interface N14Options { gut: GbrainUnderTest; upgradeFrom?: GbrainUnderTest; tiers: TierId[]; arms: Arm[]; docs?: DocKind[]; seed: number; concurrency: number; rssLimitMb: number; workDir?: string; log?: (s: string) => void }
+export interface N14Options { gut: GbrainUnderTest; upgradeFrom?: GbrainUnderTest; tiers: TierId[]; arms: Arm[]; docs?: DocKind[]; seed: number; concurrency: number; rssLimitMb: number; workDir?: string; log?: (s: string) => void; config?: Record<string, string>; nativeIngest?: NativeIngest }
 
 async function pool<T, R>(items: readonly T[], n: number, fn: (x: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);
@@ -970,7 +1133,7 @@ async function runN14Hermetic(opts: N14Options): Promise<N14RunResult> {
       const timeoutMs = Math.max(300_000, Math.round(Math.max(...docs.map(x => x.ledger.bytes)) / 1e6 * 20_000));
       const outcomes = await pool(runnable, opts.concurrency, async ({ d, arm }) => {
         log(`[${tier}] ${d.ledger.id} / ${arm}: start`);
-        const o = await runChild({ root: opts.gut.root, arm, docPath: d.docPath, ledgerPath: d.ledgerPath, outPath: join(dir, `${d.ledger.id}.${arm}.result.json`), embed }, opts.rssLimitMb, timeoutMs);
+        const o = await runChild({ root: opts.gut.root, arm, docPath: d.docPath, ledgerPath: d.ledgerPath, outPath: join(dir, `${d.ledger.id}.${arm}.result.json`), embed, config: opts.config, nativeIngest: opts.nativeIngest }, opts.rssLimitMb, timeoutMs);
         log(`[${tier}] ${d.ledger.id} / ${arm}: ${o.crash ? `CRASH ${o.crash}` : 'done'} in ${(o.wall_ms / 1000).toFixed(1)} s, peak RSS ${o.rss_peak_mb} MB`);
         return { d, arm, o };
       });
@@ -1187,6 +1350,25 @@ export function parseDocs(argv: readonly string[]): DocKind[] | undefined {
   return docs as DocKind[];
 }
 
+/** `--config key=value[,key=value]` (repeatable): brain config every child sets after initSchema (Amendment 2). Undefined when absent. */
+export function parseConfigOverlay(argv: readonly string[]): Record<string, string> | undefined {
+  const raw = argv.flatMap((a, i) => a === '--config' ? [argv[i + 1] ?? ''] : a.startsWith('--config=') ? [a.slice('--config='.length)] : []);
+  if (!raw.length) return undefined;
+  const out: Record<string, string> = {};
+  for (const pair of raw.flatMap(r => r.split(','))) {
+    const at = pair.indexOf('=');
+    if (at <= 0) throw new Error(`--config takes key=value, got ${JSON.stringify(pair)}`);
+    out[pair.slice(0, at).trim()] = pair.slice(at + 1).trim();
+  }
+  return out;
+}
+
+export function parseNativeIngest(argv: readonly string[]): NativeIngest {
+  const raw = argValue(argv, '--native-ingest') ?? 'put_page';
+  if (raw !== 'put_page' && raw !== 'import') throw new Error(`--native-ingest takes put_page or import, got ${raw}`);
+  return raw;
+}
+
 export function parseArms(argv: readonly string[]): Arm[] {
   const raw = argValue(argv, '--arms');
   if (!raw) return [...ARMS];
@@ -1222,12 +1404,14 @@ async function main(): Promise<void> {
   }
   const startedAt = new Date().toISOString();
   const gut = resolveGbrainUnderTest(gbrainSpecFrom(argv));
+  const config = parseConfigOverlay(argv);
+  const nativeIngest = parseNativeIngest(argv);
   const upgradeSpec = argValue(argv, '--upgrade-from');
   const upgradeFrom = upgradeSpec ? resolveGbrainUnderTest(upgradeSpec) : undefined;
   if (upgradeFrom && !tiers.includes('2mb')) throw new Error('--upgrade-from runs on the 2mb tier; add --tiers 2mb');
   log(`# BrainBench N14: large-page fidelity (gbrain ${gut.version}${gut.overlay ? `, overlay ${gut.overlay.build.commit.slice(0, 7)}` : ', pinned'}; tiers ${tiers.join(', ')}; arms ${arms.join(', ')})`);
   const t0 = performance.now();
-  const r = await runN14({ gut, upgradeFrom, tiers, arms, docs, seed, concurrency, rssLimitMb, log });
+  const r = await runN14({ gut, upgradeFrom, tiers, arms, docs, seed, concurrency, rssLimitMb, log, ...(config ? { config } : {}), ...(nativeIngest !== 'put_page' ? { nativeIngest } : {}) });
   const hermeticMs = Math.round(performance.now() - t0);
   let paidData: Record<string, unknown> | null = null;
   let paidCost: RunSummary | null = null;
@@ -1276,6 +1460,8 @@ async function main(): Promise<void> {
       native_capability: r.capability,
       thresholds: THRESHOLDS,
       gbrain_overlay: overlaySummary(gut),
+      ...(config ? { config_overlay: config } : {}),
+      ...(nativeIngest !== 'put_page' ? { native_ingest: 'importFromFile(engine, file, <slug>.md, { noEmbed: true, bodyPolicy: readPageBodyPolicy(engine) }); the append re-imports the whole file' } : {}),
       ...(upgradeFrom ? { upgrade_from: { gbrain_version: upgradeFrom.version, overlay: overlaySummary(upgradeFrom), path: 'file-backed PGLite seeded single-page by upgrade_from (embed off), then opened by the gbrain under test: initSchema, runOversizedBackfill, the native arm probes without an embed pass' } } : {}),
       direct_read_agent: 'exploratory (Amendment 1): the entry page default get_page also made with remote: true; its frame is reported per arm and is not in the egress count',
       hermetic_wall_ms: hermeticMs,
@@ -1294,7 +1480,7 @@ async function main(): Promise<void> {
       ...(upgradeFrom ? { upgrade: r.tiers.flatMap(t => t.upgrade ?? []) } : {}),
       presence: r.tiers.flatMap(t => t.presence),
       documents: r.tiers.flatMap(t => t.docs.map(d => ({ tier: t.tier, id: d.id, bytes: d.bytes, lines: d.lines, sections: d.sections.length, sha256: d.sha256, needles: d.needles.length, append_bytes: d.append.bytes }))),
-      probes: r.runs.map(x => ({ tier: x.tier, arm: x.run.arm, doc: x.run.doc, rows: x.run.probes, reads: x.run.reads, append: x.run.append, roundtrip: x.run.roundtrip, frames: x.run.frames, memory: x.run.memory, ingest: x.run.ingest, direct_read: x.run.direct_read, direct_read_agent: x.run.direct_read_agent ?? null, embed_initial: x.run.embed_initial, embed_error: x.run.embed_error ?? null })),
+      probes: r.runs.map(x => ({ tier: x.tier, arm: x.run.arm, doc: x.run.doc, rows: x.run.probes, reads: x.run.reads, append: x.run.append, roundtrip: x.run.roundtrip, segment_roundtrip: x.run.segment_roundtrip ?? null, frames: x.run.frames, memory: x.run.memory, ingest: x.run.ingest, direct_read: x.run.direct_read, direct_read_agent: x.run.direct_read_agent ?? null, embed_initial: x.run.embed_initial, embed_error: x.run.embed_error ?? null })),
       findings: findings.map(f => ({ id: f.id, classification: f.classification, surface: f.surface, actual: f.actual, repro: f.repro })),
       ...(paidData ?? {}),
       harness_error: r.harnessError,
