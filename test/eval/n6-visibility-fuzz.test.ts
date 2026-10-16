@@ -6,7 +6,7 @@ import type { ParamDef } from 'gbrain/operations';
 import { generateN6World, ledgerFingerprint, N6_CLASSES, N6_DEFAULT_SEED } from '../../eval/generators/n6-visibility-gen.ts';
 import {
   controlSeen, countOccurrences, deliveredUnits, echoCredit, hasSourceRow, isTargeted, namedSlugs, normalizeForOracle, decodeOpaqueJson,
-  namingWindow, oracleView, parseToolResult, runN6, scanLeaks, synthesizeParams, targetTitle, variantsFor, type CallOutcome,
+  knownAsOfBreakdown, knownAsOfOutcome, namingWindow, oracleView, parseToolResult, runN6, scanLeaks, synthesizeParams, targetTitle, variantsFor, type CallOutcome,
 } from '../../eval/runner/n6-visibility-fuzz.ts';
 import { gbrainSpecFrom, parseGbrainSpec } from '../../eval/runner/gbrain-under-test.ts';
 
@@ -140,6 +140,40 @@ describe('N6 parameter synthesis', () => {
     expect(synthesizeParams(params, target, { scope: 'foreign' }).params?.source_id).toBe('beta');
     expect(synthesizeParams(params, target, { scope: 'all' }).params?.source_id).toBe('__all__');
     expect(synthesizeParams(params, target, { enumOverride: ['unit', 'b'] }).params?.unit).toBe('b');
+  });
+
+  test('a known_as_of param gets its own recorded-time variants, with diff and include_body on; the base call leaves it out', () => {
+    const versionsParams = { slug: { type: 'string', required: true }, include_body: { type: 'boolean' }, known_as_of: { type: 'string' }, diff: { type: 'boolean' }, source_id: { type: 'string' } } as const;
+    const variants = variantsFor(versionsParams);
+    expect(variants.filter(v => v.recordedTime).map(v => [v.id, v.scope])).toEqual([['known_as_of', 'ambient'], ['known_as_of+source_id=beta', 'foreign']]);
+    expect(synthesizeParams(versionsParams, target).params).toEqual({ slug: target.slug });
+    const at = '2026-10-16T12:00:00.000Z';
+    expect(synthesizeParams(versionsParams, target, { knownAsOf: at }).params).toEqual({ slug: target.slug, include_body: true, known_as_of: at, diff: true });
+    expect(synthesizeParams(versionsParams, target, { knownAsOf: at, scope: 'foreign' }).params?.source_id).toBe('beta');
+    expect(variantsFor(params).some(v => v.recordedTime)).toBe(false);
+    const pageParams = { slug: { type: 'string', required: true }, include_deleted: { type: 'boolean' }, include_quarantined: { type: 'boolean' }, known_as_of: { type: 'string' } } as const;
+    expect(synthesizeParams(pageParams, target, { knownAsOf: at }).params).toEqual({ slug: target.slug, include_deleted: true, known_as_of: at });
+  });
+
+  test('a known_as_of answer is history only when it carries a recorded interval; refusals and coverage cuts are told apart', () => {
+    const ok = (data: unknown): CallOutcome => ({ exposed: true, ok: true, raw: JSON.stringify(data), data });
+    const err = (code: string): CallOutcome => ({ exposed: true, ok: false, error_code: code, raw: JSON.stringify({ error: code }), data: { error: code } });
+    expect(knownAsOfOutcome(ok({ known_as_of: 'x', slug: 'a', recorded_at: '2026-10-16T00:00:00Z', compiled_truth: 'body' }))).toBe('history');
+    expect(knownAsOfOutcome(ok({ known_as_of: 'x', slug: 'a', versions: [{ revision: 1 }] }))).toBe('history');
+    expect(knownAsOfOutcome(ok({ known_as_of: 'x', slug: 'a', versions: [] }))).toBe('other');
+    expect(knownAsOfOutcome(ok({ slug: 'a', compiled_truth: 'current body' }))).toBe('other');
+    expect(knownAsOfOutcome(err('coverage_from'))).toBe('coverage_from');
+    expect(knownAsOfOutcome(err('coverage_gap'))).toBe('coverage_gap');
+    expect(knownAsOfOutcome(err('known_as_of_unproven'))).toBe('unproven');
+    expect(knownAsOfOutcome(err('invalid_params'))).toBe('invalid_params');
+    expect(knownAsOfOutcome(err('page_not_found'))).toBe('refused');
+    expect(knownAsOfOutcome(err('permission_denied'))).toBe('refused');
+    expect(knownAsOfBreakdown([
+      { control: true, kao_local: 'history', kao_remote: 'refused' },
+      { control: true, kao_local: 'coverage_from', kao_remote: 'refused' },
+      { control: false, kao_local: 'history', kao_remote: 'history' },
+      { control: true },
+    ])).toEqual({ probes: 3, with_signal: 2, real_history_signal: 1, trusted_outcomes: { coverage_from: 1, history: 2 }, remote_outcomes: { history: 1, refused: 2 }, signal_by_trusted_outcome: { coverage_from: 1, history: 1 } });
   });
 
   test('a required param without a rule is unsupported, not guessed', () => {
