@@ -2,6 +2,21 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.112] - 2026-10-16
+
+### N6 with gbrain's recorded-time reads (known_as_of), at the v0.60.267.0 release
+
+gbrain v0.60.267.0 (#6850) adds `known_as_of` to `get_page` and `get_versions`: the page as the brain had recorded it at an
+instant, from the belief ledger. N6 now fuzzes both params, with the ledger on before seeding, and records for every
+`known_as_of` probe what the trusted caller and the remote caller got back (`history`, `coverage_from`, `coverage_gap`,
+`unproven`, `invalid_params` or `refused`). The Postgres-over-HTTP verdict fails when a build exposes `known_as_of` and no
+probe reads real history. At the release, from a clean checkout of the tag: Postgres over HTTP passes 155 of 155
+mandatory cells with 0 leaks and 0 oracles, and 56 of its 136 `known_as_of` probes read real history with signal; in
+process on PGLite, 0 leaks and 0 oracles, with 90 of 180 reading real history. An earlier W2 head had 16 existence
+oracles over HTTP (a remote client got `page_not_found` for a private page but `coverage_from` for a slug never written),
+fixed before release ([report](docs/benchmarks/2026-10-16-n6-known-as-of.md)). Measured through `--gbrain`; the pin is
+unchanged. Cost: $0.
+
 ## [0.10.111] - 2026-10-16
 
 ### N1 with gbrain's belief ledger on (probe 40), at the v0.60.265.0 release
