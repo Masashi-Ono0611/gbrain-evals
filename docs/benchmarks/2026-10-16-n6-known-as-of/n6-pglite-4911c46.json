@@ -23,11 +23,11 @@
   "gbrain_pin": "github:garrytan/gbrain#77cf8e1116e9af67c1983adcbb3223b96f0991a5",
   "execution": {
     "source_tree": {
-      "sha256": "d05dce4afab883bdbfa2b143bb36d3b8a8873a41c8b6fdf0cbb5bcaa9677796f",
+      "sha256": "9bffa440fc6318503883795a3c681221082cd82fc002c3d45dd0879298aa0ca5",
       "scheme": "git-index-blob-v1",
-      "files": 14200,
-      "git_head": "8f7d57bf9a73102b816535c8a78d35b85c2c6f03",
-      "dirty": false
+      "files": 14205,
+      "git_head": "3cc816acb4969f0a73230ce61e312821ffc1c2aa",
+      "dirty": true
     },
     "product": {
       "package": "gbrain",
@@ -92,8 +92,8 @@
   "hashes": {
     "ledger_sha256": "81eeeb6fe1674633b4ba3cd2868d9f7ad4ba998886bdfe8915c2e8d69eacb69c"
   },
-  "started_at": "2026-10-16T17:33:58.131Z",
-  "finished_at": "2026-10-16T17:34:59.451Z",
+  "started_at": "2026-10-16T18:13:02.291Z",
+  "finished_at": "2026-10-16T18:13:58.560Z",
   "data": {
     "metrics": {
       "read_ops_total": 79,
@@ -107,6 +107,22 @@
       "named_window_probes_with_signal": 64,
       "known_as_of_probes": 180,
       "known_as_of_probes_with_signal": 90,
+      "known_as_of": {
+        "probes": 180,
+        "with_signal": 90,
+        "real_history_signal": 90,
+        "trusted_outcomes": {
+          "history": 100,
+          "refused": 80
+        },
+        "remote_outcomes": {
+          "history": 40,
+          "refused": 140
+        },
+        "signal_by_trusted_outcome": {
+          "history": 90
+        }
+      },
       "content_leak_probes": 0,
       "existence_leak_probes": 0,
       "oracle_probes": 0,
@@ -3879,6 +3895,8 @@
         "op": "get_page",
         "target": "private_page",
         "variant": "known_as_of+source_id=beta",
+        "kao_local": "refused",
+        "kao_remote": "refused",
         "status": "no_signal",
         "control": false,
         "local_replay_detected": false,
@@ -3990,6 +4008,8 @@
         "op": "get_page",
         "target": "private_take",
         "variant": "known_as_of+source_id=beta",
+        "kao_local": "refused",
+        "kao_remote": "refused",
         "status": "no_signal",
         "control": false,
         "local_replay_detected": false,

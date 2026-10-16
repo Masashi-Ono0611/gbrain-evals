@@ -23,11 +23,11 @@
   "gbrain_pin": "github:garrytan/gbrain#77cf8e1116e9af67c1983adcbb3223b96f0991a5",
   "execution": {
     "source_tree": {
-      "sha256": "d05dce4afab883bdbfa2b143bb36d3b8a8873a41c8b6fdf0cbb5bcaa9677796f",
+      "sha256": "9bffa440fc6318503883795a3c681221082cd82fc002c3d45dd0879298aa0ca5",
       "scheme": "git-index-blob-v1",
-      "files": 14200,
-      "git_head": "8f7d57bf9a73102b816535c8a78d35b85c2c6f03",
-      "dirty": false
+      "files": 14205,
+      "git_head": "3cc816acb4969f0a73230ce61e312821ffc1c2aa",
+      "dirty": true
     },
     "product": {
       "package": "gbrain",
@@ -68,32 +68,32 @@
       {
         "step": "init",
         "code": 0,
-        "ms": 2499
+        "ms": 1385
       },
       {
         "step": "sources-add:alpha",
         "code": 0,
-        "ms": 604
+        "ms": 259
       },
       {
         "step": "sources-add:beta",
         "code": 0,
-        "ms": 994
+        "ms": 256
       },
       {
         "step": "register-client:scoped",
         "code": 0,
-        "ms": 422
+        "ms": 317
       },
       {
         "step": "register-client:owner",
         "code": 0,
-        "ms": 379
+        "ms": 220
       },
       {
         "step": "register-client:expiring",
         "code": 0,
-        "ms": 464
+        "ms": 232
       }
     ],
     "mcp_session_modes": [
@@ -120,8 +120,8 @@
   "hashes": {
     "ledger_sha256": "81eeeb6fe1674633b4ba3cd2868d9f7ad4ba998886bdfe8915c2e8d69eacb69c"
   },
-  "started_at": "2026-10-16T17:31:57.760Z",
-  "finished_at": "2026-10-16T17:33:57.522Z",
+  "started_at": "2026-10-16T18:11:49.709Z",
+  "finished_at": "2026-10-16T18:13:26.075Z",
   "data": {
     "verdict": {
       "pass": true,
@@ -147,15 +147,31 @@
       "refused_calls": 138,
       "refusal_calls": 138,
       "pool": {
-        "samples": 147,
-        "max_server_connections": 9,
-        "max_active": 6,
+        "samples": 134,
+        "max_server_connections": 8,
+        "max_active": 5,
         "condition_met": true
       },
       "phase_ms": {
-        "warm-owner": 24105,
-        "interleaved": 36827,
-        "scoped-again": 20172
+        "warm-owner": 20521,
+        "interleaved": 33442,
+        "scoped-again": 14675
+      },
+      "known_as_of": {
+        "probes": 136,
+        "with_signal": 56,
+        "real_history_signal": 56,
+        "trusted_outcomes": {
+          "history": 72,
+          "refused": 64
+        },
+        "remote_outcomes": {
+          "history": 32,
+          "refused": 104
+        },
+        "signal_by_trusted_outcome": {
+          "history": 56
+        }
       }
     },
     "controls": {
@@ -3734,45 +3750,45 @@
       "owner:open_loops": "no signal-bearing probe (the trusted control never read protected content, or the principal never saw the twin)"
     },
     "server_log_tail": [
-      "[gbrain-serve] dispatch op=open_loops args_sha256=4dda9835c860ee61",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=3e5795af8a22fef9",
       "[gbrain-serve] dispatch op=open_loops args_sha256=99e34af7cf84b7b4",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=651ccfd9341b4838",
       "[gbrain-serve] dispatch op=open_loops args_sha256=30d0d96264c51675",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=4dda9835c860ee61",
       "[gbrain-serve] dispatch op=open_loops args_sha256=d872c8e2c931c31a",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=97934070b836c524",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=8a75ada2390ca5fa",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=8593fca2106bced1",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=ff7536677c45b91d",
       "[gbrain-serve] dispatch op=open_loops args_sha256=287fd68a76d1ef46",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=8a75ada2390ca5fa",
       "[gbrain-serve] dispatch op=open_loops args_sha256=651ccfd9341b4838",
       "[gbrain-serve] dispatch op=open_loops args_sha256=ef6a6728c24b71f1",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=d872c8e2c931c31a",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=97934070b836c524",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=8a75ada2390ca5fa",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=85b4b6fe935f96f9",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=651ccfd9341b4838",
       "[gbrain-serve] dispatch op=open_loops args_sha256=ff7536677c45b91d",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=97934070b836c524",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=8593fca2106bced1",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=d872c8e2c931c31a",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=8a75ada2390ca5fa",
       "[gbrain-serve] dispatch op=open_loops args_sha256=287fd68a76d1ef46",
       "[gbrain-serve] dispatch op=open_loops args_sha256=0450cca124e43fac",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=d872c8e2c931c31a",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=a0d7cd79b3249daa",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=97934070b836c524",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=8a75ada2390ca5fa",
       "[gbrain-serve] dispatch op=open_loops args_sha256=ff7536677c45b91d",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=1116db95eb4c0c98",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=c3e1d51fee78043f",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=99e34af7cf84b7b4",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=30d0d96264c51675",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=3e5795af8a22fef9",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=4dda9835c860ee61",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=287fd68a76d1ef46",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=8a75ada2390ca5fa",
       "[gbrain-serve] dispatch op=open_loops args_sha256=651ccfd9341b4838",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=d872c8e2c931c31a",
       "[gbrain-serve] dispatch op=open_loops args_sha256=97934070b836c524",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=85b4b6fe935f96f9",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=d872c8e2c931c31a",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=8a75ada2390ca5fa",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=a0d7cd79b3249daa",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=c3e1d51fee78043f",
       "[gbrain-serve] dispatch op=open_loops args_sha256=ff7536677c45b91d",
-      "[gbrain-serve] dispatch op=open_loops args_sha256=8593fca2106bced1",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=99e34af7cf84b7b4",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=97934070b836c524",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=1116db95eb4c0c98",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=3e5795af8a22fef9",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=30d0d96264c51675",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=4dda9835c860ee61",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=8a75ada2390ca5fa",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=d872c8e2c931c31a",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=287fd68a76d1ef46",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=97934070b836c524",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=651ccfd9341b4838",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=ff7536677c45b91d",
       "[gbrain-serve] dispatch op=open_loops args_sha256=96742b52c0832b98",
+      "[gbrain-serve] dispatch op=open_loops args_sha256=8593fca2106bced1",
       "[gbrain-serve] dispatch op=open_loops args_sha256=85b4b6fe935f96f9"
     ]
   },

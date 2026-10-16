@@ -42,7 +42,7 @@ import { freePort } from './lifecycle/slice.ts';
 import { runCli, type RunEnv } from './lifecycle/drivers.ts';
 import {
   controlSeen, echoCredit, isDenial, isTargeted, loadGbrain, makeCallers, normalizeForOracle, oracleView, parseToolResult, presence,
-  scanLeaks, seed, synthesizeParams, targetTitle, variantsFor, type CallOutcome,
+  knownAsOfBreakdown, knownAsOfOutcome, scanLeaks, seed, synthesizeParams, targetTitle, variantsFor, type CallOutcome, type KnownAsOfOutcome,
 } from './n6-visibility-fuzz.ts';
 import { attestPreregistration, type Attestation } from './prereg.ts';
 import { BENCHMARK_VERSION, RECEIPT_SCHEMA_VERSION, noModelSpend, sourceTreeIdentity, writeReceipt, type Receipt } from './receipt.ts';
@@ -103,6 +103,9 @@ export interface ProbeRow {
   control: boolean;
   evidence?: string;
   error?: string;
+  /** known_as_of variants: what the trusted local caller and this principal got back. */
+  kao_local?: KnownAsOfOutcome;
+  kao_remote?: KnownAsOfOutcome;
 }
 
 export interface RefusalRow {
@@ -430,7 +433,7 @@ async function runPgHttpHermetic(opts: PgHttpOptions) {
       const localHit = scanFor(lo.prot, gold, [], echoCredit(t.prot, t.ghost, lo.ghost?.raw, gold.markers));
       const localDetected = !!(localHit.content || localHit.existence);
       const pr = (await http(t.principal, t.op.name, t.prot))!;
-      const base = { phase, principal: t.principal, op: t.op.name, target: t.unit.id, variant: t.variantId };
+      const base = { phase, principal: t.principal, op: t.op.name, target: t.unit.id, variant: t.variantId, ...(t.variantId.startsWith('known_as_of') ? { kao_local: knownAsOfOutcome(lo.prot), kao_remote: knownAsOfOutcome(pr) } : {}) };
       if (!pr.exposed) { rows.push({ ...base, status: 'not_exposed', control: false }); return; }
       if (pr.timed_out) { rows.push({ ...base, status: 'harness_error', control: false, error: `${pr.error_code}: ${pr.raw.slice(0, 160)}` }); return; }
       const gr = await http(t.principal, t.op.name, t.ghost);
@@ -545,6 +548,8 @@ async function runPgHttpHermetic(opts: PgHttpOptions) {
     const handshakeAccepted = handshakeRefusals.filter(r => !r.refused || r.canary);
     const verdict = verdictFor(cells, { total: calls, harness_errors: harnessErrors });
     if (handshakeAccepted.length) { verdict.pass = false; verdict.failures.push(`${handshakeAccepted.length} handshake requests (initialize, tools/list) accepted or carrying a canary`); }
+    const kaoBreakdown = knownAsOfBreakdown(rows);
+    if (kaoBreakdown.probes && !kaoBreakdown.real_history_signal) { verdict.pass = false; verdict.failures.push(`none of ${kaoBreakdown.probes} known_as_of probes read recorded history with signal, so they test nothing`); }
     if (!expiringValidBefore) { verdict.pass = false; verdict.failures.push('the expiring token never worked before expiry, so its refusal proves nothing'); }
 
     const optional = Object.entries(OPTIONAL_OPS).map(([op, surface]) => {
@@ -596,6 +601,7 @@ async function runPgHttpHermetic(opts: PgHttpOptions) {
           refused_calls: refusals.filter(r => r.refused).length, refusal_calls: refusals.length,
           pool: { samples: samples.length, max_server_connections: maxConnections, max_active: maxActive, condition_met: poolConditionMet },
           phase_ms: phaseTimes,
+          known_as_of: kaoBreakdown,
         },
         controls: { owner_reads_beta_only_page: ownerBetaSeen, expiring_token_valid_before_expiry: expiringValidBefore, presence: pres.checks },
         cells,

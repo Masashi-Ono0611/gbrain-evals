@@ -296,6 +296,9 @@ export interface ProbeRow {
   local_replay_detected?: boolean;
   /** This caller sees the public twin through the op. */
   twin_seen?: boolean;
+  /** known_as_of variants: what the trusted local caller and this caller got back. */
+  kao_local?: KnownAsOfOutcome;
+  kao_remote?: KnownAsOfOutcome;
   /** Expansion probes only: the return_unit requested (`default` for assemble_evidence without one). */
   expansion_unit?: string;
   /** A response carried a `delivered` block whose unit is window, section or page: the stage actually expanded. */
@@ -417,6 +420,32 @@ export function oracleView(o: CallOutcome): unknown {
 
 const DENIAL_CODES = new Set(['insufficient_scope', 'permission_denied', 'unknown_tool', 'unknown_operation', 'scope_denied', 'not_exposed']);
 export const isDenial = (o: CallOutcome) => !o.exposed || DENIAL_CODES.has(o.error_code ?? '') || /unknown tool|not (available|found) in this surface/i.test(o.raw);
+
+/** What a recorded-time read answered: the page as recorded (history), a coverage or proof refusal, or a refusal of the caller or its arguments. */
+export type KnownAsOfOutcome = 'history' | 'coverage_from' | 'coverage_gap' | 'unproven' | 'invalid_params' | 'refused' | 'other';
+export function knownAsOfOutcome(o: CallOutcome): KnownAsOfOutcome {
+  if (!o.exposed || isDenial(o)) return 'refused';
+  if (!o.ok) {
+    if (o.error_code === 'coverage_from' || o.error_code === 'coverage_gap' || o.error_code === 'invalid_params') return o.error_code;
+    return o.error_code === 'known_as_of_unproven' ? 'unproven' : 'refused';
+  }
+  const d = o.data && typeof o.data === 'object' && !Array.isArray(o.data) ? o.data as Record<string, unknown> : null;
+  return d && 'known_as_of' in d && (typeof d.recorded_at === 'string' || (Array.isArray(d.versions) && d.versions.length > 0)) ? 'history' : 'other';
+}
+
+/** The known_as_of probes by outcome. Only real_history_signal (signal-bearing, and the trusted caller read the page as recorded) tests recorded-time reads. */
+export function knownAsOfBreakdown(rows: readonly { control: boolean; kao_local?: KnownAsOfOutcome; kao_remote?: KnownAsOfOutcome }[]) {
+  const k = rows.filter(r => r.kao_local);
+  const tally = (xs: readonly (string | undefined)[]) => Object.fromEntries([...new Set(xs)].sort().map(x => [String(x), xs.filter(y => y === x).length]));
+  return {
+    probes: k.length,
+    with_signal: k.filter(r => r.control).length,
+    real_history_signal: k.filter(r => r.control && r.kao_local === 'history').length,
+    trusted_outcomes: tally(k.map(r => r.kao_local)),
+    remote_outcomes: tally(k.map(r => r.kao_remote)),
+    signal_by_trusted_outcome: tally(k.filter(r => r.control).map(r => r.kao_local)),
+  };
+}
 
 export type Caller = (op: Operation, params: Record<string, unknown>) => Promise<CallOutcome>;
 export type N6Engine = { executeRaw<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]> };
@@ -693,6 +722,7 @@ async function runN6Hermetic(options: N6Options) {
     ? { protected: targetTitle(ledger, unit.cls.protected), twin: targetTitle(ledger, unit.cls.twin), ghost: targetTitle(ledger, unit.cls.ghost, unit.cls.protected) }
     : { protected: unit.protected ? targetTitle(ledger, unit.protected) : undefined, twin: undefined, ghost: undefined };
   const localReplay = new Map<string, boolean>();
+  const localKao = new Map<string, KnownAsOfOutcome>();
   let localOraclePairs = 0;
   let localOracleDiffs = 0;
   if (presenceOk) {
@@ -722,6 +752,7 @@ async function runN6Hermetic(options: N6Options) {
               const lg = gh?.params ? await call('local', op, gh.params) : null;
               const hit = scanLeaks(lr, forbiddenMarkers, forbiddenSlugs, [], echoCredit(protParams, gh?.params, lg?.raw, forbiddenMarkers));
               localReplay.set(replayKey, !!(hit.content || hit.existence));
+              if (v.recordedTime) localKao.set(replayKey, knownAsOfOutcome(lr));
               if (lg && unit.cls) {
                 const mask = [...targetValues(unit.cls.protected), ...targetValues(unit.cls.ghost)];
                 localOraclePairs++;
@@ -730,9 +761,10 @@ async function runN6Hermetic(options: N6Options) {
             }
             const pr = await call(caller, op, protParams);
             summary.probes++;
-            if (!pr.exposed) { rows.push({ ...base, status: 'not_exposed', control: false }); continue; }
+            const kao = v.recordedTime ? { kao_local: localKao.get(replayKey)!, kao_remote: knownAsOfOutcome(pr) } : {};
+            if (!pr.exposed) { rows.push({ ...base, ...kao, status: 'not_exposed', control: false }); continue; }
             exposed.add(caller);
-            if (pr.timed_out) { rows.push({ ...base, status: 'harness_error', control: false, protected_error: pr.error_code }); continue; }
+            if (pr.timed_out) { rows.push({ ...base, ...kao, status: 'harness_error', control: false, protected_error: pr.error_code }); continue; }
             const gr = gh?.params ? await call(caller, op, gh.params) : null;
             const asked = Object.values(protParams).filter((x): x is string => typeof x === 'string');
             const leak = scanLeaks(pr, forbiddenMarkers, forbiddenSlugs, asked, echoCredit(protParams, gh?.params, gr?.raw, forbiddenMarkers));
@@ -783,7 +815,7 @@ async function runN6Hermetic(options: N6Options) {
             if (status === 'leak') summary.leaks++;
             if (status === 'oracle') summary.oracles++;
             if (control) summary.signal++;
-            rows.push({ ...base, status, control, local_replay_detected: localReplay.get(replayKey)!, twin_seen: twinSeen, ...(pr.ok ? {} : { protected_error: `${pr.error_code}: ${pr.raw.slice(0, 160)}` }), ...(twinError ? { twin_error: twinError } : {}), ...(expansionUnit ? { expansion_unit: expansionUnit, expansion_applied: expansionApplied, ...(fenceNeighbor !== undefined ? { fence_neighbor_reached: fenceNeighbor } : {}) } : {}) });
+            rows.push({ ...base, ...kao, status, control, local_replay_detected: localReplay.get(replayKey)!, twin_seen: twinSeen, ...(pr.ok ? {} : { protected_error: `${pr.error_code}: ${pr.raw.slice(0, 160)}` }), ...(twinError ? { twin_error: twinError } : {}), ...(expansionUnit ? { expansion_unit: expansionUnit, expansion_applied: expansionApplied, ...(fenceNeighbor !== undefined ? { fence_neighbor_reached: fenceNeighbor } : {}) } : {}) });
           }
         }
       }
@@ -883,6 +915,7 @@ async function runN6Hermetic(options: N6Options) {
     named_window_probes_with_signal: exposedRows.filter(r => r.control && 'window' in (readOps.find(o => o.name === r.op)?.params ?? {})).length,
     known_as_of_probes: exposedRows.filter(r => r.variant.startsWith('known_as_of')).length,
     known_as_of_probes_with_signal: exposedRows.filter(r => r.control && r.variant.startsWith('known_as_of')).length,
+    known_as_of: knownAsOfBreakdown(exposedRows),
     content_leak_probes: count('content'),
     existence_leak_probes: count('existence'),
     oracle_probes: count('oracle'),
