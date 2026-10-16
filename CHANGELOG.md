@@ -2,6 +2,22 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.109] - 2026-10-15
+
+### N14 at large pages Wave B PR 1: segmented storage (exploratory)
+
+An exploratory, hermetic N14 run against gbrain master `7f3c9f5` (v0.60.252.0, #6787) with `pages.segmented_storage` on
+and off. It cost $0. With the switch on, the 2 MB documents and the 20 MB chat are stored in segments (8, 8, 6 and 74) and
+found 40 of 40 in every decile. A 1 KB append writes one tail segment and re-embeds one chunk (two for the 2 MB chat, a
+4.35x ratio). The 20 MB append takes 7.1 s, against 11.9 s inline, and ingest peaks at 2.9 GB, against 4.1 GB. The stored
+segments match the source byte for byte. But `get_page` and `gbrain export` refuse a segmented page with
+`page_body_segmented` until PR 2, so windowed reads are 0 of 40 and the export round trip fails. The 200 MB chat is
+still refused: `put_page` with `request_too_large` at 24 MiB, and the streamed import with `file_too_large` at PGLite's
+128 MiB ceiling. With the switch off, the same commit reproduces Wave A. The runner gains `--config`,
+`--native-ingest import`, segment storage, append-write and segment round-trip measures, polling of `write_pending`
+receipts and a wait for the segmented projection (preregistration Amendments 2 and 3). The bug ledger reviews N14-2.
+See the [report](docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-b1.md).
+
 ## [0.10.108] - 2026-10-15
 
 ### D9 remote `find_contradictions`: N6 holds at 0 leaks; N2's verdict carries forward

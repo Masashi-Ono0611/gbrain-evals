@@ -17,7 +17,7 @@ import {
 } from '../../eval/generators/n14-large-page-gen.ts';
 import {
   EGRESS_CAP_BYTES, PASSAGE_CAP_BYTES, THRESHOLDS, canonicalBody, crashedSummary, absentSummary, estTokens, evaluateArm, frameBytes, hitRank, hubContent,
-  n14Findings, n14Verdict, probeNativeCapability, scoreQa, splitIntoParts, summarize, summarizeArm,
+  n14Findings, n14Verdict, parseConfigOverlay, parseNativeIngest, probeNativeCapability, scoreQa, splitIntoParts, summarize, summarizeArm,
   type AppendOutcome, type Arm, type CallFrame, type EmbedCount, type IngestOutcome, type N14Adapter, type N14RunResult, type NativeCapability, type SearchHit,
 } from '../../eval/runner/n14-large-page-fidelity.ts';
 import { overlaySummary, type GbrainUnderTest } from '../../eval/runner/gbrain-under-test.ts';
@@ -340,6 +340,35 @@ describe('N14 adapters through evaluateArm', () => {
     expect(s.responses_over_cap).toBe(0);
   });
 
+  test('a segmented page whose export refuses still fails the round-trip contract; the segment round trip is reported beside it', async () => {
+    class Segmented extends ReferenceAdapter {
+      constructor(arm: Arm, private readonly segmentLoss = 0) { super(arm); }
+      override async exportBody(): Promise<string> { throw Object.assign(new Error('rowToPage.compiled_truth: stores its body in segments'), { code: 'page_body_segmented' }); }
+      async segmentBody() { return { body: this.body.slice(0, this.body.length - this.segmentLoss), regions: ['truth'] }; }
+    }
+    const intact = summarizeArm(await evaluateArm(new Segmented('native'), doc.ledger, doc.text), '2mb');
+    expect(intact.roundtrip).toBe('error');
+    expect(intact.segment_roundtrip).toBe('match');
+    expect(summarize([intact], 0, CAPABLE).safety.roundtrip_byte_loss).toBe(1);
+    const lossy = summarizeArm(await evaluateArm(new Segmented('native', 10), doc.ledger, doc.text), '2mb');
+    expect(lossy.segment_roundtrip).toBe('mismatch');
+    expect(summarizeArm(await evaluateArm(new ReferenceAdapter('native'), doc.ledger, doc.text), '2mb').segment_roundtrip).toBeUndefined();
+  });
+
+  test('pending-write polling and the projection wait are carried into the summary', async () => {
+    class Pending extends ReferenceAdapter {
+      override async ingest(ledger: N14DocLedger, raw: string): Promise<IngestOutcome> {
+        return { ...(await super.ingest(ledger, raw)), pending: { writes: 1, wait_ms: 2000 }, projection: { sealed_at_reply: false, sealed: true, settle_ms: 9000 } };
+      }
+    }
+    const s = summarizeArm(await evaluateArm(new Pending('native'), doc.ledger, doc.text), '2mb');
+    expect(s.ingest.pending).toEqual({ writes: 1, wait_ms: 2000 });
+    expect(s.ingest.projection).toEqual({ sealed_at_reply: false, sealed: true, settle_ms: 9000 });
+    const plain = summarizeArm(await evaluateArm(new ReferenceAdapter('native'), doc.ledger, doc.text), '2mb');
+    expect(plain.ingest.pending).toBeUndefined();
+    expect(plain.ingest.projection).toBeUndefined();
+  });
+
   test('a whole-page reader fails the egress contract', async () => {
     class WholePage extends ReferenceAdapter {
       override async read() { const r = { compiled_truth: 'y'.repeat(EGRESS_CAP_BYTES + 10) }; this.frames.push({ op: 'get_page', bytes: frameBytes(r) }); return JSON.stringify(r); }
@@ -417,3 +446,17 @@ function fakeRun(arm: Arm, ledger: N14DocLedger, raw: string, found: (n: Needle)
 
 /** sha256 of the canonical 2 MB tier ledger at seed 14 (n14-large-page-gen/v1); a change means the corpus changed. */
 const PINNED_2MB_LEDGER = 'c09ed85562906f0fd9d959eed907d85743c544085711d31ff5e0490ece1fb436';
+
+describe('N14 Amendment 2 flags', () => {
+  test('--config collects key=value pairs from repeated and comma-joined flags', () => {
+    expect(parseConfigOverlay(['--tiers', '2mb'])).toBeUndefined();
+    expect(parseConfigOverlay(['--config', 'pages.segmented_storage=on', '--config=pages.max_bytes=1000,a=b'])).toEqual({ 'pages.segmented_storage': 'on', 'pages.max_bytes': '1000', a: 'b' });
+    expect(() => parseConfigOverlay(['--config', 'novalue'])).toThrow(/key=value/);
+  });
+
+  test('--native-ingest takes put_page (default) or import', () => {
+    expect(parseNativeIngest([])).toBe('put_page');
+    expect(parseNativeIngest(['--native-ingest', 'import'])).toBe('import');
+    expect(() => parseNativeIngest(['--native-ingest', 'upload'])).toThrow(/put_page or import/);
+  });
+});
