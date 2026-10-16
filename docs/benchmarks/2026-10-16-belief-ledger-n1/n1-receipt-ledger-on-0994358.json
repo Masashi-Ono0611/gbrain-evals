@@ -19,28 +19,28 @@
   "completion_rate": 1,
   "errors": [],
   "publishable": true,
-  "gbrain_version": "0.60.253.0",
+  "gbrain_version": "0.60.265.0",
   "gbrain_pin": "github:garrytan/gbrain#77cf8e1116e9af67c1983adcbb3223b96f0991a5",
   "execution": {
     "source_tree": {
-      "sha256": "d2889a4c19a4690b94da0c6e6a8ea1a4791df29f20eef8ad48e72d299446be51",
+      "sha256": "38627e1487d1092ce1cb17ca45e474e9595067059fc5ea875b0fdf9e04a8b934",
       "scheme": "git-index-blob-v1",
-      "files": 14157,
-      "git_head": "d744fa387725cc8903e11e2f9d38f6b53a7e00b2",
-      "dirty": true
+      "files": 14200,
+      "git_head": "f44b62ce10a222d1c2bad66aa5f862fbfbeba849",
+      "dirty": false
     },
     "product": {
       "package": "gbrain",
       "declared_pin": "github:garrytan/gbrain#77cf8e1116e9af67c1983adcbb3223b96f0991a5",
       "declared_sha": "77cf8e1116e9af67c1983adcbb3223b96f0991a5",
-      "version": "0.60.253.0",
-      "package_sha256": "2c6e0c75c3ec04ce28c5523a81621a9fe7079a221e52dec4f2e6d3aa33b1657d",
-      "loaded_git_head": "b3db5af98737d25d4e5f9bd0da1287b14b57a9c9"
+      "version": "0.60.265.0",
+      "package_sha256": "454c66c1a6d5de2b9002a46efafda48382dfcdb04ba35ac9e1b237ba960aec71",
+      "loaded_git_head": "09943580ecc57cfcf8f9800e70f48e37e8e1107b"
     }
   },
   "latency_ms": {
-    "p50": 65,
-    "p95": 1412,
+    "p50": 45,
+    "p95": 1089,
     "n": 1080,
     "basis": "primary-transport call latency over the PGLite cells"
   },
@@ -89,18 +89,18 @@
     },
     "gating_scope": "data.metrics aggregates the PGLite cells; data.metrics_postgres is report-only outside CI",
     "gbrain_overlay": {
-      "requested": "gbrain@HEAD",
-      "ref": "HEAD",
-      "commit": "b3db5af98737d25d4e5f9bd0da1287b14b57a9c9",
-      "tree": "aefeda3ab571b1de062927d979e857e58c913d3b",
-      "version": "0.60.253.0",
+      "requested": "gbrain@09943580ecc57cfcf8f9800e70f48e37e8e1107b",
+      "ref": "09943580ecc57cfcf8f9800e70f48e37e8e1107b",
+      "commit": "09943580ecc57cfcf8f9800e70f48e37e8e1107b",
+      "tree": "6824c121150a85e23c49ce5019cc6ffcbb8b19d3",
+      "version": "0.60.265.0",
       "checkout_dirty": false,
       "verified": {
-        "copy_tree": "aefeda3ab571b1de062927d979e857e58c913d3b",
+        "copy_tree": "6824c121150a85e23c49ce5019cc6ffcbb8b19d3",
         "tree_matches": true,
         "symlinks_under_src": 0,
         "dir_is_realpath": true,
-        "cli_version": "0.60.253.0",
+        "cli_version": "0.60.265.0",
         "cli_version_matches": true
       },
       "copied_not_symlinked": true
@@ -109,8 +109,8 @@
   "hashes": {
     "ledger_sha256": "6c176db0a8e4a53753d0c1a26b81f46d32779562abcd6a6542fb4fa7e4538d96"
   },
-  "started_at": "2026-10-16T01:01:01.600Z",
-  "finished_at": "2026-10-16T01:06:00.297Z",
+  "started_at": "2026-10-16T15:55:47.199Z",
+  "finished_at": "2026-10-16T15:59:25.699Z",
   "data": {
     "metrics": {
       "current_value_probes": 388,
@@ -353,7 +353,7 @@
     "by_cell": [
       {
         "id": "n1-pglite-cli",
-        "duration_ms": 292528,
+        "duration_ms": 216108,
         "server_version": "",
         "private_value_leaks": 0,
         "calls": {
@@ -402,8 +402,8 @@
       },
       {
         "id": "n1-pglite-mcp-stdio",
-        "duration_ms": 91510,
-        "server_version": "0.60.253.0",
+        "duration_ms": 69033,
+        "server_version": "0.60.265.0",
         "private_value_leaks": 0,
         "calls": {
           "primary": 357,
@@ -451,8 +451,8 @@
       },
       {
         "id": "n1-pglite-mcp-http",
-        "duration_ms": 97202,
-        "server_version": "0.60.253.0",
+        "duration_ms": 72285,
+        "server_version": "0.60.265.0",
         "private_value_leaks": 0,
         "calls": {
           "primary": 357,
@@ -500,7 +500,7 @@
       },
       {
         "id": "n1-postgres-cli",
-        "duration_ms": 177433,
+        "duration_ms": 134022,
         "server_version": "",
         "private_value_leaks": 0,
         "calls": {
@@ -549,8 +549,8 @@
       },
       {
         "id": "n1-postgres-mcp-stdio",
-        "duration_ms": 49312,
-        "server_version": "0.60.253.0",
+        "duration_ms": 38493,
+        "server_version": "0.60.265.0",
         "private_value_leaks": 0,
         "calls": {
           "primary": 357,
@@ -598,8 +598,8 @@
       },
       {
         "id": "n1-postgres-mcp-http",
-        "duration_ms": 50953,
-        "server_version": "0.60.253.0",
+        "duration_ms": 38421,
+        "server_version": "0.60.265.0",
         "private_value_leaks": 0,
         "calls": {
           "primary": 357,
@@ -883,8 +883,8 @@
         "id": "n1-pglite-cli",
         "engine": "pglite",
         "interface": "cli",
-        "started_at": "2026-10-16T01:01:04.270Z",
-        "duration_ms": 292528,
+        "started_at": "2026-10-16T15:55:47.636Z",
+        "duration_ms": 216108,
         "server_version": "",
         "decide": {
           "ok": true,
@@ -7646,13 +7646,13 @@
               "init",
               "--pglite",
               "--path",
-              "<tmp>/n1-knowledge-update-cells-s9ROuh/n1-pglite-cli/gbrain-home/brain.pglite",
+              "<tmp>/n1-knowledge-update-cells-IFGvSN/n1-pglite-cli/gbrain-home/brain.pglite",
               "--no-embedding",
               "--non-interactive"
             ],
             "code": 0,
-            "ms": 4872,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-s9ROuh/n1-pglite-cli/gbrain-home/.gbrain/content/d1b2fe39-56a9-4f72-aae4-d5144ffb2aaf/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "ms": 3473,
+            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-IFGvSN/n1-pglite-cli/gbrain-home/.gbrain/content/1b2753bb-cdb3-4529-9817-21f25b398729/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -7661,11 +7661,11 @@
               "add",
               "vault",
               "--path",
-              "<tmp>/n1-knowledge-update-cells-s9ROuh/n1-pglite-cli/vault-vault"
+              "<tmp>/n1-knowledge-update-cells-IFGvSN/n1-pglite-cli/vault-vault"
             ],
             "code": 0,
-            "ms": 991,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-s9ROuh/n1-pglite-cli/vault-vault\",\n  \"source_incarnation\": \"a49cfb90-5415-46c6-b77b-b7645f2c1923\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"b8e92db1-8f33-4d5b-8516-cd26bd7bd601\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "ms": 731,
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-IFGvSN/n1-pglite-cli/vault-vault\",\n  \"source_incarnation\": \"69c8a5c7-62b3-4c52-8e11-37a1fcc01e9f\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"a00a8d4c-98bb-465b-a203-75396c997296\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -7675,8 +7675,20 @@
               "vault"
             ],
             "code": 0,
-            "ms": 675,
+            "ms": 478,
             "tail": "Default source set to \"vault\"."
+          },
+          {
+            "step": "beliefs-enable",
+            "args": [
+              "beliefs",
+              "enable",
+              "--source",
+              "vault"
+            ],
+            "code": 0,
+            "ms": 523,
+            "tail": "Belief ledger enabled on vault: 0 page(s) baselined; certified (managed source)."
           },
           {
             "step": "decide-status",
@@ -7686,7 +7698,7 @@
               "--json"
             ],
             "code": 0,
-            "ms": 663,
+            "ms": 529,
             "tail": "          \"oldest_pending_days\": null,\n          \"accepted_30d\": 0,\n          \"rejected_30d\": 0\n        }\n      ]\n    }\n  ]\n}"
           },
           {
@@ -7699,8 +7711,8 @@
               "--no-pull"
             ],
             "code": 0,
-            "ms": 1844,
-            "tail": "First sync complete. Checkpoint: e3804c32\n  0 file(s) imported, 0 chunks\nManaged sync synced: 9 entries this run (0 written, 9 waived), 675.8 pages/min.\n[sync-watchdog] hard deadline armed: 3600s + 30s grace (default:non-tty); extends while the sync keeps progressing (stops after 900s without progress); disable with --no-hard-deadline\n[sync] managed catch-up: 9 entries frozen, 9 remaining; one write request per page (bulk off: PGLite publishes without network round trips; bulk applies to Postgres).\n[sync] 1/9 processed (0 written, 1 waived this run) · 131.6 pages/min · indexing ETA 4s\n[backup] checked 2 asset(s): 1 without a git remote (computed_by=sync)\n[sync] Skipped automatic .gitignore maintenance for the managed worktree."
+            "ms": 1451,
+            "tail": "First sync complete. Checkpoint: 3c0a2eb7\n  0 file(s) imported, 0 chunks\nManaged sync synced: 9 entries this run (0 written, 9 waived), 981.8 pages/min.\n[sync-watchdog] hard deadline armed: 3600s + 30s grace (default:non-tty); extends while the sync keeps progressing (stops after 900s without progress); disable with --no-hard-deadline\n[sync] managed catch-up: 9 entries frozen, 9 remaining; one write request per page (bulk off: PGLite publishes without network round trips; bulk applies to Postgres).\n[sync] 1/9 processed (0 written, 1 waived this run) · 211.3 pages/min · indexing ETA 3s\n[backup] checked 2 asset(s): 1 without a git remote (computed_by=sync)\n[sync] Skipped automatic .gitignore maintenance for the managed worktree."
           }
         ]
       },
@@ -7708,9 +7720,9 @@
         "id": "n1-pglite-mcp-stdio",
         "engine": "pglite",
         "interface": "mcp-stdio",
-        "started_at": "2026-10-16T01:01:04.277Z",
-        "duration_ms": 91510,
-        "server_version": "0.60.253.0",
+        "started_at": "2026-10-16T15:55:47.638Z",
+        "duration_ms": 69033,
+        "server_version": "0.60.265.0",
         "decide": {
           "ok": true,
           "slots": [
@@ -13944,13 +13956,13 @@
               "init",
               "--pglite",
               "--path",
-              "<tmp>/n1-knowledge-update-cells-s9ROuh/n1-pglite-mcp-stdio/gbrain-home/brain.pglite",
+              "<tmp>/n1-knowledge-update-cells-IFGvSN/n1-pglite-mcp-stdio/gbrain-home/brain.pglite",
               "--no-embedding",
               "--non-interactive"
             ],
             "code": 0,
-            "ms": 4738,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-s9ROuh/n1-pglite-mcp-stdio/gbrain-home/.gbrain/content/cabeeea0-a123-440c-9d8f-60b105a4d60f/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "ms": 3151,
+            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-IFGvSN/n1-pglite-mcp-stdio/gbrain-home/.gbrain/content/d33e20bc-fef4-482f-80eb-bed914166b16/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -13959,11 +13971,11 @@
               "add",
               "vault",
               "--path",
-              "<tmp>/n1-knowledge-update-cells-s9ROuh/n1-pglite-mcp-stdio/vault-vault"
+              "<tmp>/n1-knowledge-update-cells-IFGvSN/n1-pglite-mcp-stdio/vault-vault"
             ],
             "code": 0,
-            "ms": 1107,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-s9ROuh/n1-pglite-mcp-stdio/vault-vault\",\n  \"source_incarnation\": \"b95479a6-8da0-4e05-8d7f-707b74f85350\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"f01ba18c-4894-4080-b3d7-71082fb1d0a3\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "ms": 731,
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-IFGvSN/n1-pglite-mcp-stdio/vault-vault\",\n  \"source_incarnation\": \"90b1cb91-3edb-4638-833c-35129c04aacd\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"a606dae0-a995-40df-97a2-a6f218299a0a\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -13973,8 +13985,20 @@
               "vault"
             ],
             "code": 0,
-            "ms": 850,
+            "ms": 517,
             "tail": "Default source set to \"vault\"."
+          },
+          {
+            "step": "beliefs-enable",
+            "args": [
+              "beliefs",
+              "enable",
+              "--source",
+              "vault"
+            ],
+            "code": 0,
+            "ms": 600,
+            "tail": "Belief ledger enabled on vault: 0 page(s) baselined; certified (managed source)."
           },
           {
             "step": "decide-status",
@@ -13984,7 +14008,7 @@
               "--json"
             ],
             "code": 0,
-            "ms": 722,
+            "ms": 570,
             "tail": "          \"oldest_pending_days\": null,\n          \"accepted_30d\": 0,\n          \"rejected_30d\": 0\n        }\n      ]\n    }\n  ]\n}"
           },
           {
@@ -13997,8 +14021,8 @@
               "--no-pull"
             ],
             "code": 0,
-            "ms": 1862,
-            "tail": "First sync complete. Checkpoint: b07db714\n  0 file(s) imported, 0 chunks\nManaged sync synced: 9 entries this run (0 written, 9 waived), 644.4 pages/min.\n[sync-watchdog] hard deadline armed: 3600s + 30s grace (default:non-tty); extends while the sync keeps progressing (stops after 900s without progress); disable with --no-hard-deadline\n[sync] managed catch-up: 9 entries frozen, 9 remaining; one write request per page (bulk off: PGLite publishes without network round trips; bulk applies to Postgres).\n[sync] 1/9 processed (0 written, 1 waived this run) · 129.3 pages/min · indexing ETA 4s\n[sync] Skipped automatic .gitignore maintenance for the managed worktree."
+            "ms": 1761,
+            "tail": "First sync complete. Checkpoint: ff8f421d\n  0 file(s) imported, 0 chunks\nManaged sync synced: 9 entries this run (0 written, 9 waived), 715.2 pages/min.\n[sync-watchdog] hard deadline armed: 3600s + 30s grace (default:non-tty); extends while the sync keeps progressing (stops after 900s without progress); disable with --no-hard-deadline\n[sync] managed catch-up: 9 entries frozen, 9 remaining; one write request per page (bulk off: PGLite publishes without network round trips; bulk applies to Postgres).\n[sync] 1/9 processed (0 written, 1 waived this run) · 132.7 pages/min · indexing ETA 4s\n[sync] Skipped automatic .gitignore maintenance for the managed worktree."
           }
         ]
       },
@@ -14006,9 +14030,9 @@
         "id": "n1-pglite-mcp-http",
         "engine": "pglite",
         "interface": "mcp-http",
-        "started_at": "2026-10-16T01:01:04.278Z",
-        "duration_ms": 97202,
-        "server_version": "0.60.253.0",
+        "started_at": "2026-10-16T15:55:47.638Z",
+        "duration_ms": 72285,
+        "server_version": "0.60.265.0",
         "decide": {
           "ok": true,
           "slots": [
@@ -20242,13 +20266,13 @@
               "init",
               "--pglite",
               "--path",
-              "<tmp>/n1-knowledge-update-cells-s9ROuh/n1-pglite-mcp-http/gbrain-home/brain.pglite",
+              "<tmp>/n1-knowledge-update-cells-IFGvSN/n1-pglite-mcp-http/gbrain-home/brain.pglite",
               "--no-embedding",
               "--non-interactive"
             ],
             "code": 0,
-            "ms": 4935,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-s9ROuh/n1-pglite-mcp-http/gbrain-home/.gbrain/content/c3a6e2df-ff44-49b2-aaa7-04c4aa1a4d59/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "ms": 3125,
+            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-IFGvSN/n1-pglite-mcp-http/gbrain-home/.gbrain/content/8e2a4556-d8f5-45fe-861c-a3b01af302e4/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -20257,11 +20281,11 @@
               "add",
               "vault",
               "--path",
-              "<tmp>/n1-knowledge-update-cells-s9ROuh/n1-pglite-mcp-http/vault-vault"
+              "<tmp>/n1-knowledge-update-cells-IFGvSN/n1-pglite-mcp-http/vault-vault"
             ],
             "code": 0,
-            "ms": 893,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-s9ROuh/n1-pglite-mcp-http/vault-vault\",\n  \"source_incarnation\": \"b3f73651-ddd4-4d5d-9779-68b239c163e6\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"37d1b363-30a5-4955-9283-eb7955b7e3c3\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "ms": 633,
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-IFGvSN/n1-pglite-mcp-http/vault-vault\",\n  \"source_incarnation\": \"4eed6ab9-347d-49bd-a35a-6f6418c72452\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"2758a3ee-8652-4977-a595-a4530ad05ae0\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -20271,8 +20295,20 @@
               "vault"
             ],
             "code": 0,
-            "ms": 820,
+            "ms": 532,
             "tail": "Default source set to \"vault\"."
+          },
+          {
+            "step": "beliefs-enable",
+            "args": [
+              "beliefs",
+              "enable",
+              "--source",
+              "vault"
+            ],
+            "code": 0,
+            "ms": 526,
+            "tail": "Belief ledger enabled on vault: 0 page(s) baselined; certified (managed source)."
           },
           {
             "step": "decide-status",
@@ -20282,7 +20318,7 @@
               "--json"
             ],
             "code": 0,
-            "ms": 829,
+            "ms": 566,
             "tail": "          \"oldest_pending_days\": null,\n          \"accepted_30d\": 0,\n          \"rejected_30d\": 0\n        }\n      ]\n    }\n  ]\n}"
           },
           {
@@ -20299,8 +20335,8 @@
               "vault"
             ],
             "code": 0,
-            "ms": 911,
-            "tail": "  Client Secret:       gbrain_cs_<redacted>\n  Grant types:         client_credentials\n  Scopes:              read write\n  Token auth method:   client_secret_post\n  Write source:        vault\n  Federated reads:     vault\nSave the client secret — it will not be shown again.\nRevoke with: gbrain auth revoke-client \"gbrain_cl_ea9551d8646c6bd2b9e77c6154f5b70bae50a111ad78f35fdc4e1b2a700b501e\""
+            "ms": 700,
+            "tail": "  Client Secret:       gbrain_cs_<redacted>\n  Grant types:         client_credentials\n  Scopes:              read write\n  Token auth method:   client_secret_post\n  Write source:        vault\n  Federated reads:     vault\nSave the client secret — it will not be shown again.\nRevoke with: gbrain auth revoke-client \"gbrain_cl_ee450a2c90b6af007e6f7b377d299748489c24d1d5a0e6bedceb2bfd4976992c\""
           },
           {
             "step": "reimport-sync",
@@ -20312,8 +20348,8 @@
               "--no-pull"
             ],
             "code": 0,
-            "ms": 2508,
-            "tail": "First sync complete. Checkpoint: ae418128\n  0 file(s) imported, 0 chunks\nManaged sync synced: 9 entries this run (0 written, 9 waived), 558.4 pages/min.\n[sync-watchdog] hard deadline armed: 3600s + 30s grace (default:non-tty); extends while the sync keeps progressing (stops after 900s without progress); disable with --no-hard-deadline\n[sync] managed catch-up: 9 entries frozen, 9 remaining; one write request per page (bulk off: PGLite publishes without network round trips; bulk applies to Postgres).\n[sync] 1/9 processed (0 written, 1 waived this run) · 117 pages/min · indexing ETA 5s\n[backup] checked 2 asset(s): 1 without a git remote (computed_by=sync)\n[sync] Skipped automatic .gitignore maintenance for the managed worktree."
+            "ms": 1906,
+            "tail": "First sync complete. Checkpoint: 4c75787f\n  0 file(s) imported, 0 chunks\nManaged sync synced: 9 entries this run (0 written, 9 waived), 660.1 pages/min.\n[sync-watchdog] hard deadline armed: 3600s + 30s grace (default:non-tty); extends while the sync keeps progressing (stops after 900s without progress); disable with --no-hard-deadline\n[sync] managed catch-up: 9 entries frozen, 9 remaining; one write request per page (bulk off: PGLite publishes without network round trips; bulk applies to Postgres).\n[sync] 1/9 processed (0 written, 1 waived this run) · 141.2 pages/min · indexing ETA 4s\n[backup] checked 2 asset(s): 1 without a git remote (computed_by=sync)\n[sync] Skipped automatic .gitignore maintenance for the managed worktree."
           }
         ]
       },
@@ -20321,8 +20357,8 @@
         "id": "n1-postgres-cli",
         "engine": "postgres",
         "interface": "cli",
-        "started_at": "2026-10-16T01:02:35.787Z",
-        "duration_ms": 177433,
+        "started_at": "2026-10-16T15:56:56.671Z",
+        "duration_ms": 134022,
         "server_version": "",
         "decide": {
           "ok": true,
@@ -27083,13 +27119,13 @@
             "args": [
               "init",
               "--url",
-              "postgres://postgres:<redacted>@localhost:55432/sl_n1_postgres_cli_453682",
+              "postgres://postgres:<redacted>@127.0.0.1:55432/sl_n1_postgres_cli_178493",
               "--no-embedding",
               "--non-interactive"
             ],
             "code": 0,
-            "ms": 2286,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-s9ROuh/n1-postgres-cli/gbrain-home/.gbrain/content/1c9d8198-f0cc-4d24-81eb-24d48ce73778/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "ms": 1520,
+            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-IFGvSN/n1-postgres-cli/gbrain-home/.gbrain/content/6e357d60-5fa1-457b-9b05-7d70a7ba5a28/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -27098,11 +27134,11 @@
               "add",
               "vault",
               "--path",
-              "<tmp>/n1-knowledge-update-cells-s9ROuh/n1-postgres-cli/vault-vault"
+              "<tmp>/n1-knowledge-update-cells-IFGvSN/n1-postgres-cli/vault-vault"
             ],
             "code": 0,
-            "ms": 603,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-s9ROuh/n1-postgres-cli/vault-vault\",\n  \"source_incarnation\": \"36ecc086-1f7d-49ef-a15e-a7fbe83685be\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"adf5f1b8-6297-4457-a010-e85f6ec49fec\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "ms": 363,
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-IFGvSN/n1-postgres-cli/vault-vault\",\n  \"source_incarnation\": \"6f4d5372-3134-4786-ad14-b34fd54aa0c1\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"6e6da38a-0275-44b2-8bc5-4f1758d54328\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -27112,8 +27148,20 @@
               "vault"
             ],
             "code": 0,
-            "ms": 431,
+            "ms": 434,
             "tail": "Default source set to \"vault\"."
+          },
+          {
+            "step": "beliefs-enable",
+            "args": [
+              "beliefs",
+              "enable",
+              "--source",
+              "vault"
+            ],
+            "code": 0,
+            "ms": 252,
+            "tail": "Belief ledger enabled on vault: 0 page(s) baselined; certified (managed source)."
           },
           {
             "step": "decide-status",
@@ -27123,7 +27171,7 @@
               "--json"
             ],
             "code": 0,
-            "ms": 424,
+            "ms": 332,
             "tail": "          \"oldest_pending_days\": null,\n          \"accepted_30d\": 0,\n          \"rejected_30d\": 0\n        }\n      ]\n    }\n  ]\n}"
           },
           {
@@ -27136,8 +27184,8 @@
               "--no-pull"
             ],
             "code": 0,
-            "ms": 1294,
-            "tail": "First sync complete. Checkpoint: 1f627968\n  0 file(s) imported, 0 chunks\nManaged sync synced: 9 entries this run (0 written, 9 waived), 892.6 pages/min.\n[sync-watchdog] hard deadline armed: 3600s + 30s grace (default:non-tty); extends while the sync keeps progressing (stops after 900s without progress); disable with --no-hard-deadline\n[sync] managed catch-up: 9 entries frozen, 9 remaining; publishing in bulk groups (each page keeps its own request).\n[sync] 1/9 processed (0 written, 1 waived this run) · 150.4 pages/min · indexing ETA 4s\n[backup] checked 2 asset(s): 1 without a git remote (computed_by=sync)\n[sync] Skipped automatic .gitignore maintenance for the managed worktree."
+            "ms": 949,
+            "tail": "First sync complete. Checkpoint: 2da271d4\n  0 file(s) imported, 0 chunks\nManaged sync synced: 9 entries this run (0 written, 9 waived), 1194.7 pages/min.\n[sync-watchdog] hard deadline armed: 3600s + 30s grace (default:non-tty); extends while the sync keeps progressing (stops after 900s without progress); disable with --no-hard-deadline\n[sync] managed catch-up: 9 entries frozen, 9 remaining; publishing in bulk groups (each page keeps its own request).\n[sync] 1/9 processed (0 written, 1 waived this run) · 241.9 pages/min · indexing ETA 2s\n[backup] checked 2 asset(s): 1 without a git remote (computed_by=sync)\n[sync] Skipped automatic .gitignore maintenance for the managed worktree."
           }
         ]
       },
@@ -27145,9 +27193,9 @@
         "id": "n1-postgres-mcp-stdio",
         "engine": "postgres",
         "interface": "mcp-stdio",
-        "started_at": "2026-10-16T01:02:41.480Z",
-        "duration_ms": 49312,
-        "server_version": "0.60.253.0",
+        "started_at": "2026-10-16T15:56:59.923Z",
+        "duration_ms": 38493,
+        "server_version": "0.60.265.0",
         "decide": {
           "ok": true,
           "slots": [
@@ -33380,13 +33428,13 @@
             "args": [
               "init",
               "--url",
-              "postgres://postgres:<redacted>@localhost:55432/sl_n1_postgres_mcp_stdio_453682",
+              "postgres://postgres:<redacted>@127.0.0.1:55432/sl_n1_postgres_mcp_stdio_178493",
               "--no-embedding",
               "--non-interactive"
             ],
             "code": 0,
-            "ms": 2229,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-s9ROuh/n1-postgres-mcp-stdio/gbrain-home/.gbrain/content/a1f4f30a-db18-4297-99c3-c25d1016244e/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "ms": 1653,
+            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-IFGvSN/n1-postgres-mcp-stdio/gbrain-home/.gbrain/content/22e05d49-5ba3-4c61-a421-88db54853c03/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -33395,11 +33443,11 @@
               "add",
               "vault",
               "--path",
-              "<tmp>/n1-knowledge-update-cells-s9ROuh/n1-postgres-mcp-stdio/vault-vault"
+              "<tmp>/n1-knowledge-update-cells-IFGvSN/n1-postgres-mcp-stdio/vault-vault"
             ],
             "code": 0,
-            "ms": 610,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-s9ROuh/n1-postgres-mcp-stdio/vault-vault\",\n  \"source_incarnation\": \"7303609f-7ca8-4234-b3f9-3f5a14cb325e\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"a2c452ca-3738-4591-8a4d-14ccf07b277d\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "ms": 366,
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-IFGvSN/n1-postgres-mcp-stdio/vault-vault\",\n  \"source_incarnation\": \"e5f34cdb-54ba-44e7-a7de-c4dcd1b60fbf\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"b120bf6d-1497-48a0-be01-c7494f9fe33a\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -33409,8 +33457,20 @@
               "vault"
             ],
             "code": 0,
-            "ms": 414,
+            "ms": 311,
             "tail": "Default source set to \"vault\"."
+          },
+          {
+            "step": "beliefs-enable",
+            "args": [
+              "beliefs",
+              "enable",
+              "--source",
+              "vault"
+            ],
+            "code": 0,
+            "ms": 335,
+            "tail": "Belief ledger enabled on vault: 0 page(s) baselined; certified (managed source)."
           },
           {
             "step": "decide-status",
@@ -33420,7 +33480,7 @@
               "--json"
             ],
             "code": 0,
-            "ms": 331,
+            "ms": 264,
             "tail": "          \"oldest_pending_days\": null,\n          \"accepted_30d\": 0,\n          \"rejected_30d\": 0\n        }\n      ]\n    }\n  ]\n}"
           },
           {
@@ -33433,8 +33493,8 @@
               "--no-pull"
             ],
             "code": 0,
-            "ms": 1627,
-            "tail": "First sync complete. Checkpoint: 1c2e0a06\n  0 file(s) imported, 0 chunks\nManaged sync synced: 9 entries this run (0 written, 9 waived), 1001.9 pages/min.\n[sync-watchdog] hard deadline armed: 3600s + 30s grace (default:non-tty); extends while the sync keeps progressing (stops after 900s without progress); disable with --no-hard-deadline\n[sync] a live gbrain serve (PID 464882) owns this host's writes — running the managed catch-up inside it as this CLI's writer (job c9ef6362-d4e2-4a00-aafc-a5f7705f5f74; Ctrl-C aborts, the cursor is durable).\n[sync] managed catch-up: 9 entries frozen, 9 remaining; publishing in bulk groups (each page keeps its own request).\n[sync] 1/9 processed (0 written, 1 waived this run) · 157.1 pages/min · indexing ETA 4s\n[sync] Skipped automatic .gitignore maintenance for the managed worktree."
+            "ms": 1467,
+            "tail": "First sync complete. Checkpoint: 5ab6c920\n  0 file(s) imported, 0 chunks\nManaged sync synced: 9 entries this run (0 written, 9 waived), 1360.2 pages/min.\n[sync-watchdog] hard deadline armed: 3600s + 30s grace (default:non-tty); extends while the sync keeps progressing (stops after 900s without progress); disable with --no-hard-deadline\n[sync] a live gbrain serve (PID 189499) owns this host's writes — running the managed catch-up inside it as this CLI's writer (job 70a860b8-05a1-4a84-8468-15632464213b; Ctrl-C aborts, the cursor is durable).\n[sync] managed catch-up: 9 entries frozen, 9 remaining; publishing in bulk groups (each page keeps its own request).\n[sync] 1/9 processed (0 written, 1 waived this run) · 220.6 pages/min · indexing ETA 3s\n[sync] Skipped automatic .gitignore maintenance for the managed worktree."
           }
         ]
       },
@@ -33442,9 +33502,9 @@
         "id": "n1-postgres-mcp-http",
         "engine": "postgres",
         "interface": "mcp-http",
-        "started_at": "2026-10-16T01:03:30.792Z",
-        "duration_ms": 50953,
-        "server_version": "0.60.253.0",
+        "started_at": "2026-10-16T15:57:38.417Z",
+        "duration_ms": 38421,
+        "server_version": "0.60.265.0",
         "decide": {
           "ok": true,
           "slots": [
@@ -39677,13 +39737,13 @@
             "args": [
               "init",
               "--url",
-              "postgres://postgres:<redacted>@localhost:55432/sl_n1_postgres_mcp_http_453682",
+              "postgres://postgres:<redacted>@127.0.0.1:55432/sl_n1_postgres_mcp_http_178493",
               "--no-embedding",
               "--non-interactive"
             ],
             "code": 0,
-            "ms": 2277,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-s9ROuh/n1-postgres-mcp-http/gbrain-home/.gbrain/content/907fc98e-ffa4-4ef2-b82e-558686e3f515/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "ms": 1480,
+            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-IFGvSN/n1-postgres-mcp-http/gbrain-home/.gbrain/content/c2f22366-598a-4d82-8b9f-4f268414ec6a/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -39692,11 +39752,11 @@
               "add",
               "vault",
               "--path",
-              "<tmp>/n1-knowledge-update-cells-s9ROuh/n1-postgres-mcp-http/vault-vault"
+              "<tmp>/n1-knowledge-update-cells-IFGvSN/n1-postgres-mcp-http/vault-vault"
             ],
             "code": 0,
-            "ms": 517,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-s9ROuh/n1-postgres-mcp-http/vault-vault\",\n  \"source_incarnation\": \"fea1372c-27ee-4fe6-9d39-7212fc73ba30\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"e376df26-98a9-45d2-9c97-b25ff1c463a8\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "ms": 374,
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-IFGvSN/n1-postgres-mcp-http/vault-vault\",\n  \"source_incarnation\": \"2d6b4f23-733e-4ae6-a035-0f86738ccfb7\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"ba4c62b5-b4a3-455f-a24f-f4f310c096d2\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -39706,8 +39766,20 @@
               "vault"
             ],
             "code": 0,
-            "ms": 366,
+            "ms": 274,
             "tail": "Default source set to \"vault\"."
+          },
+          {
+            "step": "beliefs-enable",
+            "args": [
+              "beliefs",
+              "enable",
+              "--source",
+              "vault"
+            ],
+            "code": 0,
+            "ms": 225,
+            "tail": "Belief ledger enabled on vault: 0 page(s) baselined; certified (managed source)."
           },
           {
             "step": "decide-status",
@@ -39717,7 +39789,7 @@
               "--json"
             ],
             "code": 0,
-            "ms": 336,
+            "ms": 256,
             "tail": "          \"oldest_pending_days\": null,\n          \"accepted_30d\": 0,\n          \"rejected_30d\": 0\n        }\n      ]\n    }\n  ]\n}"
           },
           {
@@ -39734,8 +39806,8 @@
               "vault"
             ],
             "code": 0,
-            "ms": 447,
-            "tail": "  Client Secret:       gbrain_cs_<redacted>\n  Grant types:         client_credentials\n  Scopes:              read write\n  Token auth method:   client_secret_post\n  Write source:        vault\n  Federated reads:     vault\nSave the client secret — it will not be shown again.\nRevoke with: gbrain auth revoke-client \"gbrain_cl_51996128f32d33657d4f2148a73e9392afd74e1b93c0a43248d769de92dd4531\""
+            "ms": 345,
+            "tail": "  Client Secret:       gbrain_cs_<redacted>\n  Grant types:         client_credentials\n  Scopes:              read write\n  Token auth method:   client_secret_post\n  Write source:        vault\n  Federated reads:     vault\nSave the client secret — it will not be shown again.\nRevoke with: gbrain auth revoke-client \"gbrain_cl_2161c66b1c88af11edbf11371ec8e68866c0119e322eb7a18902b505c95bab3b\""
           },
           {
             "step": "reimport-sync",
@@ -39747,8 +39819,8 @@
               "--no-pull"
             ],
             "code": 0,
-            "ms": 1674,
-            "tail": "  0 file(s) imported, 0 chunks\nManaged sync synced: 9 entries this run (0 written, 9 waived), 1003.7 pages/min.\n[sync-watchdog] hard deadline armed: 3600s + 30s grace (default:non-tty); extends while the sync keeps progressing (stops after 900s without progress); disable with --no-hard-deadline\n[sync] a live gbrain serve (PID 470921) owns this host's writes — running the managed catch-up inside it as this CLI's writer (job 7356b220-5a4d-4417-b30a-186f2c72b1e6; Ctrl-C aborts, the cursor is durable).\n[sync] managed catch-up: 9 entries frozen, 9 remaining; publishing in bulk groups (each page keeps its own request).\n[sync] 1/9 processed (0 written, 1 waived this run) · 185.8 pages/min · indexing ETA 3s\n[backup] checked 2 asset(s): 1 without a git remote (computed_by=sync)\n[sync] Skipped automatic .gitignore maintenance for the managed worktree."
+            "ms": 1498,
+            "tail": "  0 file(s) imported, 0 chunks\nManaged sync synced: 9 entries this run (0 written, 9 waived), 1166.3 pages/min.\n[sync-watchdog] hard deadline armed: 3600s + 30s grace (default:non-tty); extends while the sync keeps progressing (stops after 900s without progress); disable with --no-hard-deadline\n[sync] a live gbrain serve (PID 195228) owns this host's writes — running the managed catch-up inside it as this CLI's writer (job 647c1081-c0c3-4bc1-a223-9b4cae0fc7e1; Ctrl-C aborts, the cursor is durable).\n[sync] managed catch-up: 9 entries frozen, 9 remaining; publishing in bulk groups (each page keeps its own request).\n[sync] 1/9 processed (0 written, 1 waived this run) · 212 pages/min · indexing ETA 3s\n[backup] checked 2 asset(s): 1 without a git remote (computed_by=sync)\n[sync] Skipped automatic .gitignore maintenance for the managed worktree."
           }
         ]
       }
