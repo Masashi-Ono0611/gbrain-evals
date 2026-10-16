@@ -1,6 +1,6 @@
 # LHF wave 2: measured verdicts
 
-gbrain v0.60.258.0, branch `capy/lhf-wave-2` (GBRA-107). Each performance item was checked with the item G
+gbrain v0.60.259.0 (garrytan/gbrain#6822, GBRA-107). Each performance item was checked with the item G
 contract-parity harness (`bun run bench:parity <base-ref>`): a 400-page fixture brain built once from the base
 tree, then the same 79 MCP calls on each tree, comparing every response block, `_meta` field and database write.
 Only timings may differ.
