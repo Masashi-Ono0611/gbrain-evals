@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.109, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.110, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -128,7 +128,7 @@ gap does not isolate the effect of a graph alone.
 | If I put one very large document in gbrain (a 2 MB chat, a novel, a 20 MB or 200 MB export), can an agent find and read what is deep inside it, and does keeping it up to date stay cheap? (report-only and held until gbrain-evals pins a gbrain with large pages; at gbrain `44eb049` one page up to 24 MiB is found 40/40 and read in windows; at `7f3c9f5` segmented storage, switched on in an exploratory run, keeps that recall and appends only the tail, but a segmented page cannot yet be read or exported) | [October 15 Wave B PR 1, segmented storage (N14, exploratory)](benchmarks/2026-10-15-n14-large-page-fidelity-wave-b1.md), [October 15 after large pages Wave A](benchmarks/2026-10-15-n14-large-page-fidelity-wave-a.md), [October 14 baseline](benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md) ([preregistration](benchmarks/2026-10-14-n14-large-page-fidelity-preregistration.md)) |
 | Does "who is waiting on me" open, close and mute Gmail loops the way the guide says, and where does a reply closing a loop differ from the work being done? | [October 1 open loops on Gmail-shaped threads (N7)](benchmarks/2026-10-01-n7-open-loops-email.md) |
 | Does the brain volunteer the right page when someone is mentioned, without false alarms, and does it keep private pages out of what it pushes? (report-only) | [October 1 unsolicited recall at final delivery (N8)](benchmarks/2026-10-01-n8-proactive-recall.md) |
-| Does relationship retrieval help questions that chain two or three relations, in wording the parser never saw, and does it still help reworded one-hop questions at the current pin? | [October 1 multi-hop check (N9)](benchmarks/2026-10-01-n9-multi-hop.md), [multi-relation planner preregistration](benchmarks/2026-10-04-p7-multi-hop-planner-preregistration.md) |
+| Does relationship retrieval help questions that chain two or three relations, in wording the parser never saw, and does it still help reworded one-hop questions at the current pin? | [October 1 multi-hop check (N9)](benchmarks/2026-10-01-n9-multi-hop.md), [multi-relation planner preregistration](benchmarks/2026-10-04-p7-multi-hop-planner-preregistration.md), [LHF wave 2 attendance paraphrase gate](benchmarks/2026-10-16-lhf-wave-2-attendance-preregistration.md) (held-out paraphrases fired 18 of 90, failed) |
 | After a value changes, does gbrain serve the new value everywhere and keep the old one as history, across transports, restarts, reimports and concurrent writes? | [October 1 knowledge update and supersession (N1)](benchmarks/2026-10-01-n1-knowledge-update.md), [October 2 CI slice](benchmarks/2026-10-02-ci-slices.md) |
 | After `forget`, is the claim gone from every active recall surface, and only that claim, even after reimport, restart and concurrent writes? | [October 1 forgetting residue (N5)](benchmarks/2026-10-01-n5-forget-residue.md), [October 2 CI slice](benchmarks/2026-10-02-ci-slices.md) ([preregistration](benchmarks/2026-10-02-ci-slices-preregistration.md)) |
 | When two notes disagree about the same fact, does gbrain find the pair, call it a contradiction rather than a change over time, and propose a safe fix? | [October 1 contradiction-surfacing check (N2)](benchmarks/2026-10-01-n2-contradiction-surfacing.md), [N2 and A4 preregistration](benchmarks/2026-10-01-n2-a4-preregistration.md) |
@@ -215,6 +215,12 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-16: LHF wave 2 attendance gate
+
+The N9 row links the [LHF wave 2 attendance paraphrase gate](benchmarks/2026-10-16-lhf-wave-2-attendance-preregistration.md):
+a narrowed attendance lexicon fired on 150 of 150 development paraphrases but 18 of 90 held-out runs, under the
+preregistered 80% floor, so gbrain did not ship it. gbrain-evals v0.10.110 (the opening names it; was v0.10.109).
 
 ### 2026-10-15: N14 at Wave B PR 1
 
