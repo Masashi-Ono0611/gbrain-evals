@@ -12,8 +12,8 @@ When `delta` exposes `beliefs`, the runner adds a `beliefs` variant that sets `b
 |---|---|---|---|---|---|---|
 | N6 in process, PGLite | `41e2900f` | six remote | **12** | 0 | **20** | **fail** |
 | N6 Postgres over HTTP | `41e2900f` | none, invalid, expired, scoped, owner | **12** | 0 | **18** | **fail** |
-| N6 in process, PGLite | `0ed5ae79` | six remote | 0 | 0 | 0 | pass |
-| N6 Postgres over HTTP | `0ed5ae79` | same | 0 | 0 | 0 | pass |
+| N6 in process, PGLite | `378f0e73` | six remote | 0 | 0 | 0 | pass |
+| N6 Postgres over HTTP | `378f0e73` | same | 0 | 0 | 0 | pass |
 
 | Run | `beliefs` probes | Real-history signal | Trusted: history / empty | Remote: history / empty |
 |---|---|---|---|---|
@@ -22,11 +22,11 @@ When `delta` exposes `beliefs`, the runner adds a `beliefs` variant that sets `b
 
 The `beliefs` counts are the same at both commits. The leaks at `41e2900f` were held Takes: `delta {beliefs: true}` passed every world-visibility Take to remote callers, both as a revised take and in the creation body of a page created in the window, while the Takes surfaces show remote callers only the holders they may read. gbrain `1d7ce5b3` applies that holder rule to the history reader and to the creation body. A unit cell in gbrain fails with either filter reverted. The oracles were `beliefs.until` timestamps alone; the runner now masks it.
 
-The final head `0ed5ae79` also carries the fixes from gstack `/review` of the branch, several of them privacy fixes on the same surface: remote reads page on the rows each history page scanned (a remote page is filtered after its SQL `LIMIT`), a creation or earlier body never shows a claim made private later, remote creation entries no longer carry counts of beliefs the caller cannot read, and relationship-note upper bounds count only the evidence the caller's scope counts. Each has a gbrain unit cell that fails without it.
+The final head `378f0e73` also carries the fixes from gstack `/review` of the branch, several of them privacy fixes on the same surface: remote reads page on the rows each history page scanned (a remote page is filtered after its SQL `LIMIT`), a creation or earlier body never shows a claim made private later, remote creation entries no longer carry counts of beliefs the caller cannot read, the event cap counts only rows the caller may read (so private events cannot change `truncated` or which changes are listed), and relationship-note upper bounds count only the evidence the caller's scope counts. Each has a gbrain unit cell that fails without it.
 
-The Postgres-over-HTTP run at `0ed5ae79` covers all 155 mandatory cells with at most 8 pooled connections. In process, N6 covers 33 of 79 read ops. Both runs read the gbrain tree through `--gbrain`; each receipt records the overlay commit and tree, and the package pin is unchanged. gbrain's branch is not released yet; the rows will be rerun from the release tag.
+The Postgres-over-HTTP run at `378f0e73` covers all 155 mandatory cells with at most 8 pooled connections. In process, N6 covers 33 of 79 read ops. Both runs read the gbrain tree through `--gbrain`; each receipt records the overlay commit and tree, and the package pin is unchanged. gbrain's branch is not released yet; the rows will be rerun from the release tag.
 
-Hermetic, no provider key, $0. Receipts: [PGLite 41e2900f](2026-10-16-n6-delta-beliefs/n6-pglite-41e2900.json), [Postgres HTTP 41e2900f](2026-10-16-n6-delta-beliefs/n6-postgres-http-41e2900.json), [PGLite 0ed5ae79](2026-10-16-n6-delta-beliefs/n6-pglite-0ed5ae7.json), [Postgres HTTP 0ed5ae79](2026-10-16-n6-delta-beliefs/n6-postgres-http-0ed5ae7.json).
+Hermetic, no provider key, $0. Receipts: [PGLite 41e2900f](2026-10-16-n6-delta-beliefs/n6-pglite-41e2900.json), [Postgres HTTP 41e2900f](2026-10-16-n6-delta-beliefs/n6-postgres-http-41e2900.json), [PGLite 378f0e73](2026-10-16-n6-delta-beliefs/n6-pglite-378f0e7.json), [Postgres HTTP 378f0e73](2026-10-16-n6-delta-beliefs/n6-postgres-http-378f0e7.json).
 
 ## Reproduce
 

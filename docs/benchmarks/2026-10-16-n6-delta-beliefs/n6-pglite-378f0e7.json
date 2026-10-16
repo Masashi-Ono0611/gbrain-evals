@@ -23,10 +23,10 @@
   "gbrain_pin": "github:garrytan/gbrain#77cf8e1116e9af67c1983adcbb3223b96f0991a5",
   "execution": {
     "source_tree": {
-      "sha256": "0eedbe84f7dec8772421731294ec40a8fb90fcb716ae1f4dd7d3d61162c4f428",
+      "sha256": "a47f7cdca9ffea45d320364f95004f7c934852fd9f44fc905de41996fe5a3c5b",
       "scheme": "git-index-blob-v1",
-      "files": 14207,
-      "git_head": "525b668a92eff951f638d0c519e78a0a4280a61b",
+      "files": 14212,
+      "git_head": "45ee808bff21a516b7c87156386c85bea6a2ed39",
       "dirty": false
     },
     "product": {
@@ -34,8 +34,8 @@
       "declared_pin": "github:garrytan/gbrain#77cf8e1116e9af67c1983adcbb3223b96f0991a5",
       "declared_sha": "77cf8e1116e9af67c1983adcbb3223b96f0991a5",
       "version": "0.60.268.0",
-      "package_sha256": "1d1f90a5c8827c8b119267e85af5b74c103ea744ba822d3774849c47ba0cc622",
-      "loaded_git_head": "0ed5ae793f52d19ffad23e6d138cb61f92f33667"
+      "package_sha256": "800a3184e893c723bdf0f11300cdbf45706e8691abbfc0f95fc3b23513a9aa50",
+      "loaded_git_head": "378f0e73eae5fa65c03b9e798ef5d301773f5778"
     }
   },
   "accounting": {
@@ -66,14 +66,14 @@
     "call_timeout_ms": 10000,
     "only": null,
     "gbrain_overlay": {
-      "requested": "gbrain@0ed5ae793f52d19ffad23e6d138cb61f92f33667",
-      "ref": "0ed5ae793f52d19ffad23e6d138cb61f92f33667",
-      "commit": "0ed5ae793f52d19ffad23e6d138cb61f92f33667",
-      "tree": "e32db8a7c7c7ec6f78eeabcdf7062d753cebecd1",
+      "requested": "gbrain@378f0e73eae5fa65c03b9e798ef5d301773f5778",
+      "ref": "378f0e73eae5fa65c03b9e798ef5d301773f5778",
+      "commit": "378f0e73eae5fa65c03b9e798ef5d301773f5778",
+      "tree": "7626e4c573d2e7ba3d3bebcf489863640a4141a0",
       "version": "0.60.268.0",
       "checkout_dirty": false,
       "verified": {
-        "copy_tree": "e32db8a7c7c7ec6f78eeabcdf7062d753cebecd1",
+        "copy_tree": "7626e4c573d2e7ba3d3bebcf489863640a4141a0",
         "tree_matches": true,
         "symlinks_under_src": 0,
         "dir_is_realpath": true,
@@ -92,8 +92,8 @@
   "hashes": {
     "ledger_sha256": "81eeeb6fe1674633b4ba3cd2868d9f7ad4ba998886bdfe8915c2e8d69eacb69c"
   },
-  "started_at": "2026-10-16T22:08:13.493Z",
-  "finished_at": "2026-10-16T22:09:09.257Z",
+  "started_at": "2026-10-16T22:33:09.699Z",
+  "finished_at": "2026-10-16T22:34:05.040Z",
   "data": {
     "metrics": {
       "read_ops_total": 79,
