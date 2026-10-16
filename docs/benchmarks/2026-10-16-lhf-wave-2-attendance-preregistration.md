@@ -48,3 +48,23 @@ If any fails, item 9 is dropped from the wave and filed with the funnel (not par
 ## Expectation stated before the run
 
 The held-out author deliberately avoided the development frames, and the narrowed lexicon adds only five verb forms and one noun frame, so a held-out fire rate below 80% is a likely outcome. That outcome drops the item; it is not a reason to widen the lexicon inside this wave.
+
+## Result (2026-10-16): FAIL, item 9 dropped
+
+Run after the lexicon change was committed (gbrain `6d59540aa` on `capy/lhf-wave-2-lane-m`, measured in the wave integration tree `f3cd6de6a`) against base `7f3c9f5f`. N9 hermetic on world-v1-attendees, seeds 1-3, with `--extra-split heldout-paraphrase=… --extra-split competing-intent=…` (the loader added to `eval/runner/n9-multi-hop-paraphrase.ts` after the lexicon commit, by the integrator, not the lexicon author). Both input files matched their committed hashes. Relations come from `eval/runner/parse-relational-questions.ts` on each tree; scored by `eval/runner/lhf-wave-2-attendance-gate.ts`.
+
+| Split | Base | Branch |
+|---|---|---|
+| Held-out paraphrase: attendance fired | 6/90 (6.7%) | 18/90 (20.0%) |
+| Held-out: questions parsed as attendance | 2/30 | 6/30 |
+| Held-out recall@5 (relational on) | 0.242 | 0.297 |
+| Competing intent: parsed as attendance | 3/90 (1 question) | 3/90 (the same question) |
+| Competing intent: attendance walk fired | 0/90 | 0/90 |
+| Template split fired / recall@5 | 351/435, 0.891 | 351/435, 0.891 |
+| Development paraphrase split fired / recall@5 (report only) | 123/435, 0.530 | 273/435, 0.707 |
+| Development: attendance paraphrases parsed as attendance | 0/150 | 150/150 |
+| Development: other templates parsed as attendance | 0 | 0 |
+
+Rules: held-out fire rate ≥ 80%: **fail** (20%). Held-out recall not lower: pass. Competing intent zero false routes: **fail as written**, but the one question routed to attendance (school attendance, "attended") does so on master too, and the branch adds none. Template unchanged: pass. Development split zero false attendance routes: pass.
+
+Verdict: item 9 does not ship in LHF wave 2; it is reverted on the wave branch and filed in gbrain `TODOS.md` with this receipt. The development split moved from 0 to 150 of 150, which is the gap the held-out set exists to measure: its author used frames such as "showed up", "made it to", "turned out for", and roster or guest-list nouns, none of which the narrowed lexicon covers. The held-out set is now spent; a future attendance change needs a new one. Its text is not published here.
