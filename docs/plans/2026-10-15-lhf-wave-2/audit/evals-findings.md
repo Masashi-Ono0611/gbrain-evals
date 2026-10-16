@@ -3,7 +3,7 @@
 Audit date 2026-10-15. gbrain master `3c16e9ba` (v0.60.250.0), gbrain-evals `d744fa38`. All gbrain citations are
 `git show HEAD:<file>` line numbers; the parent's live checkout has uncommitted edits to `src/core/ops/search.ts`,
 `src/core/search/mode.ts` and others, so working-tree line numbers can differ. Scratch work and receipts:
-`~/.capy/work/audit-evals/` (master exported with `git archive`, never the live checkout). Spend: $0 (all keyless).
+local audit notes (not committed) (master exported with `git archive`, never the live checkout). Spend: $0 (all keyless).
 
 Excluded as already known/done: the 2026-10-11 LHF wave, #6641 embed overlap, rerank-3-lite default, #6714, and the
 lead's open list (GBRA-94, JIT title arm, v240 ANALYZE, #4951, email-typed searches, Postgres 10k→20k, TODO-D).
@@ -52,7 +52,7 @@ Corrections to the brief's premises:
    - Code: `src/core/ops/search.ts:383-430` (`matchingSavedFacts`; the scan at `:413`); called from
      `buildRetrievalResponseMeta` (`:449`, saved facts at `:477`) for both `search` and `query`. The "any fact?"
      probe at `:395-404` only skips brains with zero active facts.
-   - Keyless PGLite microbench of that exact predicate (`~/.capy/work/audit-evals/likebench.ts`, synthetic 16-word
+   - Keyless PGLite microbench of that exact predicate (local audit notes (not committed), synthetic 16-word
      facts, 6 terms, median of 7): **10k facts 27.5 ms, 50k 121.9 ms, 100k 202.8 ms**; an OR `to_tsquery` on a GIN
      FTS index over the same rows: 4.5 / 3.6 / 2.6 ms.
    - gbrain-evals `docs/benchmarks/2026-10-03-wave8-f1-repin.md:142` and `TODOS.md` ("Watch MCP search time after
@@ -91,7 +91,7 @@ Corrections to the brief's premises:
    - My profile of master on the same bench (instrumented copy): `cosineReScore` is ~99% of `fuse`
      (2,702 ms of fuse time over 80 calls; RRF itself 48 ms, `stampUnverifiedExtractions` 64 ms).
    - Prototype (compute `1 - (embedding::vector <=> $q)` in SQL, return one float per row; diff in
-     `~/.capy/work/audit-evals/prototype-sql-cosine-and-profiling.diff`), same bench, 40 responses:
+     local audit notes (not committed)), same bench, 40 responses:
 
      | Run | op median ms | fuse ms (sum of 40) | ranking order vs master |
      |---|---|---|---|
@@ -317,5 +317,5 @@ Read: evals `README.md`, `TODOS.md`, the 2026-10-01→15 reports named above, `d
 (PLAN NOT-in-scope sections, RCA), `docs/benchmarks/cat40-hard/RERANK_POOL_REPLAY.md`. Verified each item at gbrain
 HEAD with `git show HEAD:` and the gbrain `TODOS.md`/`CHANGELOG.md`. Measured: items 1 and 2 only, keyless, on a
 4-vCPU shared machine with PGLite and stub providers; nothing on Postgres. Not read in depth: memory-trust,
-fence-repair, takes-bootstrap, managed-sync reports (not search-path). Receipts: `~/.capy/work/audit-evals/`
+fence-repair, takes-bootstrap, managed-sync reports (not search-path). Receipts: local audit notes (not committed)
 (`bench-pglite.json`, `base{1,2,3}.json`, `sql{1,2,3}.json`, `likebench.ts`, the prototype diff).

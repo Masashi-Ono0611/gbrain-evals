@@ -4,7 +4,7 @@ INPUT: ceo 2ea3b35280d7f37a6d2ac5843bc6089f3c3ac7b02ffd288e073cbb190c36810c
 
 Reviewer: Capy subagent on anthropic/claude-opus-5-5 (high). Machine check: `gstack: ok 1.91.101.0 for=autoplan`
 (same machine as round 1). This was a read-only review with no provider spend; the only probes were keyless PGLite
-runs from `~/.capy/work/review-ceo-native/`. The checkout is untouched (`git status` is clean). The branch is at
+runs from local audit notes (not committed). The checkout is untouched (`git status` is clean). The branch is at
 `9a4e54e8`, which is master `3c16e9ba` plus item 0 and its docs follow-up. **origin/master has since moved to
 `7f3c9f5f` (v0.60.252.0, 109 commits).**
 
@@ -16,7 +16,7 @@ trigram index, which keeps exact `LIKE` semantics, and it puts a contract-parity
 
 I tested item 2's central premise directly. In PGLite, at 100k facts, master's unchanged `LIKE ANY` statement uses a
 GIN trigram index through a bitmap index scan. The query dropped from 149 to 1.9 ms when no fact matches, and from
-252 to 6.8 ms on common terms with 200 rows returned (`~/.capy/work/review-ceo-native/trgm.ts`).
+252 to 6.8 ms on common terms with 200 rows returned (local audit notes (not committed)).
 
 Five problems remain, and none of them is a direction change.
 

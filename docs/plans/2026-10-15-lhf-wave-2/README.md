@@ -9,3 +9,8 @@ rounds (run `autoplan-20261015220653`, gate revision 2, approved as-is).
   tables, findings, gate files and the review record.
 
 Measured verdicts for every item, shipped or dropped: [VERDICTS.md](VERDICTS.md).
+
+Machine-local paths in the audits and review records were rewritten after export: committed artifacts point to their
+repo-relative path, and everything else (prompts, plan snapshots, probes, scratch receipts) reads "local audit notes (not
+committed)". The `result_sha256` values in `reviews/run.json` and `reviews/review-record.md` hash the review files as
+the reviewers wrote them, before that rewrite; no other text changed.

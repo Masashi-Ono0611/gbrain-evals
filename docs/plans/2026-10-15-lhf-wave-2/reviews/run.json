@@ -19,9 +19,9 @@
     },
     "ceo": {
       "snapshot": "2ea3b35280d7f37a6d2ac5843bc6089f3c3ac7b02ffd288e073cbb190c36810c",
-      "snapshot_dir": "~/.capy/work/lhf2/autoplan/autoplan-ceo-opoa5f",
-      "snapshot_path": "~/.capy/work/lhf2/autoplan/autoplan-ceo-opoa5f/ceo-implementation.md",
-      "methodology": "~/.capy/work/lhf2/autoplan/autoplan-ceo-methodology-L7Nuf2/methodology.md",
+      "snapshot_dir": "local audit notes (not committed): autoplan-ceo-opoa5f",
+      "snapshot_path": "local audit notes (not committed): ceo-implementation.md",
+      "methodology": "local audit notes (not committed): methodology.md",
       "opened_at": "2026-10-15T22:57:05.567Z",
       "sections": {
         "loaded": [
@@ -36,8 +36,8 @@
           {
             "attempt": "autoplan-20261015220653-a7",
             "state": "submitted",
-            "prompt": "~/.capy/work/lhf2/autoplan/ceo-native-prompt.md",
-            "result": "~/.capy/work/lhf2/autoplan/ceo-native.md",
+            "prompt": "local audit notes (not committed): ceo-native-prompt.md",
+            "result": "docs/plans/2026-10-15-lhf-wave-2/reviews/ceo-native.md",
             "estimate_usd": 0,
             "dispatched_at": "2026-10-15T22:57:05.574Z",
             "terminal_at": "2026-10-15T23:04:29.621Z"
@@ -62,8 +62,8 @@
           {
             "attempt": "autoplan-20261015220653-a8",
             "state": "submitted",
-            "prompt": "~/.capy/work/lhf2/autoplan/ceo-outside-prompt.md",
-            "result": "~/.capy/work/lhf2/autoplan/ceo-outside.md",
+            "prompt": "local audit notes (not committed): ceo-outside-prompt.md",
+            "result": "docs/plans/2026-10-15-lhf-wave-2/reviews/ceo-outside.md",
             "estimate_usd": 0,
             "dispatched_at": "2026-10-15T22:57:05.575Z",
             "terminal_at": "2026-10-15T23:04:29.772Z"
@@ -83,10 +83,10 @@
         "reviewed_sha256": "2ea3b35280d7f37a6d2ac5843bc6089f3c3ac7b02ffd288e073cbb190c36810c"
       },
       "prompts": {
-        "native": "~/.capy/work/lhf2/autoplan/ceo-native-prompt.md",
-        "outside": "~/.capy/work/lhf2/autoplan/ceo-outside-prompt.md",
-        "nativeResult": "~/.capy/work/lhf2/autoplan/ceo-native.md",
-        "outsideResult": "~/.capy/work/lhf2/autoplan/ceo-outside.md"
+        "native": "local audit notes (not committed): ceo-native-prompt.md",
+        "outside": "local audit notes (not committed): ceo-outside-prompt.md",
+        "nativeResult": "docs/plans/2026-10-15-lhf-wave-2/reviews/ceo-native.md",
+        "outsideResult": "docs/plans/2026-10-15-lhf-wave-2/reviews/ceo-outside.md"
       },
       "consensus": {
         "confirmed": 1,
@@ -99,9 +99,9 @@
     },
     "dx": {
       "snapshot": "2ea3b35280d7f37a6d2ac5843bc6089f3c3ac7b02ffd288e073cbb190c36810c",
-      "snapshot_dir": "~/.capy/work/lhf2/autoplan/autoplan-dx-BDxSx6",
-      "snapshot_path": "~/.capy/work/lhf2/autoplan/autoplan-dx-BDxSx6/dx-implementation.md",
-      "methodology": "~/.capy/work/lhf2/autoplan/autoplan-dx-methodology-9gPNOD/methodology.md",
+      "snapshot_dir": "local audit notes (not committed): autoplan-dx-BDxSx6",
+      "snapshot_path": "local audit notes (not committed): dx-implementation.md",
+      "methodology": "local audit notes (not committed): methodology.md",
       "opened_at": "2026-10-15T23:04:30.001Z",
       "sections": {
         "loaded": [
@@ -116,8 +116,8 @@
           {
             "attempt": "autoplan-20261015220653-a9",
             "state": "submitted",
-            "prompt": "~/.capy/work/lhf2/autoplan/dx-native-prompt.md",
-            "result": "~/.capy/work/lhf2/autoplan/dx-native.md",
+            "prompt": "local audit notes (not committed): dx-native-prompt.md",
+            "result": "docs/plans/2026-10-15-lhf-wave-2/reviews/dx-native.md",
             "estimate_usd": 0,
             "dispatched_at": "2026-10-15T23:04:30.008Z",
             "terminal_at": "2026-10-15T23:10:04.837Z"
@@ -142,8 +142,8 @@
           {
             "attempt": "autoplan-20261015220653-a10",
             "state": "submitted",
-            "prompt": "~/.capy/work/lhf2/autoplan/dx-outside-prompt.md",
-            "result": "~/.capy/work/lhf2/autoplan/dx-outside.md",
+            "prompt": "local audit notes (not committed): dx-outside-prompt.md",
+            "result": "docs/plans/2026-10-15-lhf-wave-2/reviews/dx-outside.md",
             "estimate_usd": 0,
             "dispatched_at": "2026-10-15T23:04:30.009Z",
             "terminal_at": "2026-10-15T23:10:04.942Z"
@@ -163,10 +163,10 @@
         "reviewed_sha256": "2ea3b35280d7f37a6d2ac5843bc6089f3c3ac7b02ffd288e073cbb190c36810c"
       },
       "prompts": {
-        "native": "~/.capy/work/lhf2/autoplan/dx-native-prompt.md",
-        "outside": "~/.capy/work/lhf2/autoplan/dx-outside-prompt.md",
-        "nativeResult": "~/.capy/work/lhf2/autoplan/dx-native.md",
-        "outsideResult": "~/.capy/work/lhf2/autoplan/dx-outside.md"
+        "native": "local audit notes (not committed): dx-native-prompt.md",
+        "outside": "local audit notes (not committed): dx-outside-prompt.md",
+        "nativeResult": "docs/plans/2026-10-15-lhf-wave-2/reviews/dx-native.md",
+        "outsideResult": "docs/plans/2026-10-15-lhf-wave-2/reviews/dx-outside.md"
       },
       "consensus": {
         "confirmed": 0,
@@ -179,9 +179,9 @@
     },
     "eng": {
       "snapshot": "2ea3b35280d7f37a6d2ac5843bc6089f3c3ac7b02ffd288e073cbb190c36810c",
-      "snapshot_dir": "~/.capy/work/lhf2/autoplan/autoplan-eng-2mm153",
-      "snapshot_path": "~/.capy/work/lhf2/autoplan/autoplan-eng-2mm153/eng-implementation.md",
-      "methodology": "~/.capy/work/lhf2/autoplan/autoplan-eng-methodology-ODscAp/methodology.md",
+      "snapshot_dir": "local audit notes (not committed): autoplan-eng-2mm153",
+      "snapshot_path": "local audit notes (not committed): eng-implementation.md",
+      "methodology": "local audit notes (not committed): methodology.md",
       "opened_at": "2026-10-15T23:10:05.083Z",
       "sections": {
         "loaded": [
@@ -196,8 +196,8 @@
           {
             "attempt": "autoplan-20261015220653-a11",
             "state": "submitted",
-            "prompt": "~/.capy/work/lhf2/autoplan/eng-native-prompt.md",
-            "result": "~/.capy/work/lhf2/autoplan/eng-native.md",
+            "prompt": "local audit notes (not committed): eng-native-prompt.md",
+            "result": "docs/plans/2026-10-15-lhf-wave-2/reviews/eng-native.md",
             "estimate_usd": 0,
             "dispatched_at": "2026-10-15T23:10:05.086Z",
             "terminal_at": "2026-10-15T23:22:13.608Z"
@@ -222,8 +222,8 @@
           {
             "attempt": "autoplan-20261015220653-a12",
             "state": "submitted",
-            "prompt": "~/.capy/work/lhf2/autoplan/eng-outside-prompt.md",
-            "result": "~/.capy/work/lhf2/autoplan/eng-outside.md",
+            "prompt": "local audit notes (not committed): eng-outside-prompt.md",
+            "result": "docs/plans/2026-10-15-lhf-wave-2/reviews/eng-outside.md",
             "estimate_usd": 0,
             "dispatched_at": "2026-10-15T23:10:05.087Z",
             "terminal_at": "2026-10-15T23:22:13.690Z"
@@ -243,10 +243,10 @@
         "reviewed_sha256": "2ea3b35280d7f37a6d2ac5843bc6089f3c3ac7b02ffd288e073cbb190c36810c"
       },
       "prompts": {
-        "native": "~/.capy/work/lhf2/autoplan/eng-native-prompt.md",
-        "outside": "~/.capy/work/lhf2/autoplan/eng-outside-prompt.md",
-        "nativeResult": "~/.capy/work/lhf2/autoplan/eng-native.md",
-        "outsideResult": "~/.capy/work/lhf2/autoplan/eng-outside.md"
+        "native": "local audit notes (not committed): eng-native-prompt.md",
+        "outside": "local audit notes (not committed): eng-outside-prompt.md",
+        "nativeResult": "docs/plans/2026-10-15-lhf-wave-2/reviews/eng-native.md",
+        "outsideResult": "docs/plans/2026-10-15-lhf-wave-2/reviews/eng-outside.md"
       },
       "consensus": {
         "confirmed": 2,
@@ -337,10 +337,10 @@
     }
   },
   "revision": 22,
-  "out": "~/.capy/work/lhf2/autoplan",
-  "plan_source": "~/.capy/work/lhf2/autoplan/plan-source.v1.md",
-  "active_plan": "~/.capy/work/lhf2/autoplan/plan-active.md",
-  "restore": "~/.capy/work/lhf2/autoplan/restore.md",
+  "out": "local audit notes (not committed): autoplan",
+  "plan_source": "local audit notes (not committed): plan-source.v1.md",
+  "active_plan": "local audit notes (not committed): plan-active.md",
+  "restore": "local audit notes (not committed): restore.md",
   "scope": {
     "ui": false,
     "dx": true,
@@ -409,9 +409,9 @@
       "at": "2026-10-15T22:56:58.019Z",
       "previous": {
         "snapshot": "6fa9d38bfc024b00e8503e41313d327403736c9f865b87ef3dc5083abc1ba736",
-        "snapshot_dir": "~/.capy/work/lhf2/autoplan/autoplan-ceo-HRpepn",
-        "snapshot_path": "~/.capy/work/lhf2/autoplan/autoplan-ceo-HRpepn/ceo-implementation.md",
-        "methodology": "~/.capy/work/lhf2/autoplan/autoplan-ceo-methodology-Wj0jqL/methodology.md",
+        "snapshot_dir": "local audit notes (not committed): autoplan-ceo-HRpepn",
+        "snapshot_path": "local audit notes (not committed): ceo-implementation.md",
+        "methodology": "local audit notes (not committed): methodology.md",
         "opened_at": "2026-10-15T22:06:53.811Z",
         "sections": {
           "loaded": [
@@ -426,8 +426,8 @@
             {
               "attempt": "autoplan-20261015220653-a1",
               "state": "submitted",
-              "prompt": "~/.capy/work/lhf2/autoplan/ceo-native-prompt.md",
-              "result": "~/.capy/work/lhf2/autoplan/ceo-native.md",
+              "prompt": "local audit notes (not committed): ceo-native-prompt.md",
+              "result": "docs/plans/2026-10-15-lhf-wave-2/reviews/ceo-native.r1.md",
               "estimate_usd": 0,
               "dispatched_at": "2026-10-15T22:06:53.816Z",
               "terminal_at": "2026-10-15T22:18:31.348Z"
@@ -452,8 +452,8 @@
             {
               "attempt": "autoplan-20261015220653-a2",
               "state": "submitted",
-              "prompt": "~/.capy/work/lhf2/autoplan/ceo-outside-prompt.md",
-              "result": "~/.capy/work/lhf2/autoplan/ceo-outside.md",
+              "prompt": "local audit notes (not committed): ceo-outside-prompt.md",
+              "result": "docs/plans/2026-10-15-lhf-wave-2/reviews/ceo-outside.r1.md",
               "estimate_usd": 0,
               "dispatched_at": "2026-10-15T22:06:53.817Z",
               "terminal_at": "2026-10-15T22:18:31.475Z"
@@ -473,10 +473,10 @@
           "reviewed_sha256": "6fa9d38bfc024b00e8503e41313d327403736c9f865b87ef3dc5083abc1ba736"
         },
         "prompts": {
-          "native": "~/.capy/work/lhf2/autoplan/ceo-native-prompt.md",
-          "outside": "~/.capy/work/lhf2/autoplan/ceo-outside-prompt.md",
-          "nativeResult": "~/.capy/work/lhf2/autoplan/ceo-native.md",
-          "outsideResult": "~/.capy/work/lhf2/autoplan/ceo-outside.md"
+          "native": "local audit notes (not committed): ceo-native-prompt.md",
+          "outside": "local audit notes (not committed): ceo-outside-prompt.md",
+          "nativeResult": "docs/plans/2026-10-15-lhf-wave-2/reviews/ceo-native.r1.md",
+          "outsideResult": "docs/plans/2026-10-15-lhf-wave-2/reviews/ceo-outside.r1.md"
         },
         "consensus": {
           "confirmed": 1,
@@ -496,9 +496,9 @@
       "at": "2026-10-15T22:56:58.019Z",
       "previous": {
         "snapshot": "6fa9d38bfc024b00e8503e41313d327403736c9f865b87ef3dc5083abc1ba736",
-        "snapshot_dir": "~/.capy/work/lhf2/autoplan/autoplan-dx-DLH3Tr",
-        "snapshot_path": "~/.capy/work/lhf2/autoplan/autoplan-dx-DLH3Tr/dx-implementation.md",
-        "methodology": "~/.capy/work/lhf2/autoplan/autoplan-dx-methodology-2PGRpb/methodology.md",
+        "snapshot_dir": "local audit notes (not committed): autoplan-dx-DLH3Tr",
+        "snapshot_path": "local audit notes (not committed): dx-implementation.md",
+        "methodology": "local audit notes (not committed): methodology.md",
         "opened_at": "2026-10-15T22:18:31.624Z",
         "sections": {
           "loaded": [
@@ -513,8 +513,8 @@
             {
               "attempt": "autoplan-20261015220653-a3",
               "state": "submitted",
-              "prompt": "~/.capy/work/lhf2/autoplan/dx-native-prompt.md",
-              "result": "~/.capy/work/lhf2/autoplan/dx-native.md",
+              "prompt": "local audit notes (not committed): dx-native-prompt.md",
+              "result": "docs/plans/2026-10-15-lhf-wave-2/reviews/dx-native.r1.md",
               "estimate_usd": 0,
               "dispatched_at": "2026-10-15T22:18:31.630Z",
               "terminal_at": "2026-10-15T22:30:38.392Z"
@@ -539,8 +539,8 @@
             {
               "attempt": "autoplan-20261015220653-a4",
               "state": "submitted",
-              "prompt": "~/.capy/work/lhf2/autoplan/dx-outside-prompt.md",
-              "result": "~/.capy/work/lhf2/autoplan/dx-outside.md",
+              "prompt": "local audit notes (not committed): dx-outside-prompt.md",
+              "result": "docs/plans/2026-10-15-lhf-wave-2/reviews/dx-outside.r1.md",
               "estimate_usd": 0,
               "dispatched_at": "2026-10-15T22:18:31.631Z",
               "terminal_at": "2026-10-15T22:30:38.537Z"
@@ -560,10 +560,10 @@
           "reviewed_sha256": "6fa9d38bfc024b00e8503e41313d327403736c9f865b87ef3dc5083abc1ba736"
         },
         "prompts": {
-          "native": "~/.capy/work/lhf2/autoplan/dx-native-prompt.md",
-          "outside": "~/.capy/work/lhf2/autoplan/dx-outside-prompt.md",
-          "nativeResult": "~/.capy/work/lhf2/autoplan/dx-native.md",
-          "outsideResult": "~/.capy/work/lhf2/autoplan/dx-outside.md"
+          "native": "local audit notes (not committed): dx-native-prompt.md",
+          "outside": "local audit notes (not committed): dx-outside-prompt.md",
+          "nativeResult": "docs/plans/2026-10-15-lhf-wave-2/reviews/dx-native.r1.md",
+          "outsideResult": "docs/plans/2026-10-15-lhf-wave-2/reviews/dx-outside.r1.md"
         },
         "consensus": {
           "confirmed": 3,
@@ -583,9 +583,9 @@
       "at": "2026-10-15T22:56:58.020Z",
       "previous": {
         "snapshot": "6fa9d38bfc024b00e8503e41313d327403736c9f865b87ef3dc5083abc1ba736",
-        "snapshot_dir": "~/.capy/work/lhf2/autoplan/autoplan-eng-Waljm9",
-        "snapshot_path": "~/.capy/work/lhf2/autoplan/autoplan-eng-Waljm9/eng-implementation.md",
-        "methodology": "~/.capy/work/lhf2/autoplan/autoplan-eng-methodology-kdUjj7/methodology.md",
+        "snapshot_dir": "local audit notes (not committed): autoplan-eng-Waljm9",
+        "snapshot_path": "local audit notes (not committed): eng-implementation.md",
+        "methodology": "local audit notes (not committed): methodology.md",
         "opened_at": "2026-10-15T22:30:38.775Z",
         "sections": {
           "loaded": [
@@ -600,8 +600,8 @@
             {
               "attempt": "autoplan-20261015220653-a5",
               "state": "submitted",
-              "prompt": "~/.capy/work/lhf2/autoplan/eng-native-prompt.md",
-              "result": "~/.capy/work/lhf2/autoplan/eng-native.md",
+              "prompt": "local audit notes (not committed): eng-native-prompt.md",
+              "result": "docs/plans/2026-10-15-lhf-wave-2/reviews/eng-native.r1.md",
               "estimate_usd": 0,
               "dispatched_at": "2026-10-15T22:30:38.778Z",
               "terminal_at": "2026-10-15T22:52:13.907Z"
@@ -626,8 +626,8 @@
             {
               "attempt": "autoplan-20261015220653-a6",
               "state": "submitted",
-              "prompt": "~/.capy/work/lhf2/autoplan/eng-outside-prompt.md",
-              "result": "~/.capy/work/lhf2/autoplan/eng-outside.md",
+              "prompt": "local audit notes (not committed): eng-outside-prompt.md",
+              "result": "docs/plans/2026-10-15-lhf-wave-2/reviews/eng-outside.r1.md",
               "estimate_usd": 0,
               "dispatched_at": "2026-10-15T22:30:38.779Z",
               "terminal_at": "2026-10-15T22:52:13.998Z"
@@ -647,10 +647,10 @@
           "reviewed_sha256": "6fa9d38bfc024b00e8503e41313d327403736c9f865b87ef3dc5083abc1ba736"
         },
         "prompts": {
-          "native": "~/.capy/work/lhf2/autoplan/eng-native-prompt.md",
-          "outside": "~/.capy/work/lhf2/autoplan/eng-outside-prompt.md",
-          "nativeResult": "~/.capy/work/lhf2/autoplan/eng-native.md",
-          "outsideResult": "~/.capy/work/lhf2/autoplan/eng-outside.md"
+          "native": "local audit notes (not committed): eng-native-prompt.md",
+          "outside": "local audit notes (not committed): eng-outside-prompt.md",
+          "nativeResult": "docs/plans/2026-10-15-lhf-wave-2/reviews/eng-native.r1.md",
+          "outsideResult": "docs/plans/2026-10-15-lhf-wave-2/reviews/eng-outside.r1.md"
         },
         "consensus": {
           "confirmed": 2,
@@ -669,7 +669,7 @@
     "autoplan guard: not enforced by this host; publication order is unverified (GUARD_NOT_INSTALLED)"
   ],
   "gstack_version": "1.91.101.0",
-  "plan_input": "~/.capy/work/lhf2/PLAN.md",
+  "plan_input": "docs/plans/2026-10-15-lhf-wave-2/PLAN.md",
   "scope_flags": {
     "ui": false,
     "developerTool": false,

@@ -2,7 +2,7 @@ INPUT: ceo 6fa9d38bfc024b00e8503e41313d327403736c9f865b87ef3dc5083abc1ba736
 
 The plan trades retrieval and interface guarantees for milliseconds and characters, but its main gates cannot see those losses. Do not authorize the default-changing parts on the present evidence contract. Keep the wave bounded; fix the acceptance rules rather than adding another collection of optimizations.
 
-Reviewed all items, sequencing and exclusions against master `3c16e9ba`, the supplied audits, the referenced eval reports and relevant contributor changes. The live checkout is `d5861ac6`; item 0 is treated as an already-approved decision, not reopened here. No repository files were changed and no provider calls were made. The keyless reproduction and its output are under `~/.capy/work/review-ceo-outside/`. Installation check: `gstack: ok 1.91.101.0 for=autoplan`.
+Reviewed all items, sequencing and exclusions against master `3c16e9ba`, the supplied audits, the referenced eval reports and relevant contributor changes. The live checkout is `d5861ac6`; item 0 is treated as an already-approved decision, not reopened here. No repository files were changed and no provider calls were made. The keyless reproduction and its output are under local audit notes (not committed). Installation check: `gstack: ok 1.91.101.0 for=autoplan`.
 
 ### F1 — The saved-facts optimization can make explicitly saved memories disappear, beyond the acknowledged substring change
 

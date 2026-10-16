@@ -2,7 +2,7 @@ INPUT: dx 6fa9d38bfc024b00e8503e41313d327403736c9f865b87ef3dc5083abc1ba736
 
 # DX review (native voice): LHF wave 2 plan
 
-Reviewer: anthropic/claude-opus-5-5 (native), gstack plan-devex-review methodology (`gstack: ok 1.91.101.0 for=autoplan` on this machine), unattended, mode **DX POLISH**. Checkout: `/workspace/gbrain` at `capy/lhf-wave-2` (master `3c16e9ba` + item 0 `d5861ac6`). No provider spend; one keyless probe (below). DX Trend Check: no prior `plan-devex-review` rows for this project.
+Reviewer: anthropic/claude-opus-5-5 (native), gstack plan-devex-review methodology (`gstack: ok 1.91.101.0 for=autoplan` on this machine), unattended, mode **DX POLISH**. Checkout: the shared gbrain checkout at `capy/lhf-wave-2` (master `3c16e9ba` + item 0 `d5861ac6`). No provider spend; one keyless probe (below). DX Trend Check: no prior `plan-devex-review` rows for this project.
 
 The plan is a sound performance wave, but its developer-facing contract work (items 1, 4, 8, 10) has four verified regressions. None of them shows up in the order-digest or char-count gates. First, eliding `effective_date_source` makes the `[gbrain dates]` line mislabel 97% of dated rows. Second, item 1's "same notice" can't be produced by the proposed `EXISTS` query. Third, item 8b removes frozen v1 fields with no escape hatch. Fourth, the `BEHAVIOR_CHANGES` list misses items 2, 9 and 10, including the image OCR model change. Each has a contained fix that keeps the plan's direction, except 8b's remote default, which is Garry's call.
 
@@ -106,7 +106,7 @@ Item 8b is a v1 wire break. `MEMORY_VERBS_v1.md:28-31` says field names and sema
 
 The receipts can't be reproduced as planned:
 
-- The 30 ms "delay proxy" is a scratch file (`~/.capy/work/audit-latency/delay-proxy.ts`), while the repo already ships a toxiproxy harness (`scripts/bench/managed-sync-catchup-lib.ts`, `foreground-put-page.ts --rtt`).
+- The 30 ms "delay proxy" is a scratch file (local audit notes (not committed)), while the repo already ships a toxiproxy harness (`scripts/bench/managed-sync-catchup-lib.ts`, `foreground-put-page.ts --rtt`).
 - The bench digest still hashes `score` (`scripts/bench-refactor-wave-1.ts:474`), but the plan's gate is order-only.
 - The keyless char-count gate doesn't name `scripts/replay-lean-row-savings.ts`. That script already cross-checks against `leanRow`'s own projection and is the natural home for the 8a elision and an 8b `context_pack` pass (F11).
 
@@ -123,7 +123,7 @@ The per-item receipts and the single gbrain-evals report are good. Missing: a le
 
 ### Keyless probe (evidence for F1)
 
-`~/.capy/work/review-dx-native/probe-dates.ts` runs `dateLabelLine` on rows with and without `effective_date_source: "date"`:
+local audit notes (not committed) runs `dateLabelLine` on rows with and without `effective_date_source: "date"`:
 
 ```
 full  : [gbrain dates] effective_date by effective_date_source: date = document date; created = fallback (page created/imported, not from its text). Never a contract's effective or validity date (read the text).

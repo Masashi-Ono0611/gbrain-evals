@@ -2,7 +2,7 @@ INPUT: dx 6fa9d38bfc024b00e8503e41313d327403736c9f865b87ef3dc5083abc1ba736
 
 The plan is not ready to implement as a compatibility-preserving performance wave. It leaves clients guessing how to reconstruct omitted fields, changes a frozen memory-verb response without a usable escape hatch, and permits a numerical change that alters the agent's duplicate-page guidance even when both proposed parity gates pass.
 
-Reviewed the complete plan and prior CEO reviews against checkout `d5861ac6` (master `3c16e9ba` plus approved item 0), the supplied audits, and the relevant implementation, documentation and tests. Reviewer: `openai/gpt-6-astra`. Installation check: `gstack: ok 1.91.101.0 for=autoplan`. No repository files were changed and no provider requests were made. Keyless reproductions are in `~/.capy/work/review-dx-outside/probe.ts`, with output in `probe-output.txt` beside it; network access was disabled in the probe.
+Reviewed the complete plan and prior CEO reviews against checkout `d5861ac6` (master `3c16e9ba` plus approved item 0), the supplied audits, and the relevant implementation, documentation and tests. Reviewer: `openai/gpt-6-astra`. Installation check: `gstack: ok 1.91.101.0 for=autoplan`. No repository files were changed and no provider requests were made. Keyless reproductions are in local audit notes (not committed), with output in `probe-output.txt` beside it; network access was disabled in the probe.
 
 ## F1 — A remote client cannot opt out of the proposed context-pack wire break
 

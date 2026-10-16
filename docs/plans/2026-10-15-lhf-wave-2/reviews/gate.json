@@ -23,7 +23,7 @@
         },
         {
           "key": "d",
-          "text": "rerun every phase on the current plan, Eng last (to review an edited plan instead: gstack-autoplan revise --out ~/.capy/work/lhf2/autoplan --plan <file>)"
+          "text": "rerun every phase on the current plan, Eng last (to review an edited plan instead: gstack-autoplan revise --out <run dir> --plan <file>)"
         },
         {
           "key": "e",

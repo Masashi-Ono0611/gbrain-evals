@@ -1,11 +1,11 @@
 # gbrain cost audit: provider calls and agent tokens (default paths)
 
 Audit lane: cost. gbrain master `3c16e9ba` (v0.60.250.0), gbrain-evals `d744fa38`. 2026-10-15.
-Read-only: code was read in a private clone (`~/.capy/work/audit-cost/gb`, same commit), never in `/workspace/gbrain`.
-Scratch scripts and probe outputs live in `~/.capy/work/audit-cost/`. Paid spend: about 52 Anthropic Haiku calls,
+Read-only: code was read in a private clone (same commit; local audit notes (not committed)), never in the shared gbrain checkout.
+Scratch scripts and probe outputs live in local audit notes (not committed). Paid spend: about 52 Anthropic Haiku calls,
 under $0.02 in total. No gpt-5.4-mini.
 
-**Note on the shared checkout.** `/workspace/gbrain` has uncommitted edits (not mine) that set `tokenmax`
+**Note on the shared checkout.** The shared gbrain checkout has uncommitted edits (not mine) that set `tokenmax`
 `expansion: false` (the GBRA-94 flip) and change the init picker's `tokenmax` line to "per-chunk synopsis context".
 Everything below cites committed HEAD. See finding F2 for why that picker line overstates what `tokenmax` does.
 
@@ -144,7 +144,7 @@ Tool-result payload, from committed Cat 40 transcripts (P1 wave, gbrain `4e10136
    when it matches its `evidence` mapping:
    - **P1 wave:** search rows −14.8%, −10.4% of all tool-result chars.
    - **Adding `source_id` elision on single-source brains:** P1 −17.2% / −12.2%, P2 −17.1% / −12.7%, P1 baseline
-     −17.6% / −14.8% (`~/.capy/work/audit-cost/elide.py`).
+     −17.6% / −14.8% (local audit notes (not committed)).
 3. **Still on master:** yes. `KEPT_FIELDS` keeps all of them unconditionally (`src/core/search/lean-rows.ts:36-47`,
    `leanRow` at `:66-85`). Referrer rows always add `trustFields` (`src/core/mentions/referrers.ts:149-152`).
 4. **Fix:** in `leanRow`, omit `trust_tier`/`origin` when they equal the declared default pair, `effective_date_source`
@@ -169,7 +169,7 @@ Tool-result payload, from committed Cat 40 transcripts (P1 wave, gbrain `4e10136
 1. **Problem:** the prompt requests 3–4 rewrites, and the sanitizer discards everything after 2.
 2. **Evidence:** `src/core/ai/expansion-prompt.ts:8` ("3-4 different, related queries", 3-item example) vs
    `src/core/search/expansion.ts:52` (`if (out.length >= 2) break`). Live probe, same query, n=8 each
-   (`~/.capy/work/audit-cost/probe2-result.json`):
+   (local audit notes (not committed)):
    - **Haiku 4.5:** 74.5 → 39.5 output tokens, p50 1,364 → 1,113 ms.
    - **Haiku 5.5:** 104.5 → 64.5 tokens, p50 1,287 → 1,069 ms.
 3. **Still on master:** yes. The schema allows up to 5 (`gateway.ts:2425-2427`).
@@ -343,7 +343,7 @@ Credit "Contributed by @spiky02plateau" with Co-Authored-By and add `Supersedes 
 - **F1. The 2.4x figure is stale**; see Bottom line.
 - **F2. `tokenmax` does not produce per-chunk synopses by default.** Import demotes `per_chunk_synopsis` to `title`
   (`import-contextual-mode.ts`), and no code path enqueues `contextual_reindex_per_chunk`. The uncommitted picker
-  text in `/workspace/gbrain` ("per-chunk synopsis context") would therefore describe a feature new installs never
+  text in the shared gbrain checkout ("per-chunk synopsis context") would therefore describe a feature new installs never
   get. Either drop that line, or wire a consented, capped synopsis backfill (a product decision). Default synopsis
   spend is $0.
 - **F3. Do not touch `DEFAULT_SYNOPSIS_MODEL`.** It feeds `computeCorpusGeneration` for the title tier

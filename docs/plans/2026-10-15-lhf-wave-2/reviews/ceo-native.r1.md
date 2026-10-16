@@ -4,7 +4,7 @@ INPUT: ceo 6fa9d38bfc024b00e8503e41313d327403736c9f865b87ef3dc5083abc1ba736
 
 Reviewer: Capy subagent on anthropic/claude-opus-5-5 (high). Machine check: `gstack: ok 1.91.101.0 for=autoplan`.
 Read-only review. Master is `3c16e9ba` (origin/master is the same commit; `git ls-remote` checked), and the branch adds
-item 0 at `d5861ac6`. Spend: $0. My one keyless probe ran in PGLite from `~/.capy/work/review-ceo-native/ts.ts`.
+item 0 at `d5861ac6`. Spend: $0. My one keyless probe ran in PGLite from local audit notes (not committed).
 
 ## Verdict
 
@@ -35,7 +35,7 @@ with the medium fixes below.
 ## 1. Is this the right problem? Is there a 10x reframing?
 
 Mostly yes. The cost audit shows gbrain's own provider spend is about 1% of agent-task dollars ($1.31 of $133.59 in
-the P1 wave, per `~/.capy/work/audit/cost.md:14-16`). So the agent-cost lever is tool-result size, and the latency
+the P1 wave, per `docs/plans/2026-10-15-lhf-wave-2/audit/cost.md:14-16`). So the agent-cost lever is tool-result size, and the latency
 lever is round trips and plan shape. The plan aims at both.
 
 The plan doesn't analyze where the size actually sits. Search is 72% of all tool-result characters, and `chunk_text`
@@ -99,7 +99,7 @@ diff (+43/−5, MERGEABLE) and item 11's numbers in `latency.md`.
 - REALITY: binding-decisions: `gstack-decision-search --scope branch --recent 50` returned nothing, and the plan has no
   `## Binding decisions` section. Item 0 records Garry's approval of 2026-10-15 in the `d5861ac6` commit message.
 - REALITY: numbers: the latency numbers come from audit scratch harnesses
-  (`[measured: ~/.capy/work/audit-latency, synthetic corpus]`). The item 8a characters come from
+  (`[measured: local audit notes (not committed), synthetic corpus]`). The item 8a characters come from
   `[measured: P1 replay]`. Item 5's "under 500 ms" is `[estimated]` (735 measured, minus about 240 estimated for
   post-fusion reads). Every baseline is `[re-measure before gate]` on the integrated tree.
 - REALITY: deferred-asks: these audit asks are dropped or deferred:

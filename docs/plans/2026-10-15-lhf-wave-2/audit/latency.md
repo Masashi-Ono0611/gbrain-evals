@@ -1,11 +1,11 @@
 # Search hot-path latency audit (gbrain master 3c16e9ba, v0.60.250.0)
 
 Auditor: latency lane. Date: 2026-10-15. No paid provider calls ($0): every run used the deterministic stub
-embedder and reranker. Nothing in /workspace/gbrain or the evals checkout was modified.
+embedder and reranker. Nothing in the shared gbrain checkout or the evals checkout was modified.
 
 ## How this was measured
 
-- Scratch copy of master at `~/.capy/work/audit-latency/gb` (`git archive 3c16e9ba`). Harness
+- Scratch copy of master at local audit notes (not committed) (`git archive 3c16e9ba`). Harness
   `scripts/audit-trace.ts` (scratch only) builds a brain through `importFromContent` with the stub embedder
   and runs the real `search` and `query` operations (`remote:false` and `remote:true`), reading
   `_meta.retrieval.timings`. PGLite statements are timed by wrapping `PgliteStatementCache.query`;
@@ -21,7 +21,7 @@ embedder and reranker. Nothing in /workspace/gbrain or the evals checkout was mo
 - Caveat: two-word queries drawn from a 256-word vocabulary match a large share of chunks. That is a worst
   case for the keyword arm and count. Absolute keyword times are pessimistic, but the round-trip, JIT and
   plan-shape findings don't depend on the corpus.
-- Raw artifacts: `~/.capy/work/audit-latency/` (`pglite400.json`, `trace400.json`, `pg20k-*.log`,
+- Raw artifacts: local audit notes (not committed) (`pglite400.json`, `trace400.json`, `pg20k-*.log`,
   `scale/*.json`).
 
 Baseline, Postgres 20k, warm, remote search (MCP path): **189 ms at RTT 0, 1,550 ms at RTT 30 ms**. Stage

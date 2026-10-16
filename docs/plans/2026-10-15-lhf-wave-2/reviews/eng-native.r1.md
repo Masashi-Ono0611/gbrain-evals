@@ -4,9 +4,9 @@ INPUT: eng 6fa9d38bfc024b00e8503e41313d327403736c9f865b87ef3dc5083abc1ba736
 
 Reviewer: anthropic/claude-opus-5-5 (native), gstack plan-eng-review methodology (runner profile), unattended.
 `gstack: ok 1.91.101.0 for=autoplan` (this machine, `scripts/install.sh --check --for autoplan`, exit 0).
-Target: the implementation plan at the INPUT hash. Checkout `/workspace/gbrain` on `capy/lhf-wave-2`
+Target: the implementation plan at the INPUT hash. Checkout: the shared gbrain checkout on `capy/lhf-wave-2`
 (master `3c16e9ba` + item 0 `d5861ac6`), read-only. No provider spend. Two keyless probes, run in scratch
-(`~/.capy/work/review-eng-native/ts.ts`, `ts2.ts`, `vec.ts`, in-memory PGLite with pgvector), are quoted where used.
+(local audit notes (not committed), `ts2.ts`, `vec.ts`, in-memory PGLite with pgvector), are quoted where used.
 Persistence: this voice writes only this file. The QA test plan, task JSONL, TODOS, review log and learnings
 are presented below as **not persisted**; the parent owns autoplan logging.
 
@@ -57,7 +57,7 @@ small and independent of the payload contract. Item 4 is only worth shipping if 
 is the one item that could be deferred without blocking the wave's goal; its savings are real but it carries the
 only frozen-protocol risk.
 
-**Complexity check** [estimated from the plan plus #6734's file list, `~/.capy/work/audit-latency/pr6734.diff`]:
+**Complexity check** [estimated from the plan plus #6734's file list, local audit notes (not committed)]:
 about 40-45 changed source files (#6734's port alone touches about 25), one new module
 (`search/hybrid/fusion-prefetch.ts`), two or three new engine methods or options (cosine read, JIT-off read,
 possibly a type-existence read), and about 10 new or extended test files. That trips the B gate (8+ files).
@@ -114,14 +114,14 @@ REALITY: premise-table finding 18 premises, 5 false or misattributed (P2 P4 P7 P
 REALITY: already-done pass master moved 3c16e9ba->56bc4e93 (v0.60.251.0) with no change to any named search file; only behavior-change-notice.ts overlaps; no open PR overlaps besides #6734 src/core/behavior-change-notice.ts:1
 REALITY: surface-check pass bench flags --backend pgbouncer and --phases exist; ci:ubicloud:diff, gstack-lane-check, gstack-pregate exist scripts/bench-refactor-wave-1.ts:644
 REALITY: binding-decisions pass no branch decisions recorded (gstack-decision-search empty); item 0 approval by Garry is respected; no overruled default reintroduced src/core/search/mode.ts:473
-REALITY: numbers finding item 4 -32 ms measured with the count stubbed out (~/.capy/work/audit/latency.md:216); item 5 under-500 ms is 735 ms measured on the PR tree (~/.capy/work/audit/latency.md:126) minus -240 ms [estimated] (~/.capy/work/audit/latency.md:178); item 8a upper end unmeasured, -10.4% on one world (~/.capy/work/audit/cost.md:145)
-REALITY: deferred-asks finding audit asks left out are listed in NOT in scope (~/.capy/work/audit/latency.md:34); two audit asks dropped without a reason: item 1 lazy DISTINCT (~/.capy/work/audit/latency.md:69) and item 6 backfill migration (~/.capy/work/audit/latency.md:244)
+REALITY: numbers finding item 4 -32 ms measured with the count stubbed out (docs/plans/2026-10-15-lhf-wave-2/audit/latency.md:216); item 5 under-500 ms is 735 ms measured on the PR tree (docs/plans/2026-10-15-lhf-wave-2/audit/latency.md:126) minus -240 ms [estimated] (docs/plans/2026-10-15-lhf-wave-2/audit/latency.md:178); item 8a upper end unmeasured, -10.4% on one world (docs/plans/2026-10-15-lhf-wave-2/audit/cost.md:145)
+REALITY: deferred-asks finding audit asks left out are listed in NOT in scope (docs/plans/2026-10-15-lhf-wave-2/audit/latency.md:34); two audit asks dropped without a reason: item 1 lazy DISTINCT (docs/plans/2026-10-15-lhf-wave-2/audit/latency.md:69) and item 6 backfill migration (docs/plans/2026-10-15-lhf-wave-2/audit/latency.md:244)
 REALITY: pr-count pass one wave PR; ship-policy default pr_count 1; queue cost one slot .gstack/ship-policy.json:1
 REALITY: transaction-semantics finding item 5 settings consolidation and item 1 JIT-off read touch SET LOCAL/savepoint restore; item 6 ANALYZE runs on a reserved connection that may be transaction-pooled; no crash-robot or pool-2 rerun named src/core/postgres-engine/search-settings.ts:24
 REALITY: units pass no unit changes; KEYWORD_COUNT_GRACE_MS 250 and TIMEOUT 2000 unchanged if item 4 starts later src/core/search/keyword-paging.ts:42
 REALITY: perf-table finding receipts are single-machine synthetic (4 vCPU, 256-word vocab), no base/branch interleave named, 400-page bench cannot exercise items 1 2 4 7 scripts/bench-refactor-wave-1.ts:466
 REALITY: recall finding item 2 changes saved-fact recall (probe) and item 7 changes the walk on Postgres too; neither has a recall-vs-exact check across buckets src/core/fts-language.ts:119
-REALITY: prior-art pass #6734 diverges intentionally (trigram v246, threshold-in-SQL, OR-retry dropped) and #6747 adopted; reasons stated in plan item 2/5 ~/.capy/work/audit/latency.md:146
+REALITY: prior-art pass #6734 diverges intentionally (trigram v246, threshold-in-SQL, OR-retry dropped) and #6747 adopted; reasons stated in plan item 2/5 docs/plans/2026-10-15-lhf-wave-2/audit/latency.md:146
 REALITY: contract-assumptions finding gbrain-evals harness defaults assumed (GBRA-94 rule, Cat 40 world M) not rechecked against merged harness code; v1 memory-verb schema assumption false (P12) src/core/verbs.ts:822
 REALITY: dependency-fallback finding item 5 fusion prefetch depends on item 3's cosine method across lanes; no stated fallback if item 3 is reverted by its gate src/core/search/hybrid.ts:1595
 REALITY: obligation-tiers finding every item is must-ship in one PR with no size budget or lateness rule; recommend 8b and item 4 as droppable tiers scripts/module-size-limits.tsv:1
@@ -331,7 +331,7 @@ source, and hashes rows only, not `_meta.retrieval` (so `saved_facts` and `type_
 Fix: order-only digest of `[source_id, slug, chunk_index]` plus a separate score tolerance; add a `remote: true`
 pass (lean rows, saved facts, safe-index probe); typed queries including a missing type and a schema-pack alias;
 seeded facts covering the F2 classes; two sources; a digest of `saved_facts` ids and `type_filter_notice`; commit
-the 30 ms delay proxy (`~/.capy/work/audit-latency/delay-proxy.ts` is scratch) as a bench helper.
+the 30 ms delay proxy (local audit notes (not committed) is scratch) as a bench helper.
 
 **F11 (Medium, 8/10). Item 8a needs a machine-checkable recovery contract.** The trailer can't carry the
 defaults on `query` (`searchCountLine` returns null without `keyword_total`, `keyword-paging.ts:247`; rendered at
@@ -757,5 +757,5 @@ pinning OCR (D5) and leaving CLI out of the snapshot in this wave (D6).
 {"id":"F14","severity":"Medium","title":"Item 10's measured default must sit where expansion resolves (two config planes at gateway configure time), or it overrides pins and disagrees with gbrain models; it also moves the OCR fallback model","file":"src/core/ai/gateway.ts","line":880,"fix":"Apply the default inside resolveEffectiveExpansionModel after both planes report tier_default/fallback; pin getImageOcrModel's fallback to the previous default or ship a BEHAVIOR_CHANGES row; tests for pin survival, gbrain models and OCR"}
 {"id":"F15","severity":"Low","title":"Item 10's '2 rewrites' does not change search fan-out (output already capped at 2) and removes slack when a rewrite equals the original","file":"src/core/search/expansion.ts","line":51,"fix":"State that the change only cuts output tokens; dedupe against the original before the cap; report the share of calls with fewer than 2 surviving rewrites in the GBRA-94 rerun"}
 {"id":"F16","severity":"Low","title":"Item 9b cannot fire on quoted anchors (quoted queries are refused first) and 9a's 'joined' collides with works_at wording; planned tests would not catch either","file":"src/core/search/relational-plan.ts","line":211,"fix":"Test an unquoted resolvable title with a year and decide on quoted titles; add negative tests for 'joined <company>' and 'was at <company>'"}
-{"id":"F17","severity":"Low","title":"Item 5's '1,550 to under 500 ms' is a subtraction across two trees (PR measured 250 commits behind on its own DB plus an estimated post-fusion gain)","file":"~/.capy/work/audit/latency.md","line":125,"fix":"Label it estimated and re-measure on the integrated tree with the committed delay proxy, interleaving base and branch runs"}
+{"id":"F17","severity":"Low","title":"Item 5's '1,550 to under 500 ms' is a subtraction across two trees (PR measured 250 commits behind on its own DB plus an estimated post-fusion gain)","file":"docs/plans/2026-10-15-lhf-wave-2/audit/latency.md","line":125,"fix":"Label it estimated and re-measure on the integrated tree with the committed delay proxy, interleaving base and branch runs"}
 ```

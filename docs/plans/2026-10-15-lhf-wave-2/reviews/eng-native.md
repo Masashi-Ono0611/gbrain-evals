@@ -4,9 +4,9 @@ INPUT: eng 2ea3b35280d7f37a6d2ac5843bc6089f3c3ac7b02ffd288e073cbb190c36810c
 
 Reviewer: anthropic/claude-opus-5-5 (native), gstack plan-eng-review methodology (runner profile), unattended.
 `gstack: ok 1.91.101.0 for=autoplan` (this machine, `scripts/install.sh --check --for autoplan`, exit 0).
-Target: the revised implementation plan at the INPUT hash. Checkout `/workspace/gbrain` on `capy/lhf-wave-2` at
+Target: the revised implementation plan at the INPUT hash. Checkout: the shared gbrain checkout on `capy/lhf-wave-2` at
 `8e615169` (master `7f3c9f5f`, v0.60.252.0, merged over item 0; 112 commits since the round-1 base `3c16e9ba`),
-read-only. No provider spend. New keyless receipts this round, all in scratch (`~/.capy/work/review-eng-native/`):
+read-only. No provider spend. New keyless receipts this round, all in scratch (local audit notes (not committed)):
 
 - `prec.ts`: 200 random 1024-d pairs, pgvector 0.8.1 on PGLite versus the JS `cosineSimilarity` formula.
 - `exists.sql`: `EXPLAIN ANALYZE` of item 1's batched `EXISTS` and the existing `DISTINCT` on the audit's 20k-page
@@ -108,7 +108,7 @@ run its tests (N10).
 | P2 | `jitOffRead` is BEGIN, SET LOCAL, query, COMMIT | `src/core/postgres-engine.ts:370-373`, `src/core/postgres-engine/search-settings.ts:24-30` | TRUE: 4 round trips |
 | P3 | DISTINCT with JIT off is about 30 ms | `exists.sql`: 37.1 ms at 20k | TRUE |
 | P4 | Item 2: query text unchanged keeps semantics | index on the same expression; `matchingSavedFacts` unchanged at `src/core/ops/search.ts:383-429` | TRUE |
-| P5 | Item 2: −25 to −200 ms | figures are the FTS prefilter microbench (`~/.capy/work/audit/evals-findings.md:55-57`); #6734's numbers are for its rewritten MATERIALIZED statement | UNSUPPORTED for the trigram mechanism |
+| P5 | Item 2: −25 to −200 ms | figures are the FTS prefilter microbench (`docs/plans/2026-10-15-lhf-wave-2/audit/evals-findings.md:55-57`); #6734's numbers are for its rewritten MATERIALIZED statement | UNSUPPORTED for the trigram mechanism |
 | P6 | "Terms shorter than three characters still scan" | terms are already filtered to `length >= 3` at `src/core/ops/search.ts:387` | MOOT (no such terms reach SQL) |
 | P7 | Item 3: zero-norm → NULL is the JS behavior | JS hydrates the vector and returns 0 (`src/core/search/hybrid.ts:1646-1647`); an all-unhydrated set returns early (`:1604`) | FALSE in the all-zero case |
 | P8 | Item 3: scores within 1e-6 | `prec.ts`: max cosine difference 1.81e-6 over 200 pairs; score moves 0.3×, about 5.4e-7 | FALSE for cosine and evidence near 0.8; tight for scores |
@@ -118,7 +118,7 @@ run its tests (N10).
 | P12 | Files at ceilings get no growth | `hybrid.ts` 1648/1648, `postgres-engine.ts` 3082/3082, `pglite-engine.ts` 3065/3065, `engine.ts` 2822/2822 (`scripts/module-size-limits.tsv`) | NOT ACHIEVABLE as stated for interface members |
 | P13 | Harness can normalize only timings | random `answer_id` (`src/core/feedback/record.ts:36`) | FALSE |
 | P14 | Item 0 GBRA-94: 298 vs 299 | gbrain-evals `verdict.json` (A1 299, B 298) | TRUE |
-| P15 | Nightly 20k 36.3 ms / 10k 68.4 ms | `~/.capy/work/audit/latency.md:257-261`; not re-fetched | UNVERIFIED |
+| P15 | Nightly 20k 36.3 ms / 10k 68.4 ms | `docs/plans/2026-10-15-lhf-wave-2/audit/latency.md:257-261`; not re-fetched | UNVERIFIED |
 | P16 | Item 0 `query` p50 2,022 → 227 ms | commit `d5861ac6` message; not found in the evals markdown | UNVERIFIED |
 
 unverified=2
@@ -130,14 +130,14 @@ REALITY: premise-table finding 16 premises; P5 P7 P8 P9 P10 P11 P12 P13 false, s
 REALITY: already-done pass branch now merges master 7f3c9f5f (commit 8e615169); no merged commit implements items 1-9; segmented storage changed the predicates items 3 and 7 use src/core/search/vector-statement.ts:377
 REALITY: surface-check pass executeRaw opts, buildIndexOnline, repair planner-stats and bench --backend exist; --rtt-ms is new (existing toxiproxy --rtt per DX) scripts/bench-refactor-wave-1.ts:644
 REALITY: binding-decisions pass round-1 cuts (items 4, 8, 10) honored as NOT in scope; item 0 approval respected; no decision log entries src/core/search/mode.ts:473
-REALITY: numbers finding item 2 gain borrowed from the FTS microbench (~/.capy/work/audit/evals-findings.md:56); item 1 JIT cost measured here on g20k (~/.capy/work/review-eng-native/exists.sql:3); item 5 800 ms is labelled an estimate (~/.capy/work/audit/latency.md:126)
-REALITY: deferred-asks pass every cut item is in NOT in scope with its precondition; audit's item 1 lazy DISTINCT now included ~/.capy/work/audit/latency.md:69
+REALITY: numbers finding item 2 gain borrowed from the FTS microbench (docs/plans/2026-10-15-lhf-wave-2/audit/evals-findings.md:56); item 1 JIT cost measured here on g20k (local audit notes (not committed)); item 5 800 ms is labelled an estimate (docs/plans/2026-10-15-lhf-wave-2/audit/latency.md:126)
+REALITY: deferred-asks pass every cut item is in NOT in scope with its precondition; audit's item 1 lazy DISTINCT now included docs/plans/2026-10-15-lhf-wave-2/audit/latency.md:69
 REALITY: pr-count pass one wave PR plus an optional item 5 PR under the lateness rule .gstack/ship-policy.json:1
 REALITY: transaction-semantics finding item 1 jitOff adds a 4-statement transaction per typed search; item 5 settings consolidation keeps the nested restore; pool-2 contention mode added src/core/postgres-engine/search-settings.ts:24
 REALITY: units pass no unit changes; tolerance 1e-6 is on scores and is the one numeric threshold at issue (N1) src/core/search/hybrid.ts:1624
 REALITY: perf-table finding interleaved base/branch runs now required, but runs mutate shared state (feedback, retrievals, request log) between arms src/core/feedback/record.ts:36
 REALITY: recall pass item 2 keeps exact LIKE semantics; item 7 keeps predicates; harness checks both src/core/ops/search.ts:413
-REALITY: prior-art pass #6734 trigram index adopted, threshold-in-SQL and OR-retry rejected with reasons; #6747 adopted ~/.capy/work/audit/latency.md:146
+REALITY: prior-art pass #6734 trigram index adopted, threshold-in-SQL and OR-retry rejected with reasons; #6747 adopted docs/plans/2026-10-15-lhf-wave-2/audit/latency.md:146
 REALITY: contract-assumptions finding gbrain-evals attendance-world scorer and split names assumed; item 3 and 7 specs assume pre-merge predicates src/core/search/safe-chunks.ts:65
 REALITY: dependency-fallback pass item 5 lateness rule names what ships without it; item 2 dropped if insert gate fails; item 2's planner gate depends on item 6 (lane M) src/core/schema-migrations/helpers.ts:94
 REALITY: obligation-tiers pass items are droppable individually; the integrator removes failing items before the single full gate src/core/schema-migrations/helpers.ts:114
@@ -418,7 +418,7 @@ SET and the query inside the transaction without awaiting each. Add a JIT-off-se
 Confirms CEO native-4 with the measurement.
 
 **N4 (Medium, 8/10). Item 2's expected gain was measured for a different mechanism.** The −25 to −200 ms figures
-are the FTS prefilter microbench (`~/.capy/work/audit/evals-findings.md:55-57`). #6734's measurement was for its
+are the FTS prefilter microbench (`docs/plans/2026-10-15-lhf-wave-2/audit/evals-findings.md:55-57`). #6734's measurement was for its
 own rewritten statement, a MATERIALIZED CTE whose comment says that, left to itself, the planner scanned every
 fact to sort before the visibility joins. Revision 2 keeps master's query (`ORDER BY f.valid_from DESC, f.id DESC
 LIMIT 200` with correlated visibility predicates, `src/core/ops/search.ts:406-417`), where the planner may prefer
