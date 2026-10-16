@@ -2,6 +2,18 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.111] - 2026-10-16
+
+### N1 with gbrain's belief ledger on (probe 40), at the v0.60.265.0 release
+
+gbrain's belief ledger (W1, #6806) shipped in v0.60.265.0. Probe 40 of its design requires that turning the ledger on
+changes no answer, so N1 ran with the ledger off and on against the release commit `09943580e`, on PGLite and Postgres
+over the CLI, stdio MCP and HTTP MCP. Both arms gave 388 of 388 current values, 0 stale, 385 of 385 history, 124 of 124
+negative controls, and no leaks, lost writes or system errors, with identical per-cell and per-checkpoint counts
+([report](docs/benchmarks/2026-10-16-belief-ledger-n1.md)). The runner gains the `EVAL_BELIEF_LEDGER=1` hook, which
+runs `gbrain beliefs enable` in each cell before any write, and the N1 runner now scrubs home and temp paths from its
+receipts. Measured through `--gbrain`; the pin is unchanged. Cost: $0.
+
 ## [0.10.110] - 2026-10-16
 
 ### LHF wave 2: plan, verdicts and the attendance paraphrase gate
