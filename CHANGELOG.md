@@ -2,6 +2,21 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.110] - 2026-10-16
+
+### LHF wave 2: plan, verdicts and the attendance paraphrase gate
+
+gbrain's second low-hanging-fruit wave (latency, retrieval and cost) shipped as gbrain v0.60.259.0 (#6822). Its plan,
+the three audits it came from, both rounds of gstack autoplan reviews and the measured verdict for every item are in
+[docs/plans/2026-10-15-lhf-wave-2/](docs/plans/2026-10-15-lhf-wave-2/VERDICTS.md). Against master, every shipped
+performance item was parity-clean on PGLite and Postgres. A remote MCP search 30 ms from Postgres went from 1.72 s to
+0.88 s at p50, and the 79-call parity run went from 6,008 to 3,580 statement round trips. The attendance paraphrase item
+failed its [preregistered gate](docs/benchmarks/2026-10-16-lhf-wave-2-attendance-preregistration.md). The development
+split went from 0 to 150 of 150, but 30 independently written held-out questions fired 18 of 90 runs (master 6 of 90),
+against an 80% floor, so it did not ship. The held-out text is not published. N9 gains `--extra-split`, and the gate adds
+a relation-aware scorer (`eval/runner/lhf-wave-2-attendance-gate.ts`) and a parser probe
+(`eval/runner/parse-relational-questions.ts`). Cost: $0.
+
 ## [0.10.109] - 2026-10-15
 
 ### N14 at large pages Wave B PR 1: segmented storage (exploratory)
