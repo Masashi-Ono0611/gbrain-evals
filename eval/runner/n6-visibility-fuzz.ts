@@ -129,7 +129,7 @@ export function targetTitle(ledger: Pick<N6Ledger, 'pages'>, target: N6Target, p
 export function synthesizeParams(
   params: Record<string, ParamDef>,
   target: N6Target | null,
-  opts: { scope?: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean; title?: string; knownAsOf?: string } = {},
+  opts: { scope?: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean; title?: string; knownAsOf?: string; beliefs?: boolean } = {},
 ): Synthesized | Unsupported {
   const out: Record<string, unknown> = {};
   for (const [name, def] of Object.entries(params)) {
@@ -168,6 +168,7 @@ export function synthesizeParams(
   if (opts.scope === 'foreign' && 'source_id' in params) out.source_id = 'beta';
   if (opts.scope === 'all' && 'source_id' in params) out.source_id = '__all__';
   if (opts.enumOverride) out[opts.enumOverride[0]] = opts.enumOverride[1];
+  if (opts.beliefs) out.beliefs = true;
   return { params: out };
 }
 
@@ -182,8 +183,8 @@ export function isTargeted(params: Record<string, ParamDef>): boolean {
  * naming the target (context_pack's pulled brief, gbrain #6703); the base call leaves it out, so a filter never
  * narrows the base probe.
  */
-export function variantsFor(params: Record<string, ParamDef>): Array<{ id: string; scope: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean; recordedTime?: boolean }> {
-  const out: Array<{ id: string; scope: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean; recordedTime?: boolean }> = [{ id: 'base', scope: 'ambient' }];
+export function variantsFor(params: Record<string, ParamDef>): Array<{ id: string; scope: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean; recordedTime?: boolean; beliefs?: boolean }> {
+  const out: Array<{ id: string; scope: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean; recordedTime?: boolean; beliefs?: boolean }> = [{ id: 'base', scope: 'ambient' }];
   for (const [name, def] of Object.entries(params)) {
     if (!def.enum) continue;
     for (const value of def.enum.slice(0, 8)) out.push({ id: `${name}=${value}`, scope: 'ambient', enumOverride: [name, value] });
@@ -198,12 +199,15 @@ export function variantsFor(params: Record<string, ParamDef>): Array<{ id: strin
     out.push({ id: 'known_as_of', scope: 'ambient', recordedTime: true });
     if ('source_id' in params) out.push({ id: 'known_as_of+source_id=beta', scope: 'foreign', recordedTime: true });
   }
+  // gbrain W4: delta's belief-ledger change diff (`beliefs: true`) is its own read surface over recorded history.
+  if (params.beliefs?.type === 'boolean' && !params.beliefs.required) out.push({ id: 'beliefs', scope: 'ambient', beliefs: true });
   return out;
 }
 
 // ─── Scoring helpers ───────────────────────────────────────────────────
 
 const SLUG_FIELDS = new Set(['slug', 'to_slug', 'from_slug', 'entity_slug', 'page_slug', 'target_slug', 'source_slug', 'resolved_slug', 'candidates', 'slugs']);
+const REQUEST_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const VOLATILE_KEY = /^(id|page_id|chunk_id|fact_id|take_id|revision|knowledge_revision|request_id|job_id|session_id|score|rank_score|.*_at|.*_ms|took.*|elapsed.*|latency.*|duration.*|generated.*|now|as_of|timestamp)$/i;
 
 /** Slugs named in slug-like result fields (strings or string arrays), at any depth. */
@@ -257,6 +261,8 @@ export function normalizeForOracle(data: unknown, mask: readonly string[]): stri
       const o: Record<string, unknown> = {};
       for (const k of Object.keys(v as Record<string, unknown>).sort()) {
         if (VOLATILE_KEY.test(k)) continue;
+        // The request instant: delta's belief-ledger window ends at the call's horizon (`beliefs.until`), so two calls differ by milliseconds.
+        if (k === 'until' && typeof (v as Record<string, unknown>)[k] === 'string' && REQUEST_INSTANT.test((v as Record<string, string>)[k]!)) continue;
         o[k] = visit((v as Record<string, unknown>)[k]);
       }
       return o;
@@ -299,6 +305,10 @@ export interface ProbeRow {
   /** known_as_of variants: what the trusted local caller and this caller got back. */
   kao_local?: KnownAsOfOutcome;
   kao_remote?: KnownAsOfOutcome;
+  /** beliefs variants: what the trusted local caller and this caller got back, and whether the trusted caller's change list itself carried a protected marker. */
+  bel_local?: BeliefsOutcome;
+  bel_remote?: BeliefsOutcome;
+  bel_signal?: boolean;
   /** Expansion probes only: the return_unit requested (`default` for assemble_evidence without one). */
   expansion_unit?: string;
   /** A response carried a `delivered` block whose unit is window, section or page: the stage actually expanded. */
@@ -444,6 +454,38 @@ export function knownAsOfBreakdown(rows: readonly { control: boolean; kao_local?
     trusted_outcomes: tally(k.map(r => r.kao_local)),
     remote_outcomes: tally(k.map(r => r.kao_remote)),
     signal_by_trusted_outcome: tally(k.filter(r => r.control).map(r => r.kao_local)),
+  };
+}
+
+/** What a `beliefs` probe got back: changes read from the belief ledger, an empty window, a source with no ledger, no `beliefs` block, or a refusal. */
+export type BeliefsOutcome = 'history' | 'empty' | 'not_recorded' | 'absent' | 'refused';
+
+const beliefsOf = (o: CallOutcome) => o.data && typeof o.data === 'object' && !Array.isArray(o.data) ? (o.data as Record<string, unknown>).beliefs as { changes?: unknown[]; not_recorded?: boolean } | undefined : undefined;
+
+export function beliefsOutcome(o: CallOutcome): BeliefsOutcome {
+  if (!o.exposed || isDenial(o) || !o.ok) return 'refused';
+  const b = beliefsOf(o);
+  if (!b) return 'absent';
+  if (b.not_recorded) return 'not_recorded';
+  return Array.isArray(b.changes) && b.changes.length > 0 ? 'history' : 'empty';
+}
+
+/** The `beliefs` block alone, as a call outcome, so a scanner can ask whether protected content arrived through the ledger diff itself. */
+export function beliefsView(o: CallOutcome): CallOutcome {
+  const b = beliefsOf(o) ?? null;
+  return { ...o, data: b, raw: b ? JSON.stringify(b) : '' };
+}
+
+/** The `beliefs` probes by outcome. Only real_history_signal (signal-bearing, and the trusted caller's change list itself carried protected content) tests the diff. */
+export function beliefsBreakdown(rows: readonly { control: boolean; variant: string; bel_local?: BeliefsOutcome; bel_remote?: BeliefsOutcome; bel_signal?: boolean }[]) {
+  const k = rows.filter(r => r.variant === 'beliefs' && r.bel_local);
+  const tally = (xs: readonly (string | undefined)[]) => Object.fromEntries([...new Set(xs)].sort().map(x => [String(x), xs.filter(y => y === x).length]));
+  return {
+    probes: k.length,
+    with_signal: k.filter(r => r.control).length,
+    real_history_signal: k.filter(r => r.control && r.bel_local === 'history' && r.bel_signal).length,
+    trusted_outcomes: tally(k.map(r => r.bel_local)),
+    remote_outcomes: tally(k.map(r => r.bel_remote)),
   };
 }
 
@@ -723,6 +765,7 @@ async function runN6Hermetic(options: N6Options) {
     : { protected: unit.protected ? targetTitle(ledger, unit.protected) : undefined, twin: undefined, ghost: undefined };
   const localReplay = new Map<string, boolean>();
   const localKao = new Map<string, KnownAsOfOutcome>();
+  const localBel = new Map<string, { outcome: BeliefsOutcome; signal: boolean }>();
   let localOraclePairs = 0;
   let localOracleDiffs = 0;
   if (presenceOk) {
@@ -753,6 +796,10 @@ async function runN6Hermetic(options: N6Options) {
               const hit = scanLeaks(lr, forbiddenMarkers, forbiddenSlugs, [], echoCredit(protParams, gh?.params, lg?.raw, forbiddenMarkers));
               localReplay.set(replayKey, !!(hit.content || hit.existence));
               if (v.recordedTime) localKao.set(replayKey, knownAsOfOutcome(lr));
+              if (v.beliefs) {
+                const bh = scanLeaks(beliefsView(lr), forbiddenMarkers, forbiddenSlugs, []);
+                localBel.set(replayKey, { outcome: beliefsOutcome(lr), signal: !!(bh.content || bh.existence) });
+              }
               if (lg && unit.cls) {
                 const mask = [...targetValues(unit.cls.protected), ...targetValues(unit.cls.ghost)];
                 localOraclePairs++;
@@ -761,7 +808,8 @@ async function runN6Hermetic(options: N6Options) {
             }
             const pr = await call(caller, op, protParams);
             summary.probes++;
-            const kao = v.recordedTime ? { kao_local: localKao.get(replayKey)!, kao_remote: knownAsOfOutcome(pr) } : {};
+            const kao = v.recordedTime ? { kao_local: localKao.get(replayKey)!, kao_remote: knownAsOfOutcome(pr) }
+              : v.beliefs ? { bel_local: localBel.get(replayKey)!.outcome, bel_signal: localBel.get(replayKey)!.signal, bel_remote: beliefsOutcome(pr) } : {};
             if (!pr.exposed) { rows.push({ ...base, ...kao, status: 'not_exposed', control: false }); continue; }
             exposed.add(caller);
             if (pr.timed_out) { rows.push({ ...base, ...kao, status: 'harness_error', control: false, protected_error: pr.error_code }); continue; }
@@ -916,6 +964,7 @@ async function runN6Hermetic(options: N6Options) {
     known_as_of_probes: exposedRows.filter(r => r.variant.startsWith('known_as_of')).length,
     known_as_of_probes_with_signal: exposedRows.filter(r => r.control && r.variant.startsWith('known_as_of')).length,
     known_as_of: knownAsOfBreakdown(exposedRows),
+    beliefs: beliefsBreakdown(exposedRows),
     content_leak_probes: count('content'),
     existence_leak_probes: count('existence'),
     oracle_probes: count('oracle'),
