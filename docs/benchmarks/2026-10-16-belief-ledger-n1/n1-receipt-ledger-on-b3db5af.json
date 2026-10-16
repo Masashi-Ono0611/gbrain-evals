@@ -7646,13 +7646,13 @@
               "init",
               "--pglite",
               "--path",
-              "/tmp/n1-knowledge-update-cells-jeYOqU/n1-pglite-cli/gbrain-home/brain.pglite",
+              "<tmp>/n1-knowledge-update-cells-jeYOqU/n1-pglite-cli/gbrain-home/brain.pglite",
               "--no-embedding",
               "--non-interactive"
             ],
             "code": 0,
             "ms": 5130,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /tmp/n1-knowledge-update-cells-jeYOqU/n1-pglite-cli/gbrain-home/.gbrain/content/94339dc7-c145-4541-b645-11be33e755f5/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-jeYOqU/n1-pglite-cli/gbrain-home/.gbrain/content/94339dc7-c145-4541-b645-11be33e755f5/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -7661,11 +7661,11 @@
               "add",
               "vault",
               "--path",
-              "/tmp/n1-knowledge-update-cells-jeYOqU/n1-pglite-cli/vault-vault"
+              "<tmp>/n1-knowledge-update-cells-jeYOqU/n1-pglite-cli/vault-vault"
             ],
             "code": 0,
             "ms": 1022,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/tmp/n1-knowledge-update-cells-jeYOqU/n1-pglite-cli/vault-vault\",\n  \"source_incarnation\": \"0b2dc86e-7ec5-4698-801c-e11be0b0fead\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"93786b8e-e7cc-4c6d-85b9-0dfd7d04d6cb\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-jeYOqU/n1-pglite-cli/vault-vault\",\n  \"source_incarnation\": \"0b2dc86e-7ec5-4698-801c-e11be0b0fead\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"93786b8e-e7cc-4c6d-85b9-0dfd7d04d6cb\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -13956,13 +13956,13 @@
               "init",
               "--pglite",
               "--path",
-              "/tmp/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-stdio/gbrain-home/brain.pglite",
+              "<tmp>/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-stdio/gbrain-home/brain.pglite",
               "--no-embedding",
               "--non-interactive"
             ],
             "code": 0,
             "ms": 5195,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /tmp/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-stdio/gbrain-home/.gbrain/content/246747f3-c8b0-4c82-9bdd-368e4734c5fa/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-stdio/gbrain-home/.gbrain/content/246747f3-c8b0-4c82-9bdd-368e4734c5fa/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -13971,11 +13971,11 @@
               "add",
               "vault",
               "--path",
-              "/tmp/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-stdio/vault-vault"
+              "<tmp>/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-stdio/vault-vault"
             ],
             "code": 0,
             "ms": 1025,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/tmp/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-stdio/vault-vault\",\n  \"source_incarnation\": \"82e1fb59-bdf8-4bca-bcf5-b7ba7ba89de7\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"7f78f827-1313-4f5f-a5fb-a12a3555842d\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-stdio/vault-vault\",\n  \"source_incarnation\": \"82e1fb59-bdf8-4bca-bcf5-b7ba7ba89de7\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"7f78f827-1313-4f5f-a5fb-a12a3555842d\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -20266,13 +20266,13 @@
               "init",
               "--pglite",
               "--path",
-              "/tmp/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-http/gbrain-home/brain.pglite",
+              "<tmp>/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-http/gbrain-home/brain.pglite",
               "--no-embedding",
               "--non-interactive"
             ],
             "code": 0,
             "ms": 4734,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /tmp/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-http/gbrain-home/.gbrain/content/14b7dab3-0714-4f72-aaa3-3bcadb38ff30/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "tail": "More: bulk-load notes `gbrain import <dir>` · scale up `gbrain migrate --to postgres --plan` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-http/gbrain-home/.gbrain/content/14b7dab3-0714-4f72-aaa3-3bcadb38ff30/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -20281,11 +20281,11 @@
               "add",
               "vault",
               "--path",
-              "/tmp/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-http/vault-vault"
+              "<tmp>/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-http/vault-vault"
             ],
             "code": 0,
             "ms": 926,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/tmp/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-http/vault-vault\",\n  \"source_incarnation\": \"e897f871-1136-4da3-b27c-1f63e263f376\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"5b4b641c-ecac-4d6f-9506-60bc44221669\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-jeYOqU/n1-pglite-mcp-http/vault-vault\",\n  \"source_incarnation\": \"e897f871-1136-4da3-b27c-1f63e263f376\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"5b4b641c-ecac-4d6f-9506-60bc44221669\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -27125,7 +27125,7 @@
             ],
             "code": 0,
             "ms": 2328,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /tmp/n1-knowledge-update-cells-jeYOqU/n1-postgres-cli/gbrain-home/.gbrain/content/19075728-b3ea-48ea-8c4b-07dfcbd359c4/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-jeYOqU/n1-postgres-cli/gbrain-home/.gbrain/content/19075728-b3ea-48ea-8c4b-07dfcbd359c4/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -27134,11 +27134,11 @@
               "add",
               "vault",
               "--path",
-              "/tmp/n1-knowledge-update-cells-jeYOqU/n1-postgres-cli/vault-vault"
+              "<tmp>/n1-knowledge-update-cells-jeYOqU/n1-postgres-cli/vault-vault"
             ],
             "code": 0,
             "ms": 616,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/tmp/n1-knowledge-update-cells-jeYOqU/n1-postgres-cli/vault-vault\",\n  \"source_incarnation\": \"f6c4e3e5-1d6b-4514-bf89-074638e41e10\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"87d6fc93-da7e-4e49-b70b-0cc2e5ad9e0e\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-jeYOqU/n1-postgres-cli/vault-vault\",\n  \"source_incarnation\": \"f6c4e3e5-1d6b-4514-bf89-074638e41e10\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"87d6fc93-da7e-4e49-b70b-0cc2e5ad9e0e\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -33434,7 +33434,7 @@
             ],
             "code": 0,
             "ms": 2244,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /tmp/n1-knowledge-update-cells-jeYOqU/n1-postgres-mcp-stdio/gbrain-home/.gbrain/content/c045b584-73b8-4b5f-916e-5ae9f6836e34/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-jeYOqU/n1-postgres-mcp-stdio/gbrain-home/.gbrain/content/c045b584-73b8-4b5f-916e-5ae9f6836e34/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -33443,11 +33443,11 @@
               "add",
               "vault",
               "--path",
-              "/tmp/n1-knowledge-update-cells-jeYOqU/n1-postgres-mcp-stdio/vault-vault"
+              "<tmp>/n1-knowledge-update-cells-jeYOqU/n1-postgres-mcp-stdio/vault-vault"
             ],
             "code": 0,
             "ms": 520,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/tmp/n1-knowledge-update-cells-jeYOqU/n1-postgres-mcp-stdio/vault-vault\",\n  \"source_incarnation\": \"8ba78e64-f5b0-40bd-9bbe-43d26a1771ff\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"f5c90af5-37bd-44cb-9e62-e370fee46f8c\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-jeYOqU/n1-postgres-mcp-stdio/vault-vault\",\n  \"source_incarnation\": \"8ba78e64-f5b0-40bd-9bbe-43d26a1771ff\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"f5c90af5-37bd-44cb-9e62-e370fee46f8c\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",
@@ -39743,7 +39743,7 @@
             ],
             "code": 0,
             "ms": 2261,
-            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: /tmp/n1-knowledge-update-cells-jeYOqU/n1-postgres-mcp-http/gbrain-home/.gbrain/content/c909b04a-7bc0-4359-bcfb-6e3b1436f770/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
+            "tail": "More: bulk-load notes `gbrain import <dir>` · health `gbrain doctor`\n  Setting up brain schema (v249)...\n  v142: takes.embedding resized to vector(1024); existing take vectors cleared\n  244 migration(s) applied\n[init] Migrations: 14 recorded as not needed on a new brain; 5 setup migration(s) pending (0.11.0, 0.14.0, 0.22.4, 0.28.0, 0.53.0). Finish setup: gbrain apply-migrations --yes --no-autopilot-install\nFresh brain setup approves following the packaged memory skills: prose only, existing memory/discovery tools, no scripts, paid services, capture or editor grants.\n[init] Content: <tmp>/n1-knowledge-update-cells-jeYOqU/n1-postgres-mcp-http/gbrain-home/.gbrain/content/c909b04a-7bc0-4359-bcfb-6e3b1436f770/default (content_directory; ready). Optional: initialize Git explicitly; configure an off-host backup separately.\n[init] Using schema pack: gbrain-base-v2 (override with --schema-pack <name>)"
           },
           {
             "step": "sources-add:vault",
@@ -39752,11 +39752,11 @@
               "add",
               "vault",
               "--path",
-              "/tmp/n1-knowledge-update-cells-jeYOqU/n1-postgres-mcp-http/vault-vault"
+              "<tmp>/n1-knowledge-update-cells-jeYOqU/n1-postgres-mcp-http/vault-vault"
             ],
             "code": 0,
             "ms": 497,
-            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"/tmp/n1-knowledge-update-cells-jeYOqU/n1-postgres-mcp-http/vault-vault\",\n  \"source_incarnation\": \"5636cd39-fcda-49d5-b104-53aa228b5def\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"914edc43-9fc3-46ee-9593-a11c6b21c410\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
+            "tail": "  \"source_id\": \"vault\",\n  \"local_path\": \"<tmp>/n1-knowledge-update-cells-jeYOqU/n1-postgres-mcp-http/vault-vault\",\n  \"source_incarnation\": \"5636cd39-fcda-49d5-b104-53aa228b5def\",\n  \"invalidated_requests\": 0,\n  \"request_id\": \"914edc43-9fc3-46ee-9593-a11c6b21c410\",\n  \"state\": \"committed\",\n  \"retry_after_ms\": null\n}"
           },
           {
             "step": "sources-default",

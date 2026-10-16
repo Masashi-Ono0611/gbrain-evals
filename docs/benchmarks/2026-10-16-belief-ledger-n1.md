@@ -47,3 +47,5 @@ EVAL_BELIEF_LEDGER=1 bun eval/runner/n1-knowledge-update.ts --gbrain <gbrain che
 Each arm writes `<dir>/receipt.json`, takes about 5 minutes and costs $0. The hook is in `eval/runner/lifecycle/slice.ts`, and `test/eval/lifecycle-belief-ledger-arm.test.ts` checks it.
 
 Receipts: [ledger off](2026-10-16-belief-ledger-n1/n1-receipt-ledger-off-b3db5af.json), [ledger on](2026-10-16-belief-ledger-n1/n1-receipt-ledger-on-b3db5af.json).
+
+The receipts were scrubbed with `bun eval/runner/receipt.ts scrub <receipt.json>`. The only change is the cells' scratch paths: `/tmp/` became `<tmp>/` in 21 strings per receipt (each cell's database path, vault path and `gbrain init` output). The sha256 of the receipts as the runner wrote them were `eefa6616d2809cd3f8fb16e6675bf07371c479d28ee978c74d6aa7d4fe05bf22` (ledger off) and `c92fdbe5e70a103c24a3bdb3e7059361442e04bf1acc32168f8bf53033060876` (ledger on). The N1 runner now scrubs home and temp paths itself before writing a receipt, as the N14 runner does.
