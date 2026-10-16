@@ -2151,13 +2151,13 @@
       "actual": "put_page of the 20mb conversation refused with request_too_large; keyword recall 0/40",
       "review": {
         "date": "2026-10-15",
-        "gbrain_sha": "44eb0493ff2776f04d6616b1a526657702f7544a",
+        "gbrain_sha": "7f3c9f5f19862372d056c713942564dd165f62ba",
         "evidence": "rerun",
         "receipts": [
-          "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a/20mb/receipt.json",
-          "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a/200mb/receipt.json"
+          "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-b1/on/200mb/receipt.json",
+          "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-b1/on/200mb-import/receipt.json"
         ],
-        "note": "partly closed by garrytan/gbrain#6733 (24 MiB ceiling): the 20 MB chat is now stored as one page (8,855 chunks, 40/40); the 200 MB chat is still refused with request_too_large, so writing one document over 24 MiB stays a gap for large pages Wave B"
+        "note": "still open at Wave B PR 1 (garrytan/gbrain#6787, exploratory run with pages.segmented_storage=on): put_page still refuses the 200 MB chat with request_too_large at the 24 MiB single-string ceiling, and the streamed file import refuses it with file_too_large because PGLite's segmented ceiling is 128 MiB; Postgres (256 MiB) was not run"
       },
       "review_history": [
         {
@@ -2168,6 +2168,16 @@
             "docs/benchmarks/2026-10-14-n14-large-page-fidelity-baseline/20mb/receipt.json"
           ],
           "note": "found by this run"
+        },
+        {
+          "date": "2026-10-15",
+          "gbrain_sha": "44eb0493ff2776f04d6616b1a526657702f7544a",
+          "evidence": "rerun",
+          "receipts": [
+            "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a/20mb/receipt.json",
+            "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a/200mb/receipt.json"
+          ],
+          "note": "partly closed by garrytan/gbrain#6733 (24 MiB ceiling): the 20 MB chat is now stored as one page (8,855 chunks, 40/40); the 200 MB chat is still refused with request_too_large, so writing one document over 24 MiB stays a gap for large pages Wave B"
         }
       ]
     },
