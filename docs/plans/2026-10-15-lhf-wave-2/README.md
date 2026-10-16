@@ -8,4 +8,4 @@ rounds (run `autoplan-20261015220653`, gate revision 2, approved as-is).
 - [reviews/](reviews/): CEO, DX and engineering reviews from both rounds (`*.r1.md` is round 1), consensus
   tables, findings, gate files and the review record.
 
-Measured verdicts for each shipped item are mirrored here when the gbrain wave PR lands.
+Measured verdicts for every item, shipped or dropped: [VERDICTS.md](VERDICTS.md).
