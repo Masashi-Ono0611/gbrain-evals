@@ -354,6 +354,8 @@ async function runPgHttpHermetic(opts: PgHttpOptions) {
     await engine.connect({ database_url: dbUrl, poolSize: 4 });
     const config = { engine: 'postgres', database_url: dbUrl } as unknown as OperationContext['config'];
     const seedErrors = await seed(g, engine, ledger, config);
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const knownAsOf = new Date().toISOString();
     const local = makeCallers(g, engine, config).local;
     const opByName = (n: string) => g.operations.find(o => o.name === n)!;
     const pres = await presence(engine, ledger, local, opByName('get_page'), opByName);
@@ -391,11 +393,12 @@ async function runPgHttpHermetic(opts: PgHttpOptions) {
         for (const unit of units) {
           const titles = 'cls' in unit && unit.cls ? { p: targetTitle(ledger, unit.cls.protected), t: targetTitle(ledger, unit.cls.twin), g: targetTitle(ledger, unit.cls.ghost, unit.cls.protected) } : { p: unit.protected ? targetTitle(ledger, unit.protected) : undefined, t: undefined, g: undefined };
           for (const v of variantsFor(op.params)) {
-            const prot = synthesizeParams(op.params, unit.protected, { ...v, title: titles.p });
+            const at = v.recordedTime ? knownAsOf : undefined;
+            const prot = synthesizeParams(op.params, unit.protected, { ...v, title: titles.p, knownAsOf: at });
             if (!prot.params) { unsupported[op.name] = prot.unsupported; continue; }
             const cls = 'cls' in unit ? unit.cls : undefined;
-            const gh = cls ? synthesizeParams(op.params, cls.ghost, { ...v, title: titles.g }).params : undefined;
-            const tw = cls ? synthesizeParams(op.params, cls.twin, { ...v, title: titles.t }).params : undefined;
+            const gh = cls ? synthesizeParams(op.params, cls.ghost, { ...v, title: titles.g, knownAsOf: at }).params : undefined;
+            const tw = cls ? synthesizeParams(op.params, cls.twin, { ...v, title: titles.t, knownAsOf: at }).params : undefined;
             tasks.push({ principal, op, unit, variantId: v.id, scope: v.scope, prot: prot.params, ghost: gh, twin: tw, replayKey: `${op.name}:${unit.id}:${v.id}` });
           }
         }

@@ -142,6 +142,19 @@ describe('N6 parameter synthesis', () => {
     expect(synthesizeParams(params, target, { enumOverride: ['unit', 'b'] }).params?.unit).toBe('b');
   });
 
+  test('a known_as_of param gets its own recorded-time variants, with diff and include_body on; the base call leaves it out', () => {
+    const versionsParams = { slug: { type: 'string', required: true }, include_body: { type: 'boolean' }, known_as_of: { type: 'string' }, diff: { type: 'boolean' }, source_id: { type: 'string' } } as const;
+    const variants = variantsFor(versionsParams);
+    expect(variants.filter(v => v.recordedTime).map(v => [v.id, v.scope])).toEqual([['known_as_of', 'ambient'], ['known_as_of+source_id=beta', 'foreign']]);
+    expect(synthesizeParams(versionsParams, target).params).toEqual({ slug: target.slug });
+    const at = '2026-10-16T12:00:00.000Z';
+    expect(synthesizeParams(versionsParams, target, { knownAsOf: at }).params).toEqual({ slug: target.slug, include_body: true, known_as_of: at, diff: true });
+    expect(synthesizeParams(versionsParams, target, { knownAsOf: at, scope: 'foreign' }).params?.source_id).toBe('beta');
+    expect(variantsFor(params).some(v => v.recordedTime)).toBe(false);
+    const pageParams = { slug: { type: 'string', required: true }, include_deleted: { type: 'boolean' }, include_quarantined: { type: 'boolean' }, known_as_of: { type: 'string' } } as const;
+    expect(synthesizeParams(pageParams, target, { knownAsOf: at }).params).toEqual({ slug: target.slug, include_deleted: true, known_as_of: at });
+  });
+
   test('a required param without a rule is unsupported, not guessed', () => {
     expect(synthesizeParams({ revision: { type: 'string', required: true } }, target).unsupported).toContain('revision');
     expect(synthesizeParams({ slug: { type: 'string', required: true } }, null).unsupported).toContain('slug');

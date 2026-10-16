@@ -129,7 +129,7 @@ export function targetTitle(ledger: Pick<N6Ledger, 'pages'>, target: N6Target, p
 export function synthesizeParams(
   params: Record<string, ParamDef>,
   target: N6Target | null,
-  opts: { scope?: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean; title?: string } = {},
+  opts: { scope?: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean; title?: string; knownAsOf?: string } = {},
 ): Synthesized | Unsupported {
   const out: Record<string, unknown> = {};
   for (const [name, def] of Object.entries(params)) {
@@ -149,12 +149,16 @@ export function synthesizeParams(
       else if (name === 'slugPrefix') value = target.slug.split('/')[0] + '/';
       else if (name === 'hits' && def.type === 'array') value = [{ source_id: target.source_id ?? 'alpha', slug: target.slug, chunk_id: 0 }];
     }
+    if (value === undefined && opts.knownAsOf) {
+      if (name === 'known_as_of') value = opts.knownAsOf;
+      else if ((name === 'diff' || name === 'include_body') && def.type === 'boolean') value = true;
+    }
     if (value === undefined) {
       if (name === 'source_id' && target?.source_id) value = target.source_id;
       else if (['since', 'after', 'updated_after'].includes(name) && def.type === 'string') value = '2000-01-01';
       else if (['until', 'before', 'asof'].includes(name) && def.type === 'string') value = '2100-01-01';
       else if (name === 'limit' && def.type === 'number') value = 50;
-      else if (def.type === 'boolean' && WIDENING_BOOLEANS.has(name) && !opts.ranked) value = true;
+      else if (def.type === 'boolean' && WIDENING_BOOLEANS.has(name) && !opts.ranked && (!opts.knownAsOf || name === 'include_deleted')) value = true;
       else if (name === 'type' && def.required) value = target?.type ?? 'note';
       else if (def.required && def.type === 'number') value = 10;
     }
@@ -178,8 +182,8 @@ export function isTargeted(params: Record<string, ParamDef>): boolean {
  * naming the target (context_pack's pulled brief, gbrain #6703); the base call leaves it out, so a filter never
  * narrows the base probe.
  */
-export function variantsFor(params: Record<string, ParamDef>): Array<{ id: string; scope: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean }> {
-  const out: Array<{ id: string; scope: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean }> = [{ id: 'base', scope: 'ambient' }];
+export function variantsFor(params: Record<string, ParamDef>): Array<{ id: string; scope: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean; recordedTime?: boolean }> {
+  const out: Array<{ id: string; scope: ScopeVariant; enumOverride?: [string, string]; ranked?: boolean; counterparty?: boolean; recordedTime?: boolean }> = [{ id: 'base', scope: 'ambient' }];
   for (const [name, def] of Object.entries(params)) {
     if (!def.enum) continue;
     for (const value of def.enum.slice(0, 8)) out.push({ id: `${name}=${value}`, scope: 'ambient', enumOverride: [name, value] });
@@ -189,6 +193,10 @@ export function variantsFor(params: Record<string, ParamDef>): Array<{ id: strin
   if ('source_id' in params) {
     out.push({ id: 'source_id=beta', scope: 'foreign' });
     out.push({ id: 'source_id=__all__', scope: 'all' });
+  }
+  if (params.known_as_of && !params.known_as_of.required) {
+    out.push({ id: 'known_as_of', scope: 'ambient', recordedTime: true });
+    if ('source_id' in params) out.push({ id: 'known_as_of+source_id=beta', scope: 'foreign', recordedTime: true });
   }
   return out;
 }
@@ -357,6 +365,8 @@ export interface Gbrain {
   dispatchToolCall: (engine: unknown, name: string, params: Record<string, unknown> | undefined, opts: Record<string, unknown>) => Promise<{ content: { text: string }[]; isError?: boolean }>;
   operationScopesAllowed: (scopes: readonly string[], op: Operation) => boolean;
   buildBrainTools: (opts: Record<string, unknown>) => Array<{ name: string; execute(input: unknown, ctx: unknown): Promise<unknown> }>;
+  /** gbrain's belief ledger switch, so recorded-time reads (`known_as_of`) have coverage of the seeded writes (absent before W1). */
+  belief?: { enableBeliefLedger: (engine: unknown, sourceId: string) => Promise<unknown> };
   /** gbrain's contradiction probe and its run writer, to store a report for find_contradictions (absent on builds without them). */
   contradictions?: {
     runContradictionProbe: (opts: Record<string, unknown>) => Promise<{ report: { duration_ms: number; per_query: Array<{ contradictions: unknown[] }> } }>;
@@ -376,7 +386,9 @@ export async function loadGbrain(gut: GbrainUnderTest): Promise<Gbrain> {
   const trends = await importGbrain<Partial<NonNullable<Gbrain['contradictions']>>>(gut, 'src/core/eval-contradictions/trends.ts').catch((): Partial<NonNullable<Gbrain['contradictions']>> => ({}));
   const contradictions = probe.runContradictionProbe && trends.writeRunRow
     ? { runContradictionProbe: probe.runContradictionProbe, writeRunRow: trends.writeRunRow } : undefined;
-  return { operations: ops.operations, PGLiteEngine: pglite.PGLiteEngine, dispatchToolCall: dispatch.dispatchToolCall, operationScopesAllowed: scope.operationScopesAllowed, buildBrainTools: tools.buildBrainTools, contradictions };
+  const ledger = await importGbrain<Partial<NonNullable<Gbrain['belief']>>>(gut, 'src/core/belief/coverage.ts').catch((): Partial<NonNullable<Gbrain['belief']>> => ({}));
+  const belief = ledger.enableBeliefLedger ? { enableBeliefLedger: ledger.enableBeliefLedger } : undefined;
+  return { operations: ops.operations, PGLiteEngine: pglite.PGLiteEngine, dispatchToolCall: dispatch.dispatchToolCall, operationScopesAllowed: scope.operationScopesAllowed, buildBrainTools: tools.buildBrainTools, belief, contradictions };
 }
 
 const CONFIG = { engine: 'pglite', database_path: ':memory:' } as OperationContext['config'];
@@ -470,6 +482,10 @@ export async function seed(g: Gbrain, engine: N6Engine, ledger: N6Ledger, config
   // Only missing sources are inserted (no row, no trigger): on Postgres the caller adds them through writer administration first.
   for (const s of ledger.sources) {
     await engine.executeRaw(`INSERT INTO sources (id, name, config) SELECT $1::text, $1::text, '{}'::jsonb WHERE NOT EXISTS (SELECT 1 FROM sources WHERE id = $1::text)`, [s]);
+  }
+  // A build with recorded-time reads gets the belief ledger on every source before any write, so known_as_of answers from the seeded history.
+  if (g.belief && 'known_as_of' in (g.operations.find(o => o.name === 'get_page')?.params ?? {})) {
+    for (const s of ledger.sources) await g.belief.enableBeliefLedger(engine, s);
   }
   const putPage = g.operations.find(o => o.name === 'put_page')!;
   const local = makeCallers(g, engine, config).local;
@@ -647,6 +663,8 @@ async function runN6Hermetic(options: N6Options) {
   const getPage = g.operations.find(o => o.name === 'get_page')!;
 
   const seedErrors = await seed(g, engine, ledger);
+  await new Promise(resolve => setTimeout(resolve, 50));
+  const knownAsOf = new Date().toISOString();
   const pres = await presence(engine, ledger, callers.local, getPage, name => g.operations.find(o => o.name === name)!);
   const presenceOk = seedErrors.length === 0 && pres.checks.every(c => c.pass);
 
@@ -691,13 +709,14 @@ async function runN6Hermetic(options: N6Options) {
         for (const unit of units) {
           for (const v of variants) {
             const titles = unitTitles(unit);
-            const prot = synthesizeParams(op.params, unit.protected, { ...v, title: titles.protected });
+            const at = v.recordedTime ? knownAsOf : undefined;
+            const prot = synthesizeParams(op.params, unit.protected, { ...v, title: titles.protected, knownAsOf: at });
             if (!prot.params) { unsupported.add(prot.unsupported); continue; }
             const protParams = prot.params;
             const probe_id = `${caller}:${op.name}:${unit.id}:${v.id}`;
             const base = { probe_id, caller, op: op.name, target: unit.id, variant: v.id };
             const replayKey = `${op.name}:${unit.id}:${v.id}`;
-            const gh = unit.cls ? synthesizeParams(op.params, unit.cls.ghost, { ...v, title: titles.ghost }) : null;
+            const gh = unit.cls ? synthesizeParams(op.params, unit.cls.ghost, { ...v, title: titles.ghost, knownAsOf: at }) : null;
             if (!localReplay.has(replayKey)) {
               const lr = await call('local', op, protParams);
               const lg = gh?.params ? await call('local', op, gh.params) : null;
@@ -725,7 +744,7 @@ async function runN6Hermetic(options: N6Options) {
             let twinError: string | undefined;
             if (unit.cls) {
               const cls = unit.cls;
-              const tw = synthesizeParams(op.params, cls.twin, { ...v, title: titles.twin });
+              const tw = synthesizeParams(op.params, cls.twin, { ...v, title: titles.twin, knownAsOf: at });
               const tr = tw.params ? await call(caller, op, tw.params) : null;
               twinSeen = tr ? controlSeen(tr, cls.twin_markers, [cls.twin.slug]) : false;
               if (tr && !tr.ok) twinError = `${tr.error_code}: ${tr.raw.slice(0, 160)}`;
@@ -862,6 +881,8 @@ async function runN6Hermetic(options: N6Options) {
     probes_with_signal: exposedRows.filter(r => r.control).length,
     probes_no_signal: exposedRows.filter(r => r.status === 'no_signal').length,
     named_window_probes_with_signal: exposedRows.filter(r => r.control && 'window' in (readOps.find(o => o.name === r.op)?.params ?? {})).length,
+    known_as_of_probes: exposedRows.filter(r => r.variant.startsWith('known_as_of')).length,
+    known_as_of_probes_with_signal: exposedRows.filter(r => r.control && r.variant.startsWith('known_as_of')).length,
     content_leak_probes: count('content'),
     existence_leak_probes: count('existence'),
     oracle_probes: count('oracle'),
