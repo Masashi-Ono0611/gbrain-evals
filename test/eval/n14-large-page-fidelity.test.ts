@@ -355,6 +355,20 @@ describe('N14 adapters through evaluateArm', () => {
     expect(summarizeArm(await evaluateArm(new ReferenceAdapter('native'), doc.ledger, doc.text), '2mb').segment_roundtrip).toBeUndefined();
   });
 
+  test('pending-write polling and the projection wait are carried into the summary', async () => {
+    class Pending extends ReferenceAdapter {
+      override async ingest(ledger: N14DocLedger, raw: string): Promise<IngestOutcome> {
+        return { ...(await super.ingest(ledger, raw)), pending: { writes: 1, wait_ms: 2000 }, projection: { sealed_at_reply: false, sealed: true, settle_ms: 9000 } };
+      }
+    }
+    const s = summarizeArm(await evaluateArm(new Pending('native'), doc.ledger, doc.text), '2mb');
+    expect(s.ingest.pending).toEqual({ writes: 1, wait_ms: 2000 });
+    expect(s.ingest.projection).toEqual({ sealed_at_reply: false, sealed: true, settle_ms: 9000 });
+    const plain = summarizeArm(await evaluateArm(new ReferenceAdapter('native'), doc.ledger, doc.text), '2mb');
+    expect(plain.ingest.pending).toBeUndefined();
+    expect(plain.ingest.projection).toBeUndefined();
+  });
+
   test('a whole-page reader fails the egress contract', async () => {
     class WholePage extends ReferenceAdapter {
       override async read() { const r = { compiled_truth: 'y'.repeat(EGRESS_CAP_BYTES + 10) }; this.frames.push({ op: 'get_page', bytes: frameBytes(r) }); return JSON.stringify(r); }

@@ -111,12 +111,16 @@ export interface SearchHit {
   /** The text the agent actually receives in the result row. */
   delivered: string;
 }
-export interface IngestOutcome { status: 'stored' | 'refused' | 'error'; code?: string; message?: string; pages: number; chunks: number; embed_skip: string | null; write_errors: number; storage?: BodyStorage | null }
+export interface IngestOutcome { status: 'stored' | 'refused' | 'error'; code?: string; message?: string; pages: number; chunks: number; embed_skip: string | null; write_errors: number; storage?: BodyStorage | null; pending?: PendingWrites | null; projection?: ProjectionSettle | null }
 /** Body storage of the document's entry page (Amendment 2): `segmented` pages keep their body in content-addressed segments. */
+/** Writes that replied `write_pending` and were polled to a final state (Amendment 3). */
+export interface PendingWrites { writes: number; wait_ms: number }
+/** A segmented page's text projection (its chunks) is built after the write commits; probes wait for it to seal (Amendment 3). */
+export interface ProjectionSettle { sealed_at_reply: boolean; sealed: boolean; settle_ms: number }
 export interface BodyStorage { body_storage: string; body_bytes: number | null; segment_count: number | null; body_generation: number | null }
 /** Segment rows an append wrote (Amendment 2): live manifest rows at the new generation, and segment texts added. */
 export interface SegmentWrites { generation_before: number | null; generation_after: number | null; live_segments: number; segments_at_new_generation: number; segment_texts_added: number; segment_text_bytes_added: number }
-export interface AppendOutcome { status: 'ok' | 'refused' | 'error'; code?: string; message?: string; chunks_before: number; chunks_after: number; chunks_rewritten: number; chunks_deleted: number; path: string; segments?: SegmentWrites | null }
+export interface AppendOutcome { status: 'ok' | 'refused' | 'error'; code?: string; message?: string; chunks_before: number; chunks_after: number; chunks_rewritten: number; chunks_deleted: number; path: string; segments?: SegmentWrites | null; pending?: PendingWrites | null; projection?: ProjectionSettle | null }
 export interface EmbedCount { inputs: number; tokens: number }
 export interface CallFrame { op: string; bytes: number }
 
@@ -330,7 +334,7 @@ export interface ArmSummary {
   tier: TierId;
   status: 'ran' | 'crashed' | 'capability_absent';
   crash?: string;
-  ingest: { status: string; code?: string; chunks: number; pages: number; embed_skip: string | null; wall_ms: number | null; rss_peak_mb: number | null; rss_over_baseline_mb: number | null; storage?: BodyStorage | null };
+  ingest: { status: string; code?: string; chunks: number; pages: number; embed_skip: string | null; wall_ms: number | null; rss_peak_mb: number | null; rss_over_baseline_mb: number | null; storage?: BodyStorage | null; pending?: PendingWrites | null; projection?: ProjectionSettle | null };
   stored_needles: Rate;
   keyword_recall: Rate;
   keyword_recall_by_decile: Rate[];
@@ -343,7 +347,7 @@ export interface ArmSummary {
   direct_read_agent_bytes?: number | null;
   max_frame_bytes: number;
   responses_over_cap: number;
-  append: { status: string; code?: string; wall_ms: number | null; embed_inputs: number | null; embed_tokens: number | null; appended_tokens: number; embed_ratio: number | null; chunks_rewritten: number; chunks_deleted: number; visible: boolean; path: string; segments?: SegmentWrites | null } | null;
+  append: { status: string; code?: string; wall_ms: number | null; embed_inputs: number | null; embed_tokens: number | null; appended_tokens: number; embed_ratio: number | null; chunks_rewritten: number; chunks_deleted: number; visible: boolean; path: string; segments?: SegmentWrites | null; pending?: PendingWrites | null; projection?: ProjectionSettle | null } | null;
   embed_initial: { inputs: number; tokens: number; wall_ms: number; tokens_per_mb: number } | null;
   roundtrip: string;
   segment_roundtrip?: string;
@@ -369,6 +373,8 @@ export function summarizeArm(run: ArmRun, tier: TierId): ArmSummary {
       wall_ms: run.ingest.wall_ms, rss_peak_mb: afterIngest?.max_rss_mb || null,
       rss_over_baseline_mb: afterIngest && baseline && afterIngest.max_rss_mb ? Math.max(0, Math.round(afterIngest.max_rss_mb - baseline.rss_mb)) : null,
       ...(run.ingest.storage !== undefined ? { storage: run.ingest.storage } : {}),
+      ...(run.ingest.pending ? { pending: run.ingest.pending } : {}),
+      ...(run.ingest.projection ? { projection: run.ingest.projection } : {}),
     },
     stored_needles: rate(run.stored.contains, run.stored.total),
     keyword_recall: rate(hits, run.probes.length),
@@ -385,7 +391,7 @@ export function summarizeArm(run: ArmRun, tier: TierId): ArmSummary {
       status: run.append.status, ...(run.append.code ? { code: run.append.code } : {}), wall_ms: run.append.wall_ms,
       embed_inputs: run.append.embed?.inputs ?? null, embed_tokens: run.append.embed?.tokens ?? null, appended_tokens: run.append.appended_tokens,
       embed_ratio: ratio === null ? null : Number(ratio.toFixed(3)), chunks_rewritten: run.append.chunks_rewritten, chunks_deleted: run.append.chunks_deleted,
-      visible: run.append.visible_rank !== null, path: run.append.path, ...(run.append.segments !== undefined ? { segments: run.append.segments } : {}),
+      visible: run.append.visible_rank !== null, path: run.append.path, ...(run.append.segments !== undefined ? { segments: run.append.segments } : {}), ...(run.append.pending ? { pending: run.append.pending } : {}), ...(run.append.projection ? { projection: run.append.projection } : {}),
     },
     embed_initial: run.embed_initial ? { inputs: run.embed_initial.inputs, tokens: run.embed_initial.tokens, wall_ms: Math.round(run.embed_initial.wall_ms), tokens_per_mb: Math.round(run.embed_initial.tokens / (run.bytes / 1e6)) } : null,
     roundtrip: run.roundtrip.status,
@@ -548,6 +554,10 @@ type RunEmbedCore = (engine: unknown, opts: Record<string, unknown>) => Promise<
 type RunExport = (engine: unknown, args: string[]) => Promise<void>;
 type ImportFromFile = (engine: unknown, file: string, rel: string, opts: Record<string, unknown>) => Promise<{ status: string; error?: string; refusal?: { code: string; message: string } }>;
 export type NativeIngest = 'put_page' | 'import';
+/** How long a `write_pending` write is polled before the harness records it as still pending (Amendment 3). */
+export const PENDING_WAIT_MAX_MS = 240_000;
+/** How long probes wait for a segmented page's projection to seal (Amendment 3). */
+export const PROJECTION_SETTLE_MAX_MS = 240_000;
 type Embedder = { kind: 'counting' } | { kind: 'none' } | { kind: 'real'; model: string; dims: number; env: Record<string, string> };
 
 export class GbrainAdapter implements N14Adapter {
@@ -571,6 +581,7 @@ export class GbrainAdapter implements N14Adapter {
   #capability!: NativeCapability;
   #runBackfill: ((engine: unknown) => Promise<unknown>) | null = null;
   #nativeIngest: NativeIngest = 'put_page';
+  #pending: PendingWrites = { writes: 0, wait_ms: 0 };
   #importFile: ((file: string, rel: string) => Promise<{ status: string; error?: string; refusal?: { code: string; message: string } }>) | null = null;
   /** The `runOversizedBackfill` receipt when this adapter's ingest is the upgrade backfill (Amendment 1). */
   backfill: unknown = null;
@@ -628,8 +639,40 @@ export class GbrainAdapter implements N14Adapter {
 
   async #put(slug: string, content: string): Promise<void> {
     const prev = this.#rev.get(slug);
-    const r = await this.call('put_page', { slug, content, ...(prev ? { expected_revision: prev } : {}) }) as { revision?: string };
+    let r: { revision?: string };
+    try { r = await this.call('put_page', { slug, content, ...(prev ? { expected_revision: prev } : {}) }) as { revision?: string }; }
+    catch (e) {
+      const request = (e as { writeRequest?: { request_id?: string } }).writeRequest;
+      if (errCode(e) !== 'write_pending' || !request?.request_id) throw e;
+      r = await this.#settle(request.request_id);
+    }
     if (r?.revision) this.#rev.set(slug, r.revision);
+  }
+
+  /** Amendment 3: an accepted write that replies `write_pending` is polled with get_write_request, as its contract asks, until it is final. */
+  async #settle(requestId: string): Promise<{ revision?: string }> {
+    const t0 = performance.now();
+    for (;;) {
+      const rec = await this.call('get_write_request', { request_id: requestId }) as { state: string; retry_after_ms?: number | null; revision?: string; write_error?: string; write_error_message?: string };
+      if (['committed', 'conflict', 'failed', 'cancelled'].includes(rec.state)) {
+        this.#pending.writes++;
+        this.#pending.wait_ms += Math.round(performance.now() - t0);
+        if (rec.state !== 'committed') throw Object.assign(new Error(rec.write_error_message ?? `write ${rec.state}`), { code: rec.write_error ?? `write_${rec.state}` });
+        return rec;
+      }
+      if (performance.now() - t0 > PENDING_WAIT_MAX_MS) {
+        this.#pending.writes++;
+        this.#pending.wait_ms += Math.round(performance.now() - t0);
+        throw Object.assign(new Error(`write ${requestId} still ${rec.state} after ${PENDING_WAIT_MAX_MS} ms`), { code: 'write_pending' });
+      }
+      await new Promise(res => setTimeout(res, Math.min(Math.max(rec.retry_after_ms ?? 500, 200), 5_000)));
+    }
+  }
+
+  #takePending(): PendingWrites | null {
+    const p = this.#pending;
+    this.#pending = { writes: 0, wait_ms: 0 };
+    return p.writes ? p : null;
   }
 
   async ingest(ledger: N14DocLedger, raw: string): Promise<IngestOutcome> {
@@ -701,19 +744,35 @@ export class GbrainAdapter implements N14Adapter {
     return { body: Buffer.concat(rows.map(r => Buffer.from(r.body))).toString('utf8'), regions: [...new Set(rows.map(r => r.region))] };
   }
 
+  /** Null for an inline page or no segmented storage; otherwise waits (bounded) until the text projection is sealed at the page's revision. */
+  async #settleProjection(): Promise<ProjectionSettle | null> {
+    if ((await this.#storage())?.body_storage !== 'segmented') return null;
+    const t0 = performance.now();
+    const sealedNow = async () => Number((await this.sql<{ n: number }>(
+      `SELECT count(*)::int AS n FROM pages WHERE slug = $1 AND deleted_at IS NULL AND text_projection_revision = knowledge_revision`, [this.#ledger.slug]))[0]?.n ?? 0) > 0;
+    const atReply = await sealedNow();
+    let sealed = atReply;
+    while (!sealed && performance.now() - t0 < PROJECTION_SETTLE_MAX_MS) {
+      await new Promise(res => setTimeout(res, 250));
+      sealed = await sealedNow();
+    }
+    return { sealed_at_reply: atReply, sealed, settle_ms: Math.round(performance.now() - t0) };
+  }
+
   async #segmentTexts(): Promise<{ n: number; bytes: number }> {
     const r = await this.sql<{ n: number; bytes: string }>(`SELECT count(*)::int AS n, coalesce(sum(byte_len), 0)::bigint AS bytes FROM page_segment_texts`);
     return { n: Number(r[0]?.n ?? 0), bytes: Number(r[0]?.bytes ?? 0) };
   }
 
   async #ingestOutcome(writeErrors: number, first: { code: string; message: string } | null): Promise<IngestOutcome> {
+    const projection = this.arm === 'managed-parts' ? null : await this.#settleProjection();
     const docPages = await this.sql<{ n: number; chunks: number; skip: string | null }>(
       `SELECT count(*)::int AS n, coalesce(sum((SELECT count(*) FROM content_chunks c WHERE c.page_id = p.id)), 0)::int AS chunks,
               max(p.frontmatter->'embed_skip'->>'reason') AS skip
          FROM pages p WHERE p.deleted_at IS NULL AND p.slug <> $1`, [CONTROL_SLUG]);
     const pages = Number(docPages[0]?.n ?? 0);
     const status: IngestOutcome['status'] = pages > 0 && writeErrors === 0 ? 'stored' : first && /too_large|file_too_large|oversized|request_too_large/.test(first.code + first.message) ? 'refused' : pages > 0 ? 'stored' : 'error';
-    return { status, ...(first ? { code: first.code, message: first.message } : {}), pages, chunks: Number(docPages[0]?.chunks ?? 0), embed_skip: docPages[0]?.skip ?? null, write_errors: writeErrors, storage: this.arm === 'managed-parts' ? null : await this.#storage() };
+    return { status, ...(first ? { code: first.code, message: first.message } : {}), pages, chunks: Number(docPages[0]?.chunks ?? 0), embed_skip: docPages[0]?.skip ?? null, write_errors: writeErrors, storage: this.arm === 'managed-parts' ? null : await this.#storage(), pending: this.#takePending(), projection };
   }
 
   async #upload(slug: string, raw: string): Promise<void> {
@@ -805,6 +864,7 @@ export class GbrainAdapter implements N14Adapter {
   }
 
   async append(text: string): Promise<AppendOutcome> {
+    this.#takePending();
     const before = await this.#chunkSnapshot();
     const storageBefore = this.arm === 'managed-parts' ? null : await this.#storage();
     const textsBefore = storageBefore ? await this.#segmentTexts() : null;
@@ -832,6 +892,7 @@ export class GbrainAdapter implements N14Adapter {
       const message = errMsg(e).slice(0, 500);
       failure = { status: /too_large|oversized/.test(code + message) ? 'refused' : 'error', code, message };
     }
+    const projection = storageBefore && !failure ? await this.#settleProjection() : null;
     const after = await this.#chunkSnapshot();
     let rewritten = 0;
     for (const [id, h] of after) if (before.get(id) !== h) rewritten++;
@@ -847,7 +908,7 @@ export class GbrainAdapter implements N14Adapter {
       segments = { generation_before: storageBefore?.body_generation ?? null, generation_after: storageAfter.body_generation, live_segments: Number(live[0]?.n ?? 0),
         segments_at_new_generation: Number(live[0]?.at_new ?? 0), segment_texts_added: textsAfter.n - textsBefore.n, segment_text_bytes_added: textsAfter.bytes - textsBefore.bytes };
     }
-    return { status: failure ? failure.status : 'ok', ...(failure ? { code: failure.code, message: failure.message } : {}), chunks_before: before.size, chunks_after: after.size, chunks_rewritten: rewritten, chunks_deleted: deleted, path, ...(storageBefore ? { segments } : {}) };
+    return { status: failure ? failure.status : 'ok', ...(failure ? { code: failure.code, message: failure.message } : {}), chunks_before: before.size, chunks_after: after.size, chunks_rewritten: rewritten, chunks_deleted: deleted, path, ...(storageBefore ? { segments } : {}), pending: this.#takePending(), ...(projection ? { projection } : {}) };
   }
 
   async exportBody(): Promise<string> {
