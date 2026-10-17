@@ -50,6 +50,15 @@ Coverage is resolvable takes applied and right, over 500. Abstention is unresolv
 
 The judge gbrain should trust for take grading is gpt-6.1-sol: on clean evidence it never applied a wrong verdict and resolved nearly everything resolvable, at the lowest cost. The Anthropic models read the evidence about as well (Opus 5.5 matched every gold verdict on resolvable takes) but report lower confidence, so under a 0.95 threshold they grade almost nothing on their own; a lower threshold or the existing three-judge ensemble rule would be a new preregistration. Before auto-resolve is ever wired, two things this does not settle remain: how the judge does on a real brain's messier evidence (a real-sample check), and whether a missed target should resolve `incorrect` or `partial`.
 
+## Follow-ups for auto-resolve (decided 2026-10-16)
+
+Garry approved these on October 16, 2026, through GBRA-108. They bind the eventual auto-resolve PR, and none of them changes code today, because auto-resolve is unwired.
+
+- **Auto-resolve is a later opt-in PR**, built only after a real sample passes. The sample is about 300 graded takes from a real brain, the size needed to back a 1% error claim.
+- **A missed numeric target is never auto-applied.** If a take's numeric target was missed by a margin (the exploratory `partial` set's shape), auto-resolve applies neither `partial` nor `incorrect`. The take is held for manual review until the real sample settles which verdict is right. All three models answered `incorrect` on that set, and gpt-6.1-sol did so at 0.96 confidence or higher, so this is a policy question, not a confidence threshold.
+- **The measured judge is scoped to its prompt.** `GRADE_TAKES_MEASURED_MODELS` (gpt-6.1-sol) covers only verdicts asked with prompt `hybrid-evidence-v2`. A new prompt version needs a new measurement.
+- **Proposed for the next preregistration, not decided:** giving the judge call a thinking setting or a larger output ceiling (12 of the 18 unparsed answers ran out of tokens while thinking), and tolerating a trailing `,"}` when parsing.
+
 ## Reproduce
 
 ```bash
