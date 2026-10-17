@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.113 (`VERSION`) |
+| This repository | gbrain-evals v0.10.114 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except three: the Cat 40 Hard row's, which shipped after it
@@ -305,12 +305,19 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 
 ## Changelog
 
-### 2026-10-17: Take-grading row; repository row names v0.10.113
+### 2026-10-17: Take-grading row; repository row names v0.10.114
 
-gbrain-evals v0.10.113 records the take-grading eval for gbrain #6882 (wave 4b W6, `d99b84694`): among the verdicts the
+gbrain-evals v0.10.114 records the take-grading eval for gbrain #6882 (wave 4b W6, `d99b84694`): among the verdicts the
 auto-resolve rule would apply, gpt-6.1-sol applied 496 with none wrong (one-sided 95% upper bound 0.6%, under the
 preregistered 1%), so it is gbrain's measured take-grading judge; Opus 5.5 and Sonnet 5.5 do not qualify. New row
-after the slug-conflict row. The repository row names v0.10.113 (was v0.10.112).
+after the slug-conflict row. The repository row names v0.10.114 (was v0.10.113).
+
+### 2026-10-16: Repository row names v0.10.113
+
+gbrain-evals v0.10.113 records N6 on gbrain's weekly belief diff (`delta {beliefs: true}`) at the v0.60.273.0 release
+(`6c3e6fe0`, #6866): 0 leaks and 0 oracles in process and over Postgres HTTP, with real-history signal on both
+(measured through `--gbrain`; the pin is unchanged), and adds the P1 E2 rerun preregistration for gbrain W5. No result
+row on this page changes. The repository row names v0.10.113 (was v0.10.112).
 
 ### 2026-10-16: Repository row names v0.10.112
 

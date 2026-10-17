@@ -2,12 +2,32 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
-## [0.10.113] - 2026-10-17
+## [0.10.114] - 2026-10-17
 
 ### Take grading (gbrain wave 4b W6, #6882)
 
 - **Report** ([doc](docs/benchmarks/2026-10-16-take-grading.md), [preregistration](docs/benchmarks/2026-10-16-take-grading-preregistration.md), frozen in gbrain `d99b84694` before any counted run). 790 counted synthetic forecasting takes with dated evidence and placeholder names (750 in the rule: 500 resolvable, 250 the evidence cannot settle; 40 exploratory), one run per model through gbrain's production evidence block, judge call and parser, $9.25 in all. A verdict counts as applied when it is not `unresolvable` and its confidence is at least 0.95; a model qualifies when the one-sided 95% upper bound on wrong applied verdicts is at most 1%. `gpt-6.1-sol` applied 496 with none wrong (0.6%), resolving 99.2% of resolvable takes and holding back on every unresolvable one; it qualifies, and gbrain's `GRADE_TAKES_MEASURED_MODELS` lists it. `claude-opus-5-5` gave the gold verdict on every resolvable take but applied 2; `claude-sonnet-5-5` applied 121 with one wrong (a real-world proposition graded from its own knowledge). On the exploratory `partial` set every model calls a missed target `incorrect`, a policy question left open; 12 of 18 unparsed answers spent the judge's 600-token ceiling on thinking.
 - **Records**: fixtures, dev-round and counted rows with each model's reasoning, `summary.json`, `summary.md` and `verdict.json` in `docs/benchmarks/2026-10-16-take-grading/`; `README.md` and `docs/README.md` gain the row.
+
+## [0.10.113] - 2026-10-16
+
+### N6 on gbrain's weekly belief diff (delta beliefs) at the v0.60.273.0 release, and the P1 E2 rerun preregistration for W5
+
+gbrain v0.60.273.0 (#6866, wave 4a) adds `beliefs: true` to `delta`: each belief that changed in a window, with its value
+before and after, the event that caused it and a pointer to the evidence, read from the belief ledger. N6 now fuzzes it
+with the ledger on before seeding, records the trusted and remote outcome of every `beliefs` probe, counts the probes
+that read real history with signal, and fails the HTTP verdict when a build exposes `beliefs` and none do. The oracle
+view masks `beliefs.until`, the request instant. On the branch, N6 found 12 content leaks in process and over Postgres
+HTTP (held Takes shown to remote callers, as revisions and in a new page's creation body), fixed before review. At the
+release, from a clean checkout of the tag: Postgres over HTTP passes 155 of 155 mandatory cells with 0 leaks and 0
+oracles, and in process on PGLite 0 leaks and 0 oracles, with 28 `beliefs` probes reading real history on each
+([report](docs/benchmarks/2026-10-16-n6-delta-beliefs.md)).
+
+The P1 E2 rerun after gbrain W5 is preregistered ([preregistration](docs/benchmarks/2026-10-16-p1-e2-w5-rerun-preregistration.md)):
+Opus 5.5, Sonnet 5.5 and GPT-6.1 Sol on phrasing set C's joins-only ledger, seeds 11, 13 and 17, run by the custodian
+after this release with a $8 cap. It reports the late-closure count and checks that every late closure is disclosed as
+an upper bound. `temporal-contradictions.ts` gains that count, `late_upper_bound`, with a test. No held-out text is in
+this repository. Measured through `--gbrain`; the pin is unchanged. Cost: $0.
 
 ## [0.10.112] - 2026-10-16
 

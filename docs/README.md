@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.113, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.114, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -118,7 +118,7 @@ gap does not isolate the effect of a graph alone.
 |---|---|
 | Does gbrain answer "where did she work on that date?" and "when did I last see him?" from valid time, not from when a note was written? | [September 30 temporal and as-of check (N3)](benchmarks/2026-09-30-n3-temporal-asof.md) |
 | Does a nickname, handle or former name reach the right person without merging two people who share a name? | [September 30 entity-resolution check (N4)](benchmarks/2026-09-30-n4-entity-resolution.md) |
-| Can an agent-facing caller read private pages, held Takes, private Facts or another source through any read operation? | [September 30 visibility leak fuzz (N6)](benchmarks/2026-09-30-n6-visibility-fuzz.md), [October 6 on Postgres over the real HTTP transport](benchmarks/2026-10-06-n6-postgres-http.md) ([preregistration](benchmarks/2026-10-06-n6-postgres-http-preregistration.md)), [October 15 remote `find_contradictions` (D9)](benchmarks/2026-10-15-d9-find-contradictions.md): on v0.60.250.0, scoped callers get stored contradiction findings with 0 leaks across 540 `find_contradictions` probes, and a forced probe that skips the live re-read leaks 288, [October 16 recorded-time reads (`known_as_of`)](benchmarks/2026-10-16-n6-known-as-of.md): on v0.60.267.0, 0 leaks and 0 oracles in process and over Postgres HTTP, with 56 and 90 probes reading real history |
+| Can an agent-facing caller read private pages, held Takes, private Facts or another source through any read operation? | [September 30 visibility leak fuzz (N6)](benchmarks/2026-09-30-n6-visibility-fuzz.md), [October 6 on Postgres over the real HTTP transport](benchmarks/2026-10-06-n6-postgres-http.md) ([preregistration](benchmarks/2026-10-06-n6-postgres-http-preregistration.md)), [October 15 remote `find_contradictions` (D9)](benchmarks/2026-10-15-d9-find-contradictions.md): on v0.60.250.0, scoped callers get stored contradiction findings with 0 leaks across 540 `find_contradictions` probes, and a forced probe that skips the live re-read leaks 288, [October 16 recorded-time reads (`known_as_of`)](benchmarks/2026-10-16-n6-known-as-of.md): on v0.60.267.0, 0 leaks and 0 oracles in process and over Postgres HTTP, with 56 and 90 probes reading real history, [October 16 weekly belief diff (`delta {beliefs: true}`)](benchmarks/2026-10-16-n6-delta-beliefs.md): on v0.60.273.0, 0 leaks and 0 oracles in process and over Postgres HTTP, with 28 probes each reading real history, after 12 held-Take leaks found on the branch were fixed before release |
 | Does proactive recall keep private pages away from remote callers and the turn block, as a CI gate? | [October 6 N8 privacy gate](benchmarks/2026-10-06-n8-privacy-gate.md) ([preregistration](benchmarks/2026-10-06-n8-privacy-gate-preregistration.md)) |
 | Which models can gbrain's contradiction judge run on, and what is the cheapest that passes N2? | [October 6 N2 judges on current models](benchmarks/2026-10-06-n2-judges.md) ([preregistration](benchmarks/2026-10-06-n2-judges-preregistration.md)) |
 | Does F5 turn owner phrases like "Dana's freight account" into the right account links, precisely enough to ship? | [October 14 F5 on messy-company-v1](benchmarks/2026-10-14-f5-messy-company/README.md): FAIL, 6 of 6 links correct but too few to pass (Wilson [0.610, 1.000]; recall 6 of 124) |
@@ -220,8 +220,14 @@ procedure with documented missing pieces; it is not the current refresh command.
 ### 2026-10-17: Take grading
 
 New row linking [take grading](benchmarks/2026-10-16-take-grading.md), mirrored from gbrain #6882: gpt-6.1-sol
-qualifies as the take-grading judge; Opus 5.5 and Sonnet 5.5 do not. gbrain-evals v0.10.113 (the opening names it; was
-v0.10.112).
+qualifies as the take-grading judge; Opus 5.5 and Sonnet 5.5 do not. gbrain-evals v0.10.114 (the opening names it; was
+v0.10.113).
+
+### 2026-10-16: N6 on the weekly belief diff
+
+The visibility row links [N6 with gbrain's weekly belief diff](benchmarks/2026-10-16-n6-delta-beliefs.md) at the
+v0.60.273.0 release: 0 leaks and 0 oracles in process and over Postgres HTTP, with real-history signal on both.
+gbrain-evals v0.10.113 (the opening names it; was v0.10.112).
 
 ### 2026-10-16: N6 on recorded-time reads
 
