@@ -125,4 +125,4 @@ W10 renders per-sentence provenance and undoes one refreshed block by an inverse
 
 ## Changes
 
-None.
+- 2026-10-17, after freezing, before any count: **decided on prior, with no owner data.** The owner declined to supply production-brain counts, so queries A and B were not run and r_obs is unknown. The rule above is unchanged. On the prior, W9 is **not built in V1** and W10 is **dropped with it**: the build threshold is 1,387 reads per changed page-day, and nothing known about a personal brain's read rate comes close. Reopen if aggregate telemetry from a hosted brain shows r_obs at or above the threshold, measured with queries A and B or their hosted equivalents. Verdict: [`2026-10-17-living-pages/verdict.json`](2026-10-17-living-pages/verdict.json).
