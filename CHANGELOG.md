@@ -2,6 +2,12 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.119] - 2026-10-17
+
+### Living pages (gbrain W9) decided on prior: not built in V1, W10 dropped with it
+
+- **Verdict** ([file](docs/benchmarks/2026-10-17-living-pages/verdict.json); the [preregistration](docs/benchmarks/2026-10-17-living-pages-preregistration.md) records it under Changes). No owner data: the owner declined to supply production-brain counts, so the observed ratio is unknown and the decision is taken on the prior. The build threshold is 1,387 reads per changed page-day (0.5 review minutes at $2.00 a minute, $0.017 a refresh), and nothing known about a personal brain's read rate comes close, so W9 is not built in V1 and W10 (provenance render and block undo) is dropped with it. The preregistered rule is unchanged. Reopen if aggregate telemetry from a hosted brain shows the observed ratio at or above the threshold. Cost: $0.
+
 ## [0.10.118] - 2026-10-17
 
 ### Living pages (gbrain wave 4b W9): the read/write break-even, preregistered before the owner's counts
