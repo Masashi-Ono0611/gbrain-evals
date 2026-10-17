@@ -2,6 +2,14 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.115] - 2026-10-17
+
+### Take grading shipped in gbrain v0.60.282.0 (#6882), and the auto-resolve follow-ups
+
+- **Shipped**: gbrain #6882 merged as `4e698e9d9` (v0.60.282.0). `GRADE_TAKES_MEASURED_MODELS` is `openai:gpt-6.1-sol` for prompt `hybrid-evidence-v2`, and auto-resolve stays unwired. The [take-grading report](docs/benchmarks/2026-10-16-take-grading.md) and its `verdict.json` (`gbrain_shipped_in`) name the release.
+- **Follow-ups for auto-resolve** (decided October 16, recorded in the report): auto-resolve is a later opt-in PR, built only after a real sample of about 300 graded takes passes. A take whose numeric target was missed is never auto-applied, neither as `partial` nor as `incorrect`; it is held for manual review. The measured judge is scoped to its prompt version. A thinking setting or larger output ceiling for the judge, and a parser tolerance, are proposed for the next preregistration.
+- Measured through `--gbrain`; the pin is unchanged. Cost: $0.
+
 ## [0.10.114] - 2026-10-17
 
 ### Take grading (gbrain wave 4b W6, #6882)

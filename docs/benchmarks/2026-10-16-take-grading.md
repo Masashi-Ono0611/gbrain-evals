@@ -2,7 +2,7 @@
 
 **Measured October 16, 2026, at gbrain [`d99b84694`](https://github.com/garrytan/gbrain/commit/d99b84694e559333051b4944c5c3d2428df4c8df) (branch `capy/w6-take-grading`, wave 4b W6, judge prompt `hybrid-evidence-v2`), the commit that froze the [preregistration](2026-10-16-take-grading-preregistration.md).**
 
-**Ships with gbrain [#6882](https://github.com/garrytan/gbrain/pull/6882)** (the version and merge commit are filled in [`verdict.json`](2026-10-16-take-grading/verdict.json) when it lands).
+**Shipped in gbrain v0.60.282.0** ([#6882](https://github.com/garrytan/gbrain/pull/6882), merge commit `4e698e9d9`, recorded in [`verdict.json`](2026-10-16-take-grading/verdict.json)).
 
 [gbrain](https://github.com/garrytan/gbrain) keeps a person's forecasting takes ("Acme-example will reach $5M ARR by the end of 2024") as rows on their pages. The dream cycle's `grade_takes` phase walks unresolved takes old enough to have played out, retrieves dated evidence from the brain, and asks a chat model for a verdict (`correct`, `incorrect`, `partial` or `unresolvable`) with a confidence. Auto-resolve, which would write a verdict onto the take, is off. This experiment measures what turning it on would risk: among the verdicts the rule would apply (not `unresolvable`, confidence at least 0.95), how many are wrong?
 

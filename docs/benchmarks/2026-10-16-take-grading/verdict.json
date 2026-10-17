@@ -5,7 +5,12 @@
   "gbrain_commit": "d99b84694e559333051b4944c5c3d2428df4c8df",
   "gbrain_branch": "capy/w6-take-grading",
   "gbrain_pull_request": "https://github.com/garrytan/gbrain/pull/6882",
-  "gbrain_shipped_in": null,
+  "gbrain_shipped_in": {
+    "version": "0.60.282.0",
+    "merge_commit": "4e698e9d990712be0a184255d881dd052b16c5c9",
+    "pull_request": "https://github.com/garrytan/gbrain/pull/6882",
+    "note": "merged 2026-10-17; GRADE_TAKES_MEASURED_MODELS is openai:gpt-6.1-sol for prompt hybrid-evidence-v2 (GRADE_TAKES_MEASURED_PROMPT_VERSION); auto-resolve stays unwired"
+  },
   "harness": "gbrain evals/take-grading/ at the recorded commit (committed, not uncommitted)",
   "harness_sha256": "a6546fa3b4f896e9a605b5d1411b65410c2482194717e09930f375d770f058f7",
   "prompt_version": "hybrid-evidence-v2",
