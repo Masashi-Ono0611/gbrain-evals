@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.120 (`VERSION`) |
+| This repository | gbrain-evals v0.10.121 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except three: the Cat 40 Hard row's, which shipped after it
@@ -305,6 +305,12 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-17: W11 confirms gbrain W4 on sealed material; repository row names v0.10.121
+
+gbrain-evals v0.10.121 records the custodian's W11 run on gbrain v0.60.289.0: the weekly belief diff scores set-F1 1.0
+on three fresh seeds with fresh wording, with exact before and after on 28 of 28 re-scores and correct cause and
+evidence on 108 of 108 changes. The repository row names v0.10.121 (was v0.10.120).
 
 ### 2026-10-17: W11 sealed-confirmation preregistration for gbrain W4; repository row names v0.10.120
 

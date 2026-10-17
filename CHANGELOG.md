@@ -2,6 +2,14 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.121] - 2026-10-17
+
+### W11: gbrain W4 (weekly belief diff) confirmed on sealed material
+
+- **Held-out verdict** ([file](docs/benchmarks/2026-10-05-heldout-verdicts/w11-w4-heldout-2026-10-17.json), [preregistration](docs/benchmarks/2026-10-17-w11-w4-sealed-confirmation-preregistration.md), frozen in 0.10.120 before the material was minted). The custodian ran gbrain release v0.60.289.0 (`15b159514`) with harness `60e2b21f3` on three fresh seeds and a fresh phrasing set minted in custody on the Dyson Sphere (set `w11-cust-2026-10-17-a`, SHA-256 `31b5f86d…`), PGLite only. Every gate passes. G1: set-F1 1.0 on each of the three seeds (bar 0.95). G2: 28 of 28 gold re-scores reported with their exact before and after, 0 wrong or missing, 0 extra. G3 and G4: cause and evidence pointer correct on 108 of 108 reported changes. So `delta {beliefs: true}` and `gbrain beliefs` keep shipping as they are, and W11 closes.
+- **Tokens, reported, not gated**: the weekly belief diff runs 238 to 507 tokens against 238 to 390 for `delta`'s page list over the same week (5 to 8 pages).
+- **Records**: the verdict index gains the file. The phrasing, the receipt and the brains stay in custody; the custodian checked that the verdict quotes no held-out line. No harness errors, no reruns. Cost: $0, no model calls (cap $1).
+
 ## [0.10.120] - 2026-10-17
 
 ### W11: sealed confirmation of gbrain W4 (weekly belief diff), preregistered
