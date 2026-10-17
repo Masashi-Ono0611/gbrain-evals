@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.115, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.116, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -216,6 +216,12 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-17: P1 E2 rerun on W5
+
+The [held-out program](benchmarks/2026-10-05-heldout-program.md) records the P1 E2 rerun on gbrain v0.60.273.0 (W5):
+C1 and C2 pass, so every late closure is disclosed as an upper bound and the three counted models keep `apply`.
+gbrain-evals v0.10.116 (the opening names it; was v0.10.115).
 
 ### 2026-10-17: Take grading shipped
 

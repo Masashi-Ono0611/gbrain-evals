@@ -10,6 +10,7 @@ published. Comparators are named by kind only.
 | `p1-e1-r2-heldout-2026-10-04.json` | P1 temporal edges E1, round 2 (set C) | pass |
 | `p1-e1-sete-2026-10-05.json` | P1 temporal edges E1 on a third phrasing set (second custodian) | fail (traps 89/105; lexicon misses the set's join, leave and move cues) |
 | `p1-e2-r2-heldout-2026-10-04.json` | P1 contradiction phase E2, five judge models | all certified for apply |
+| `p1-e2-w5-heldout-2026-10-16.json` | P1 E2 rerun on gbrain W5 (v0.60.273.0): upper-bound disclosure of late closures, three counted models | pass (C1 and C2; late closures 48 of 74 to 75 per run, reported) |
 | `p1-e3-r2-heldout-2026-10-04.json` | P1 ingestion to answer E3 | report-only |
 | `p2-e1-heldout-2026-10-06.json` | P2 hub dampening E1, sealed hub-world seeds 2 and 3, all 12 cells | fail (rivals win on concept; hub-as-answer −10.0 to −36.2) |
 | `p2-e2-heldout-2026-10-04.json` | P2 date-grounded extraction E2, sealed LoCoMo | pass (unresolved relative dates 8.95% → 2.05%) |
