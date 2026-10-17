@@ -2,6 +2,13 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.118] - 2026-10-17
+
+### Living pages (gbrain wave 4b W9): the read/write break-even, preregistered before the owner's counts
+
+- **Preregistration** ([doc](docs/benchmarks/2026-10-17-living-pages-preregistration.md)). The plan builds living pages only if the cheaper designs lose, and the answer turns on reads per change. From pinned questions, the closest measured analogue (C4 run 3, Sonnet 5.5), a refreshed page is cheaper per correct answer than equal-token anchored retrieval above **8.2** reads per change with the cheapest measured refresh and free review, **23.2** with the plan's $0.017 living-page refresh, and **1,387** once a proposal costs 0.5 review minutes at $2.00 a minute (the build threshold; the doc tabulates 194 to 13,663 across review times and prices). The owner's ratio comes from two read-only aggregate queries over 30 days: operation counts from `mcp_request_log` (frozen read set) over changed page-days from `page_versions` and new pages. W9 is built only at or above 1,387; otherwise it and W10 (provenance render and block undo, which need refreshed blocks) are dropped. If W9 is built, the paid `living-pages` category (capped at $40) replaces the priors with measured review minutes and costs before any default.
+- **Classifier**: `eval/runner/living-pages-breakeven.ts` turns the two query results into the decision, with a test that pins the thresholds; `preregistrations.d/living-pages.json` registers the experiment. No owner data is in this repository. Cost: $0.
+
 ## [0.10.117] - 2026-10-17
 
 ### Forecast journal (gbrain wave 4b W7, #6886), shipped in v0.60.286.0

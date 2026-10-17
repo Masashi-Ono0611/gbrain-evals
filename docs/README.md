@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.117, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.118, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -217,6 +217,12 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-17: Living-pages preregistration
+
+The [living-pages preregistration](benchmarks/2026-10-17-living-pages-preregistration.md) fixes the read/write
+break-even that decides whether gbrain builds W9, before the owner's counts are known. gbrain-evals v0.10.118 (the
+opening names it; was v0.10.117).
 
 ### 2026-10-17: Forecast journal
 
