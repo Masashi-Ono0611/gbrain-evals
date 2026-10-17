@@ -1395,6 +1395,8 @@ export const RUNNER_HELPERS: Readonly<Record<string, RunnerHelper>> = {
   'import-embedded.ts': { role: 'embedding-required import wrapper' },
   'judge.ts': { role: 'shared rubric judge' },
   'lifecycle-report.ts': { role: 'Markdown summary of lifecycle receipts', part_of: 'memory-lifecycle' },
+  'living-pages-breakeven.ts': { role: 'keyless W9 build decision: the read/write break-even and the classification of the owner\'s mcp_request_log counts (docs/benchmarks/2026-10-17-living-pages-preregistration.md)' },
+  'living-pages-csv.ts': { role: 'parser for the living-pages query A table (CSV, tab or psql output)' },
   'llm-budget.ts': { role: 'shared LLM concurrency bucket' },
   'metering-proxy.ts': { role: 'fail-closed provider metering proxy: in-process for Cat 40 and other gbrain-arm callers, lease mode for open-source memory shootout cells (docs/plans/2026-10-05-oss-memory-shootout/PLAN.md)' },
   'longmemeval-aggregate.ts': { role: 'LongMemEval receipt aggregator', part_of: 'longmemeval-retrieval' },
