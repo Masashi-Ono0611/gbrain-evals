@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.116 (`VERSION`) |
+| This repository | gbrain-evals v0.10.117 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except three: the Cat 40 Hard row's, which shipped after it
@@ -81,6 +81,7 @@ save, find, update and forget what it knows. The parts that matter for an agent:
 | Malformed facts/takes tables repaired by a model without a wrong cell (held-out set, model tier only) | **96.0%** repaired, **0** wrong cells (gpt-6.1-sol and claude-opus-5-5, the measured defaults); every other case held | v0.60.102.0 ([`5b58910`](https://github.com/garrytan/gbrain/commit/5b5891069)) | [Fence repair Tier 3](docs/benchmarks/2026-10-06-fence-repair-tier3.md) |
 | A file whose frontmatter `slug:` names another page: duplicate to merge, stray line to delete, or a case for a person (model judgment) | **0** harmful answers in 432 pair runs (no duplicate split, no merge of two different things); true duplicates recognised **92.0%** (Opus 5.5), 85.3% (gpt-6.1-sol), 80.0% (Sonnet 5.5), the rest deferred to a person | gbrain #6377 (`ac6e0868`) | [Slug-conflict judgment](docs/benchmarks/2026-10-09-content-repair-judgment.md) |
 | A forecasting take graded by a model, among verdicts confident enough to apply (≥ 0.95) | **0** wrong in 496 applied verdicts by gpt-6.1-sol (upper bound 0.6%, bar 1%), which resolved 99.2% of resolvable takes and held back on all 250 unresolvable ones; Opus 5.5 and Sonnet 5.5 rarely reach 0.95 (2 and 121 applied, Sonnet 1 wrong) | gbrain #6882 (`d99b84694`) | [Take grading](docs/benchmarks/2026-10-16-take-grading.md) |
+| A forecast journal over synthetic holders of known skill (private, trusted local only) | Shrunk accuracy ranks holders in their true order, median Spearman ρ **0.905** (bar 0.80); who-was-right set-F1 **1.000**; every open, overdue and undated prediction counted exactly; **8/8** remote probes see none of it | gbrain #6886 (`65ed40ec6`), v0.60.286.0 | [Forecast journal](docs/benchmarks/2026-10-17-forecast-journal.md) |
 | Useful material kept when a session becomes a memory page | **88.1%** judged (judge calibration awaiting a person's review); 74.9% with quoted evidence | Cat 35 run | [Cat 35](docs/benchmarks/2026-08-16-brainbench-cat35-transcript-distill.md) |
 
 All 29 reproductions in the [bug ledger](docs/benchmarks/2026-10-01-wave-bugs.md) pass at `77cf8e111`, including
@@ -304,6 +305,13 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-17: Forecast-journal row; repository row names v0.10.117
+
+gbrain-evals v0.10.117 mirrors the $0 forecast-journal gate for gbrain #6886 (wave 4b W7, shipped in v0.60.286.0): on
+synthetic holders of known skill the journal ranks them in their true order (median ρ 0.905), counts every open
+prediction exactly, and stays invisible to remote callers. New row after the take-grading row. The repository row names
+v0.10.117 (was v0.10.116).
 
 ### 2026-10-17: P1 E2 rerun on gbrain W5; repository row names v0.10.116
 

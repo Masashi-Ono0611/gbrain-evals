@@ -2,6 +2,14 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.117] - 2026-10-17
+
+### Forecast journal (gbrain wave 4b W7, #6886), shipped in v0.60.286.0
+
+- **Report** ([doc](docs/benchmarks/2026-10-17-forecast-journal.md), [preregistration](docs/benchmarks/2026-10-17-forecast-journal-preregistration.md), frozen in gbrain `65ed40ec6` before any scored run). The $0 synthetic gate for the private forecast journal: 20 cohorts of placeholder holders with known skill, 5,622 predictions, in-memory PGLite. It passes every criterion. Shrunk accuracy ranks holders in their true order (median Spearman ρ 0.905, bar 0.80). Who-was-right set-F1 is 1.000. Journal totals, per-holder counts, `low_n` flags and uncertified prediction-time labels match exactly. All 8 remote probes pass: remote `takes_list`, `takes_search` and `takes_scorecard {}` are unchanged and carry no journal field, and remote `group_by` or `min_n` is refused with `scorecard_group_by_local_only`. Set-F1 and the exact counts are a ceiling (regression guards); ρ is a diagnostic of shrinkage, not a ranking of real people.
+- **Shipped**: gbrain #6886 merged as `d28cbaeee` (v0.60.286.0). A rerun at that commit gives identical results; its `summary.json` and `summary.md` and a `verdict.json` are in `docs/benchmarks/2026-10-17-forecast-journal/`. `README.md` and `docs/README.md` gain the row.
+- Measured through gbrain's own harness; the pin is unchanged. Cost: $0.
+
 ## [0.10.116] - 2026-10-17
 
 ### P1 E2 rerun on gbrain W5: late closures disclosed as upper bounds, apply certification holds
