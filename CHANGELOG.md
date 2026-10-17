@@ -2,6 +2,26 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.113] - 2026-10-16
+
+### N6 on gbrain's weekly belief diff (delta beliefs) at the v0.60.273.0 release, and the P1 E2 rerun preregistration for W5
+
+gbrain v0.60.273.0 (#6866, wave 4a) adds `beliefs: true` to `delta`: each belief that changed in a window, with its value
+before and after, the event that caused it and a pointer to the evidence, read from the belief ledger. N6 now fuzzes it
+with the ledger on before seeding, records the trusted and remote outcome of every `beliefs` probe, counts the probes
+that read real history with signal, and fails the HTTP verdict when a build exposes `beliefs` and none do. The oracle
+view masks `beliefs.until`, the request instant. On the branch, N6 found 12 content leaks in process and over Postgres
+HTTP (held Takes shown to remote callers, as revisions and in a new page's creation body), fixed before review. At the
+release, from a clean checkout of the tag: Postgres over HTTP passes 155 of 155 mandatory cells with 0 leaks and 0
+oracles, and in process on PGLite 0 leaks and 0 oracles, with 28 `beliefs` probes reading real history on each
+([report](docs/benchmarks/2026-10-16-n6-delta-beliefs.md)).
+
+The P1 E2 rerun after gbrain W5 is preregistered ([preregistration](docs/benchmarks/2026-10-16-p1-e2-w5-rerun-preregistration.md)):
+Opus 5.5, Sonnet 5.5 and GPT-6.1 Sol on phrasing set C's joins-only ledger, seeds 11, 13 and 17, run by the custodian
+after this release with a $8 cap. It reports the late-closure count and checks that every late closure is disclosed as
+an upper bound. `temporal-contradictions.ts` gains that count, `late_upper_bound`, with a test. No held-out text is in
+this repository. Measured through `--gbrain`; the pin is unchanged. Cost: $0.
+
 ## [0.10.112] - 2026-10-16
 
 ### N6 with gbrain's recorded-time reads (known_as_of), at the v0.60.267.0 release
