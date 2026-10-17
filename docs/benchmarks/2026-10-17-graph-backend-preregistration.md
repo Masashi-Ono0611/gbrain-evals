@@ -188,4 +188,29 @@ for arm D if it runs), owner tag `gbra123`, under 20 USD of VM time, destroyed w
 
 ## Amendments
 
-None yet.
+### 2026-10-17, before any counted cell: adapter details forced by HydraDB's subset and image availability
+
+Found while building the adapter against the HydraDB image, on 5 uncounted smoke start pages (no counted or calibration
+cell had run):
+
+1. **Incoming walks use reversed relationship types.** HydraDB rejects an incoming pattern in variable-length `MATCH`
+   ("variable-length MATCH requires a fixed source id") and in batched `UNWIND` reads ("UNWIND source requires an id
+   field"); only a single-hop, single-seed incoming `MATCH` works. So the projection adds a reversed relationship for
+   every link type (`R_<TYPE>`, to -> from) and `LINK_R`, and direction `in` walks those outgoing. `both` is the
+   union of forward and reversed types. The projection therefore holds four relationships per link (forward and
+   reversed, typed and catch-all).
+2. **Relationship batches carry no properties.** HydraDB rejects properties on a batched relationship `CREATE` ("UNWIND
+   batch requires one fixed relationship type without properties"), so no `id` property is written; the edge batch
+   deduplicates on (src, dst, type).
+3. **Per-depth strategy for `traversePathsDetailed`.** Strategy (1) also applies to `out` and `in` path walks
+   (walk with `*d..d` over `LINK`, `LINK_R` or the filtered type, then batched edge reads level by level); `both`
+   stays layer by layer. Calibration picks per call kind (`traverseGraph`, `traversePathsDetailed`) as written.
+4. **HydraDB runs with its indexer.** Arm C runs `graph-node` plus `graph-indexer` (both from the same image) so
+   reads use published CSC index generations; counted calls start only after the indexer has published a generation
+   for every relationship with its full edge count. Server settings raised from defaults:
+   `GRAPH_MAX_QUERY_SCAN_EDGES=1000000000`, `GRAPH_MAX_GRAPHBLAS_BYTES=4294967296`. Everything else is default.
+   The indexer's memory counts toward arm C.
+5. **MinIO image.** The official `minio/minio` images are no longer pullable (Docker Hub denies the pull, quay.io returns
+   401, dl.min.io returns 410). MinIO runs from `bitnamilegacy/minio:2025.7.23`, the same MinIO release date HydraDB's
+   own scripts pin (`RELEASE.2025-07-23T15-54-02Z`).
+6. **Receipt digests** are the first 16 hex characters of SHA-1 over the canonical result.
