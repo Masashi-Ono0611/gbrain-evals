@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.115 (`VERSION`) |
+| This repository | gbrain-evals v0.10.116 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except three: the Cat 40 Hard row's, which shipped after it
@@ -304,6 +304,12 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-17: P1 E2 rerun on gbrain W5; repository row names v0.10.116
+
+gbrain-evals v0.10.116 records the custodian's P1 E2 rerun on gbrain v0.60.273.0 (W5): every late closure is disclosed
+as an upper bound, and Opus 5.5, Sonnet 5.5 and GPT-6.1 Sol keep `apply` (0 wrong and 0 undated closures, as-of
+exact 0.392 to 0.397). The repository row names v0.10.116 (was v0.10.115).
 
 ### 2026-10-17: Take grading shipped in gbrain v0.60.282.0; repository row names v0.10.115
 

@@ -2,6 +2,14 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.116] - 2026-10-17
+
+### P1 E2 rerun on gbrain W5: late closures disclosed as upper bounds, apply certification holds
+
+- **Held-out verdict** ([file](docs/benchmarks/2026-10-05-heldout-verdicts/p1-e2-w5-heldout-2026-10-16.json), [preregistration](docs/benchmarks/2026-10-16-p1-e2-w5-rerun-preregistration.md), frozen in 0.10.113 before the first cell). The custodian ran gbrain `6c3e6fe05` (v0.60.273.0, wave 4a W4 and W5) with harness `3a9360b86` on phrasing set C's joins-only ledger, whose SHA-256 matches the E2 attempt-2 receipt: `claude-opus-5-5`, `claude-sonnet-5-5` and `gpt-6.1-sol`, seeds 11, 13 and 17, 27 of 27 runs. C1 passes: every late closure is disclosed as an upper bound (`late_upper_bound` equals `late` in every run). C2 passes for all three models: 0 wrong and 0 undated closures in every run, as-of exact 0.392 to 0.397 against the 0.361 floor. So the three models keep `apply` on the W5 build.
+- **Late closures, reported, not gated**: 48 of 75 per run (48 of 74 in one Sonnet run, where one judge error left a proposal unapplied; no harness errors, no reruns). W5's build applies more closures per run than E2's (74 to 75 against 66), so this is not comparable with E2's 41 of 66.
+- **Records**: the verdict index and the held-out program's P1 section and scorecard gain the rerun. Row-level output stays in custody. Cost: $2.40 of the $8 cap, on the custodian's eval ledger.
+
 ## [0.10.115] - 2026-10-17
 
 ### Take grading shipped in gbrain v0.60.282.0 (#6882), and the auto-resolve follow-ups
