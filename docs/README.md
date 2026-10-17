@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.113, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.114, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -95,6 +95,7 @@ gap does not isolate the effect of a graph alone.
 | Did gbrain's takes-bootstrap classifier (facts, takes, bets and hunches from a person's pages) pass its graduation bar for running on autopilot? | [October 4 graduation verdict, mirrored from gbrain #6013](benchmarks/2026-10-04-takes-bootstrap-verdict.md) |
 | When gbrain asks a chat model to repair a malformed facts or takes table (Tier 3), which models write it correctly? | [October 6 Tier 3 fence repair, two rounds](benchmarks/2026-10-06-fence-repair-tier3.md) ([preregistration](benchmarks/2026-10-06-fence-repair-tier3-preregistration.md), [amendment 1](benchmarks/2026-10-06-fence-repair-tier3-amendment-1.md)): after the round 1 fixes, `gpt-6.1-sol`, `claude-opus-5-5` and `claude-fable-5-1` write no wrong cell on a held-out set and qualify; `claude-opus-4-7` and `claude-sonnet-5-5` do not |
 | When a file's frontmatter `slug:` names another page, which models can tell a duplicate page (merge, naming the canonical) from a stray line (delete) without ever giving a harmful answer? | [October 9 slug-conflict judgment, mirrored from gbrain #6377](benchmarks/2026-10-09-content-repair-judgment.md) ([preregistration](benchmarks/2026-10-09-content-repair-judgment-preregistration.md)): `claude-opus-5-5`, `gpt-6.1-sol` and `claude-sonnet-5-5` give no harmful answer in 432 pair runs and qualify; Opus 5.5 recognises the most true duplicates (92.0%), the others defer more |
+| Which judge models may grade a forecasting take, among the verdicts confident enough for gbrain's auto-resolve rule to apply? | [October 16 take grading, mirrored from gbrain #6882](benchmarks/2026-10-16-take-grading.md) ([preregistration](benchmarks/2026-10-16-take-grading-preregistration.md)): `gpt-6.1-sol` applies 496 verdicts with none wrong (upper bound 0.6%) and qualifies; `claude-opus-5-5` matches every gold verdict but is rarely confident enough to apply, `claude-sonnet-5-5` applies one wrong verdict |
 | What did gbrain fix wave 9 cost on fact inserts, and can takes-quality receipts from before and after it be compared? | [October 5 fix wave 9 mirror, from gbrain #6111](benchmarks/2026-10-05-fix-wave-9-mirror.md): pinning `search_path` makes bulk fact inserts about 10-13% slower with fingerprints unchanged; takes-quality protocol 1 and 2 receipts are dissimilar inputs |
 | Can a skill improve on held-out tasks, and can the judge detect cheating? | [Skill optimization](benchmarks/2026-06-03-skillopt.md) |
 | Can the system distinguish kinds of claims and sensible confidence? | [Calibration and proposed takes](benchmarks/2026-05-18-brainbench-cat14-cat15-calibration.md) (the advice result was retracted on September 28, 2026), [October 2 blind rerun of the advice test](benchmarks/2026-10-02-cat14-rerun.md) |
@@ -215,6 +216,12 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-17: Take grading
+
+New row linking [take grading](benchmarks/2026-10-16-take-grading.md), mirrored from gbrain #6882: gpt-6.1-sol
+qualifies as the take-grading judge; Opus 5.5 and Sonnet 5.5 do not. gbrain-evals v0.10.114 (the opening names it; was
+v0.10.113).
 
 ### 2026-10-16: N6 on the weekly belief diff
 

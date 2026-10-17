@@ -2,6 +2,13 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.114] - 2026-10-17
+
+### Take grading (gbrain wave 4b W6, #6882)
+
+- **Report** ([doc](docs/benchmarks/2026-10-16-take-grading.md), [preregistration](docs/benchmarks/2026-10-16-take-grading-preregistration.md), frozen in gbrain `d99b84694` before any counted run). 790 counted synthetic forecasting takes with dated evidence and placeholder names (750 in the rule: 500 resolvable, 250 the evidence cannot settle; 40 exploratory), one run per model through gbrain's production evidence block, judge call and parser, $9.25 in all. A verdict counts as applied when it is not `unresolvable` and its confidence is at least 0.95; a model qualifies when the one-sided 95% upper bound on wrong applied verdicts is at most 1%. `gpt-6.1-sol` applied 496 with none wrong (0.6%), resolving 99.2% of resolvable takes and holding back on every unresolvable one; it qualifies, and gbrain's `GRADE_TAKES_MEASURED_MODELS` lists it. `claude-opus-5-5` gave the gold verdict on every resolvable take but applied 2; `claude-sonnet-5-5` applied 121 with one wrong (a real-world proposition graded from its own knowledge). On the exploratory `partial` set every model calls a missed target `incorrect`, a policy question left open; 12 of 18 unparsed answers spent the judge's 600-token ceiling on thinking.
+- **Records**: fixtures, dev-round and counted rows with each model's reasoning, `summary.json`, `summary.md` and `verdict.json` in `docs/benchmarks/2026-10-16-take-grading/`; `README.md` and `docs/README.md` gain the row.
+
 ## [0.10.113] - 2026-10-16
 
 ### N6 on gbrain's weekly belief diff (delta beliefs) at the v0.60.273.0 release, and the P1 E2 rerun preregistration for W5
