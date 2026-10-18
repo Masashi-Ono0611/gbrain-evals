@@ -9,6 +9,14 @@ This records what each gbrain-evals release changed and what its measurements me
 - **Report** ([doc](docs/benchmarks/2026-10-17-graph-backend.md), [preregistration](docs/benchmarks/2026-10-17-graph-backend-preregistration.md), pushed before any timed run). gbrain's `traverseGraph` and `traversePathsDetailed` on seeded fictional power-law graphs of 10,000, 100,000 and 1,000,000 pages: the old recursive CTE (`b1fdcb843`) and the breadth-first walks of #6934 (`fc1121cae58`) on Postgres 17, against HydraDB `fe496d475be` as the walk engine with Postgres hydration. HydraDB returned the same answer as breadth-first Postgres on all 54,842 compared calls, but its warm p95 was 6.28 s against 1.44 s at 100,000 pages and 6.28 s against 3.45 s at 1,000,000. The preregistered rule (2x and 50 ms faster) is not met, so production HydraDB routing is not built. HydraDB is faster on deep `both` edge walks (10.3 s against 3.8 s p95 at depth 3, 1,000,000 pages), flagged as the next Postgres target. The old CTE differs from breadth-first only where its row cap fired.
 - **Harness**: `eval/runner/graph-backend/` (generator, loaders, eval-only HydraDB HTTP adapter, resumable runner, analyzer); receipts per tier under `docs/benchmarks/2026-10-17-graph-backend/`. Cost: $0 in model spend; one Ubicloud `standard-16` for 8 h 24 min (about $4.20).
 
+## [0.10.121] - 2026-10-17
+
+### W11: gbrain W4 (weekly belief diff) confirmed on sealed material
+
+- **Held-out verdict** ([file](docs/benchmarks/2026-10-05-heldout-verdicts/w11-w4-heldout-2026-10-17.json), [preregistration](docs/benchmarks/2026-10-17-w11-w4-sealed-confirmation-preregistration.md), frozen in 0.10.120 before the material was minted). The custodian ran gbrain release v0.60.289.0 (`15b159514`) with harness `60e2b21f3` on three fresh seeds and a fresh phrasing set minted in custody on the Dyson Sphere (set `w11-cust-2026-10-17-a`, SHA-256 `31b5f86d…`), PGLite only. Every gate passes. G1: set-F1 1.0 on each of the three seeds (bar 0.95). G2: 28 of 28 gold re-scores reported with their exact before and after, 0 wrong or missing, 0 extra. G3 and G4: cause and evidence pointer correct on 108 of 108 reported changes. So `delta {beliefs: true}` and `gbrain beliefs` keep shipping as they are, and W11 closes.
+- **Tokens, reported, not gated**: the weekly belief diff runs 238 to 507 tokens against 238 to 390 for `delta`'s page list over the same week (5 to 8 pages).
+- **Records**: the verdict index gains the file. The phrasing, the receipt and the brains stay in custody; the custodian checked that the verdict quotes no held-out line. No harness errors, no reruns. Cost: $0, no model calls (cap $1).
+
 ## [0.10.120] - 2026-10-17
 
 ### W11: sealed confirmation of gbrain W4 (weekly belief diff), preregistered
