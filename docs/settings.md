@@ -158,6 +158,14 @@ reproducible matrix used here.
 
 ## Changelog
 
+### 2026-10-18: Installed pin moves to `f717b1a5b`
+
+gbrain-evals v0.10.123. The installed gbrain commit changed from `77cf8e111` (v0.60.169.0) to `f717b1a5b` (v0.60.299.0).
+The mode-definition note now ends its "same values" range at `77cf8e111`, because two bundle values changed afterwards.
+Every bundle's reranker resolves to Voyage `rerank-3-lite` (v0.60.223.0), and `tokenmax` no longer expands queries
+(v0.60.250.0). The note cites the addenda that checked both changes. The conversation measurements on this page used
+`rerank-2.5`, and the note says so.
+
 ### 2026-10-11: Installed pin moves to `77cf8e111`
 
 gbrain-evals v0.10.76. The installed gbrain commit changed from `8a3eedeac` (v0.60.126.0) to `77cf8e111` (v0.60.169.0),

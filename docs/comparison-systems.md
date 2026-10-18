@@ -230,6 +230,11 @@ before A6b use the former environment variable names. The hashes of every file A
 
 ## Changelog
 
+### 2026-10-18: Re-pin to gbrain `f717b1a5b`
+
+gbrain-evals v0.10.123. The pin named in the opening and in the LongMemEval section changed from `77cf8e111` (v0.60.169.0)
+to `f717b1a5b` (v0.60.299.0). No comparison on this page was rerun, and every row keeps its measurement date and commit.
+
 ### 2026-10-11: Re-pin to gbrain `77cf8e111`; BEAM head-to-head
 
 gbrain-evals v0.10.76. The pin named in the opening changed from `8a3eedeac` (v0.60.126.0) to `77cf8e111` (v0.60.169.0),

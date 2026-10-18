@@ -2,6 +2,27 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.123] - 2026-10-18
+
+### Re-pin to gbrain `f717b1a5b` (v0.60.299.0); N14 at large pages Wave B PR 2 and the switch-on
+
+- **Pin.** gbrain moves from `77cf8e111` (v0.60.169.0) to `f717b1a5b` (v0.60.299.0), which turns `pages.segmented_storage` on by default (#6963) on top of Wave B PR 2 (#6900). The harness follows gbrain where its own docs and commits changed behavior, with no assertion weakened:
+  - Cat 15 uses `extractorOutcome` (#6782).
+  - The tool-bridge fake engine answers get_page's trust read.
+  - N4's presence check follows gbrain's alias convention: declared prose names are stored since v0.60.174.0.
+  - N2 records `total_visible` for scoped callers (D9).
+  - The stubbed hash-embed runs turn off gbrain's OpenAI model discovery (#6607).
+  - The shootout reranker is gbrain's default `rerank-3-lite`.
+  - `@types/cookie-parser` and `@types/cors` match gbrain's `serve-http` imports.
+  - The docs name the new pin and the two search-mode values that changed since `77cf8e111`.
+- **N14** ([report](docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2.md), preregistration Amendment 4, written before any counted run). This was a hermetic run on the default config, PGLite 2 MB to 260 MiB and Postgres 2 MB and 100 MiB to 260 MiB, at $0.
+  - Every stored page is found 40/40, read in windows and exported byte-identical, except the 24 MiB chat (39/40). No response passes 1 MiB, because a trusted-local full read of a segmented page now refuses.
+  - The file import stores up to 128 MiB on PGLite and 256 MiB on Postgres, the 200 MB chat included. `put_page` stays at 24 MiB per call.
+  - A 1 KB append writes one tail segment and re-embeds one chunk (worst native ratio 2.87, held pending Wave B PR 3).
+  - Counted verdict: fail, on the recall-gap rule at 24 MiB (2.5 points), where one needle's sentence is split across two chunks. Safety and the floor pass.
+  - The runner gains binary tiers at the engine ceilings, `--engine postgres`, a size-scaled settle bound, and a lifecycle step (forget, delete, restore, purge, with residue counts).
+- **Bug ledger.** N14-2 closes, because a document over 24 MiB is now written through the file import. N14-5 opens: a purge after `forget_fact`, delete and restore leaves one segment text holding page content until the 1 h segment GC.
+
 ## [0.10.121] - 2026-10-17
 
 ### W11: gbrain W4 (weekly belief diff) confirmed on sealed material

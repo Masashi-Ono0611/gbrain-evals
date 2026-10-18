@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`f717b1a5b`](https://github.com/garrytan/gbrain/tree/f717b1a5b1c71871c5b6530e98bd1d540a38c70d), release v0.60.299.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.121 (`VERSION`) |
+| This repository | gbrain-evals v0.10.123 (`VERSION`) |
 
 This repository installs gbrain v0.60.299.0 (`f717b1a5b`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except `a7cb37b`, the September 29 branch
@@ -309,6 +309,16 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-18: Re-pin to gbrain `f717b1a5b`; repository row names v0.10.123
+
+gbrain-evals v0.10.123. The pinned product row changes from `77cf8e111` (v0.60.169.0) to `f717b1a5b` (v0.60.299.0), which
+turns segmented page storage on by default (large pages Wave B). The paragraph under the table now lists only `a7cb37b` as
+a named commit outside the release's history: the other three it listed shipped before v0.60.299.0. It also says the
+search modes changed after v0.60.169.0, with the Voyage `rerank-3-lite` default and `tokenmax` without expansion, and
+cites the two addenda that checked them. This release also records the N14 run at the switch-on
+([report](docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2.md)). No result row on this page changes. The
+repository row names v0.10.123 (was v0.10.121).
 
 ### 2026-10-17: W11 confirms gbrain W4 on sealed material; repository row names v0.10.121
 
