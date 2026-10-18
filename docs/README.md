@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.120, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.121, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -217,6 +217,12 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-17: W11 verdict
+
+The [held-out verdicts](benchmarks/2026-10-05-heldout-verdicts/README.md) gain W11, the sealed confirmation of gbrain
+W4 (weekly belief diff) on v0.60.289.0: all four gates pass (set-F1 1.0 on every seed). gbrain-evals v0.10.121 (the
+opening names it; was v0.10.120).
 
 ### 2026-10-17: W11 preregistration
 

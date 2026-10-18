@@ -37,6 +37,7 @@ published. Comparators are named by kind only.
 | `p8-quotes-rerun-2026-10-05.json` | P8 quote grounding, second-custodian rescore with the fixed scorer; root causes; sealed-v2 exposure; voided v2 retest | fail stands (16/319) |
 | `p8-quotes-retest2-2026-10-05.json` | P8 quote grounding retest on custodian-written synthetic sessions | pass (5/321, Wilson upper 3.59%) |
 | `p8-surface-heldout-2026-10-05.json` | P8 advertised tool surface (Cat 40 sealed world) | fail in both narrower arms; `full` stays |
+| `w11-w4-heldout-2026-10-17.json` | W11 sealed confirmation of gbrain W4 (weekly belief diff) on v0.60.289.0, three fresh seeds and fresh phrasing (second custodian) | pass (set-F1 1.0 on every seed; 28/28 re-scores exact; cause and evidence 108/108) |
 | `q2-heldout-2026-10-08.json` | Q2 parser gaps (P5 follow-up): grammar gates G1–G6 and C-gates, one campaign (second custodian) | G1 and G3 fail, G2, G4, G5 pass, G6 not run; U34 and U1 confirmed, U25 and U6 reverted |
 
 The table lists the verdicts of plans whose gbrain pull requests have merged (P1, P2, P3, P4, P5, P6, P7, P8, Q2). Each plan's page under [`../2026-10-05-heldout-program/`](../2026-10-05-heldout-program/) explains its verdicts. The [program report](../2026-10-05-heldout-program.md) puts these verdicts beside each plan's preregistration, development results and default.
