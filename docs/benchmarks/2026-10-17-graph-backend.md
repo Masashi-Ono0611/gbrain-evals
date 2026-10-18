@@ -275,6 +275,7 @@ GB_B=$PWD/../gbrain-B bun eval/runner/graph-backend/analyze.ts docs/benchmarks/2
   (`sha256:ac08538c…`); MinIO `bitnamilegacy/minio:2025.7.23` (`sha256:8935e75f…`; the official MinIO images are
   no longer pullable, see the preregistration's amendment).
 - Preregistration: [2026-10-17-graph-backend-preregistration.md](2026-10-17-graph-backend-preregistration.md), pushed
-  before any timed run, with one amendment written before any counted cell.
+  before any timed run, with one amendment written before any counted cell and one written after the runs that
+  records what changed while running (no rule changed).
 - Time and cost: Personal about 2 hours and Team about 7.5 hours on the Capy machine; Company 8 hours 24 minutes on one
   Ubicloud `standard-16` VM, about $4.20 at list price. No model calls.

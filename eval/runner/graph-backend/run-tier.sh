@@ -121,8 +121,8 @@ EOF
       extra=(); [[ $arm == A && $tier != personal ]] && extra=(--starts "${A_STARTS:-100}")
       "$STACK" hydra-stop
       "$STACK" cold pg
-      run_arm "$arm" "$eng" cold --db "$PG_WALK" "${extra[@]}"
-      run_arm "$arm" "$eng" warm --db "$PG_WALK" "${extra[@]}"
+      run_arm "$arm" "$eng" cold --db "$PG_WALK" ${extra[@]+"${extra[@]}"}
+      run_arm "$arm" "$eng" warm --db "$PG_WALK" ${extra[@]+"${extra[@]}"}
       stats "arm-$arm"
       ;;
     arm-BL)
