@@ -56,7 +56,7 @@ import type { GBrainConfig } from 'gbrain/config';
 import {
   N4_DEFAULT_SEED, N4_GENERATOR_VERSION, deriveGold, entityByPage, generateLedger, ledgerFingerprint,
   normName, pageKey, parseWrittenPage, renderPage,
-  type Gold, type Ledger, type LedgerMention, type MentionCaller, type SourceId, type WrittenPage,
+  type Gold, type Ledger, type LedgerMention, type LedgerPage, type MentionCaller, type SourceId, type WrittenPage,
 } from '../generators/n4-entity-gen.ts';
 import { GoldStore } from './evaluator/gold-store.ts';
 import { gbrainPin } from './gbrain-version.ts';
@@ -363,6 +363,24 @@ export interface RunOptions {
   acc?: ProbeAccounting;
 }
 
+/**
+ * Names gbrain's alias convention (docs/designs/ALIAS_CONVENTIONS.md, shipped in v0.60.174.0) stores as a page's own
+ * aliases from the prose lines this generator writes. A line-initial `Goes by X.` or `Formerly X; ...` cue is anchored
+ * to the page and declares X; `Handle: @x` declares nothing, since `handle` is not a label noun. A name under 4
+ * characters is kept only as a short code, which these two cues never declare, and a name equal to the page's own
+ * title or its first word is not stored. A name equal to another page's title is still stored; the convention's
+ * title guard runs when the gazetteer reads the names, not when they are written.
+ */
+export function storedProseNames(page: LedgerPage): string[] {
+  const title = normName(page.title);
+  return page.declarations.flatMap(line => {
+    const name = /^Goes by (.+)\.$/.exec(line)?.[1] ?? /^Formerly (.+?); /.exec(line)?.[1];
+    if (name === undefined || name.length < 4) return [];
+    const norm = normName(name);
+    return norm === title || norm === title.split(' ')[0] ? [] : [name];
+  });
+}
+
 /** Planned probe count for accounting, before anything runs. */
 export function plannedProbes(ledger: Ledger): number {
   const single = ledger.mentions.filter(m => m.caller.sources.length === 1 && !m.caller.remote).length;
@@ -428,14 +446,15 @@ async function runOnEngine(g: Gbrain, engine: BrainEngine, ledger: Ledger, gold:
   const landed = new Map(pageRows.map(r => [`${r.source_id}:${r.slug}`, r.title]));
   const missingPages = ledger.pages.filter(p => landed.get(pageKey(p)) !== p.title).map(pageKey);
   presence.push({ check: 'every ledger page exists with its title', ok: missingPages.length === 0, detail: `${ledger.pages.length - missingPages.length}/${ledger.pages.length} pages${missingPages.length ? `; missing or mistitled: ${missingPages.join(', ')}` : ''}` });
-  const aliasRows = await engine.executeRaw<{ source_id: string; slug: string; alias_norm: string }>(`SELECT source_id, slug, alias_norm FROM page_aliases`);
-  const aliasMismatch = ledger.pages.filter(p => {
-    const want = [...new Set(p.aliases.map(normName))].sort().join('\n');
-    const got = [...new Set(aliasRows.filter(r => r.source_id === p.source && r.slug === p.slug).map(r => r.alias_norm))].sort().join('\n');
-    return want !== got;
-  }).map(pageKey);
+  const aliasRows = await engine.executeRaw<{ source_id: string; slug: string; alias_norm: string; origin: string }>(`SELECT source_id, slug, alias_norm, origin FROM page_aliases`);
+  const aliasSet = (names: string[]) => [...new Set(names)].sort().join('\n');
+  const rowsOf = (p: LedgerPage, frontmatter: boolean) => aliasRows.filter(r => r.source_id === p.source && r.slug === p.slug && (r.origin === 'frontmatter') === frontmatter).map(r => r.alias_norm);
+  const aliasMismatch = ledger.pages.filter(p => aliasSet(rowsOf(p, true)) !== aliasSet(p.aliases.map(normName))).map(pageKey);
+  const derivedMismatch = ledger.pages.filter(p => aliasSet(rowsOf(p, false)) !== aliasSet(storedProseNames(p).map(normName))).map(pageKey);
   const aliasTotal = ledger.pages.reduce((n, p) => n + p.aliases.length, 0);
-  presence.push({ check: 'page_aliases rows equal each page\'s aliases: frontmatter', ok: aliasMismatch.length === 0, detail: `${aliasRows.length} alias rows for ${aliasTotal} written aliases${aliasMismatch.length ? `; mismatched pages: ${aliasMismatch.join(', ')}` : ''}` });
+  const derivedTotal = ledger.pages.reduce((n, p) => n + storedProseNames(p).length, 0);
+  presence.push({ check: 'page_aliases frontmatter rows equal each page\'s aliases: frontmatter', ok: aliasMismatch.length === 0, detail: `${aliasRows.filter(r => r.origin === 'frontmatter').length} frontmatter alias rows for ${aliasTotal} written aliases${aliasMismatch.length ? `; mismatched pages: ${aliasMismatch.join(', ')}` : ''}` });
+  presence.push({ check: 'page_aliases derived rows equal the prose names gbrain\'s alias convention stores', ok: derivedMismatch.length === 0, detail: `${aliasRows.filter(r => r.origin !== 'frontmatter').length} derived alias rows for ${derivedTotal} stored prose names${derivedMismatch.length ? `; mismatched pages: ${derivedMismatch.join(', ')}` : ''}` });
   const listed = await op(g, 'entity_identity_list').handler(trusted, {}) as { identities: Array<{ entity_id: string; canonical: { source_id: string; slug: string } | null; members: Array<{ source_id: string; slug: string }> }> };
   const identityOk = ledger.identities.every(id => {
     const got = listed.identities.find(x => x.entity_id === id.entity_id);
@@ -656,7 +675,7 @@ export function verdictOf(r: Pick<RunResult, 'surfaces' | 'search_floor' | 'iden
 
 export const UNSUPPORTED = [
   'Context-aware disambiguation: the resolver takes only the mention text and a source id, so a namesake cannot be disambiguated by surrounding prose; slug and aliases are the only disambiguators. Namesake mentions are scored as refusals.',
-  'Names declared only in page prose ("Goes by X.", "Handle: @x", "Formerly X; name changed on D.") are not read by the resolver; only `aliases:` frontmatter reaches page_aliases. Those variants are solvable by the oracle and scored as misses, reported separately as prose-or-derived.',
+  'Names declared only in page prose reach page_aliases only as gbrain\'s alias convention (v0.60.174.0+) stores them: "Goes by X." and "Formerly X; name changed on D." do, "Handle: @x" does not. Every prose variant is solvable by the oracle, and all of them are reported separately as prose-or-derived.',
   'entity_identity_list takes no source_id: a slug seeds groups from any source the caller may read (documented in listEntityIdentities), so the same slug in another source returns that source\'s group. Counted as foreign rows, not as a pass/fail target.',
   'The LLM extractor in front of resolve-on-save (extract-conversation-facts) is not run; extractor-shaped facts are fed to resolveExtractedEntitiesForSave directly. The resolver cascade itself has no embedding or LLM stage, so no stage was skipped.',
   'Import-time mention linking in page bodies (by-mention gazetteer, auto-link) and the entity_identity.union link read are not exercised here.',
