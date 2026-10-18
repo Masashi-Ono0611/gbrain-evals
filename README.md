@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.121 (`VERSION`) |
+| This repository | gbrain-evals v0.10.122 (`VERSION`) |
 
 This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except three: the Cat 40 Hard row's, which shipped after it
@@ -307,12 +307,12 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 
 ## Changelog
 
-### 2026-10-18: Graph backend row (HydraDB vs Postgres)
+### 2026-10-18: Graph backend row (HydraDB vs Postgres); repository row names v0.10.122
 
 Current results gains a graph-walk row from the [graph backend benchmark](docs/benchmarks/2026-10-17-graph-backend.md)
 (GBRA-123, preregistered): gbrain's breadth-first walks on Postgres (#6934, `fc1121cae58`) answer faster than HydraDB
 at 10,000, 100,000 and 1,000,000 pages with identical answers, so production HydraDB routing is not built. No existing
-number changed. The repository version is stamped when this change merges.
+number changed. The repository row names v0.10.122 (was v0.10.121).
 
 ### 2026-10-17: W11 confirms gbrain W4 on sealed material; repository row names v0.10.121
 

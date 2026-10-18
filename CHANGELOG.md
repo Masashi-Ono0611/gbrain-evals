@@ -2,7 +2,7 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
-## [Unreleased] - 2026-10-18
+## [0.10.122] - 2026-10-18
 
 ### Graph backend: HydraDB vs Postgres for gbrain's graph walks (GBRA-123)
 

@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.121, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
+gbrain-evals v0.10.122, with gbrain master `77cf8e111` (v0.60.169.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -223,7 +223,7 @@ procedure with documented missing pieces; it is not the current refresh command.
 
 Retrieval experiments gains the [graph backend benchmark](benchmarks/2026-10-17-graph-backend.md) (GBRA-123): HydraDB
 does not beat Postgres breadth-first walks for gbrain's graph calls at any tested size, so no HydraDB routing is built.
-The repository version is stamped when this change merges.
+gbrain-evals v0.10.122 (the opening names it; was v0.10.121).
 
 ### 2026-10-17: W11 verdict
 
