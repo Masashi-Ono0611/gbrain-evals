@@ -214,3 +214,25 @@ cell had run):
    401, dl.min.io returns 410). MinIO runs from `bitnamilegacy/minio:2025.7.23`, the same MinIO release date HydraDB's
    own scripts pin (`RELEASE.2025-07-23T15-54-02Z`).
 6. **Receipt digests** are the first 16 hex characters of SHA-1 over the canonical result.
+
+### 2026-10-18, after the runs: what changed while running (no rule changed)
+
+Results: [2026-10-17-graph-backend.md](2026-10-17-graph-backend.md).
+
+1. **Team and Company projection check.** At the Team tier the per-relationship `count(*)` check exceeded HydraDB's
+   30 s query deadline after the load had finished (log kept as `team/load-hydra-attempt1-count-timeout.log`). The Team
+   projection was reloaded from an empty store, and Team and Company verify the projection by the edge count of each
+   index generation the indexer published (`HYDRA_VERIFY=index`), which must equal the expected count for every
+   relationship before counted calls start. Personal used the `count(*)` check.
+2. **Company calibration.** No calibration ran at Company; it reuses the Team choice (layer-by-layer for both calls),
+   fixed before the counted Team run as written above.
+3. **Company start pages.** 200 (20 hubs + 180), as allowed for a time-bound run. Arm A ran the first 100 at Team and
+   Company, as written.
+4. **Interruption.** The Capy machine restarted at 02:13 UTC during the uncounted Team calibration pass `cal2` of the
+   per-depth strategy. Its partial rows were moved to `team/rows-interrupted-cal2.ndjson.gz` and the pass was rerun
+   after the containers restarted. No counted cell was running.
+5. **Arm D skipped.** The Company projection took 3.5 hours and arm C already missed the rule by 1.8x to 4.4x; a
+   remote object store can only add latency, so the extra run could not change the verdict.
+6. **Throughput timeouts.** Under 8 callers at Team, 158 HydraDB `traverseGraph` calls hit the 30 s cap. They are
+   reported as timeouts. The decision rule's correctness condition is evaluated on the cold and warm passes, where HydraDB
+   had no error or timeout; the verdict is the same either way because the speed condition fails.
