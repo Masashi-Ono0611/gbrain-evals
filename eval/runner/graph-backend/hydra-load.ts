@@ -3,7 +3,10 @@
  * vertex with label Page, then for every link type a forward T_<TYPE> and a
  * reversed R_<TYPE> relationship, plus catch-all LINK and LINK_R. Batches of
  * 1,000 (server cap 1,024); the edge batch deduplicates (src, dst, type), so a
- * retried batch is safe. Verifies each relationship's count afterwards.
+ * retried batch is safe. Verifies each relationship's count afterwards with a
+ * label-anchored count(*), or, with HYDRA_VERIFY=index (Company tier, where the
+ * count scan takes hours), leaves it to run-tier.sh's wait for the indexer to
+ * publish a generation with the expected edge count for every relationship.
  *
  * Usage: bun eval/runner/graph-backend/hydra-load.ts <tier>
  * Env: HYDRA_URL, HYDRA_TOKEN (defaults match run.ts), HYDRA_LOAD_CONCURRENCY.
@@ -54,12 +57,14 @@ for (const { rel, idx, reversed } of rels) {
   console.error(`[hydra-load] ${tier} ${rel} ${idx.length} edges in ${relMs[rel]} ms`);
 }
 const tEdges = performance.now();
-const counts: Record<string, { expected: number; got: number }> = {};
+const counts: Record<string, { expected: number; got: number | null }> = {};
+const countVerify = process.env.HYDRA_VERIFY !== 'index';
 for (const { rel, idx } of rels) {
+  if (!countVerify) { counts[rel] = { expected: idx.length, got: null }; continue; }
   const rows = await retry(() => hydra.query(`MATCH (a:Page)-[:${rel}]->(b) RETURN count(*) AS n`));
   counts[rel] = { expected: idx.length, got: Number((rows[0][0] as { value: number }).value) };
 }
 const tVerify = performance.now();
-const ok = Object.values(counts).every(c => c.expected === c.got);
-console.log(JSON.stringify({ tier, edgeSha256: g.edgeSha256, ok, counts, requests: hydra.requests, ms: { nodes: Math.round(tNodes - t0), edges: Math.round(tEdges - tNodes), per_relationship: relMs, verify: Math.round(tVerify - tEdges), total: Math.round(tVerify - t0) } }));
+const ok = Object.values(counts).every(c => c.got === null || c.expected === c.got);
+console.log(JSON.stringify({ tier, edgeSha256: g.edgeSha256, ok, verify: countVerify ? 'count' : 'index', counts, requests: hydra.requests, ms: { nodes: Math.round(tNodes - t0), edges: Math.round(tEdges - tNodes), per_relationship: relMs, verify: Math.round(tVerify - tEdges), total: Math.round(tVerify - t0) } }));
 if (!ok) process.exit(1);
