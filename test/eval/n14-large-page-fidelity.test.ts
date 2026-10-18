@@ -465,11 +465,11 @@ describe('N14 Amendment 2 flags', () => {
 describe('N14 Amendment 4: tiers, engine, settle bound, lifecycle', () => {
   const MiB = 1024 ** 2;
   test('the binary tiers sit on gbrain page limits: under 24 MiB, 128 MiB and 256 MiB, over 256 MiB', () => {
-    expect(TIERS['24mib'].conversation).toBe(24 * MiB - 64 * 1024);
-    expect(TIERS['100mib'].conversation).toBe(100 * MiB);
-    expect(TIERS['128mib'].conversation).toBe(128 * MiB - 64 * 1024);
-    expect(TIERS['256mib'].conversation).toBe(256 * MiB - 64 * 1024);
-    expect(TIERS['260mib'].conversation).toBe(260 * MiB);
+    expect(Number(TIERS['24mib'].conversation)).toBe(24 * MiB - 64 * 1024);
+    expect(Number(TIERS['100mib'].conversation)).toBe(100 * MiB);
+    expect(Number(TIERS['128mib'].conversation)).toBe(128 * MiB - 64 * 1024);
+    expect(Number(TIERS['256mib'].conversation)).toBe(256 * MiB - 64 * 1024);
+    expect(Number(TIERS['260mib'].conversation)).toBe(260 * MiB);
     expect([...EMBED_PASS_TIERS]).toEqual(['2mb', '20mb', '24mib']);
   });
 
