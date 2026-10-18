@@ -41,11 +41,21 @@ export type NeedleType = 'number' | 'date' | 'name' | 'fact';
 export const NEEDLE_TYPES: readonly NeedleType[] = ['number', 'date', 'name', 'fact'];
 export const DECILES = 10;
 
-/** Size tiers. `1gb` is listed for manual runs only. */
+/**
+ * Size tiers. `1gb` is listed for manual runs only. The binary tiers
+ * (Amendment 4) sit on gbrain's page limits: `24mib` just under the 24 MiB
+ * single-call write ceiling, `128mib` and `256mib` just under the PGLite and
+ * Postgres segmented page ceilings, `260mib` just over the Postgres one.
+ */
 export const TIERS = {
   '2mb': { conversation: 2_000_000, 'project-log': 2_000_000, book: 1_500_000 },
   '20mb': { conversation: 20_000_000 },
+  '24mib': { conversation: 25_100_288 },
+  '100mib': { conversation: 104_857_600 },
+  '128mib': { conversation: 134_152_192 },
   '200mb': { conversation: 200_000_000 },
+  '256mib': { conversation: 268_369_920 },
+  '260mib': { conversation: 272_629_760 },
   '1gb': { conversation: 1_000_000_000 },
 } as const satisfies Record<string, Partial<Record<DocKind, number>>>;
 export type TierId = keyof typeof TIERS;

@@ -431,10 +431,12 @@ class GbrainMemoryProvider(MemoryProvider):
 
         Read-time keys are not ingest inputs, so cells with different values share a store. The unit remembers
         which keys a cell set; a later cell without them unsets them, so no cell inherits another's setting.
+        A cell that leaves `search.page_rank_cut` unset runs with it `off`, as `_arm_page_rank_cut` reads it,
+        rather than gbrain's default (`whole_pages` since gbrain e9b59f29), so an arm's cut never moves with the pin.
         """
         marker = home / "mpw-search-config.json"
         applied = json.loads(marker.read_text()) if marker.exists() else {}
-        want = {k: str(v) for k, v in (self.cfg.get("search_config") or {}).items()}
+        want = {"search.page_rank_cut": "off", **{k: str(v) for k, v in (self.cfg.get("search_config") or {}).items()}}
         if applied == want:
             return
         for key in applied.keys() - want.keys():

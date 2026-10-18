@@ -2142,7 +2142,7 @@
       "id": "N14-2",
       "category": "large-page-fidelity",
       "classification": "feature-gap",
-      "status": "open",
+      "status": "closed",
       "gbrain_sha": "c71fe7436e673db819c1be4532504b861e14ad50",
       "contract": "gbrain documents a 5 MB per-page write limit (MAX_FILE_SIZE, src/core/import-screen.ts; file_too_large / request_too_large in src/core/error-registry.ts) and tells the user to split the file",
       "surface": "put_page -> persistence preparation (request_too_large)",
@@ -2150,14 +2150,14 @@
       "expected": "one large document can be written as one page",
       "actual": "put_page of the 20mb conversation refused with request_too_large; keyword recall 0/40",
       "review": {
-        "date": "2026-10-15",
-        "gbrain_sha": "7f3c9f5f19862372d056c713942564dd165f62ba",
+        "date": "2026-10-18",
+        "gbrain_sha": "f717b1a5b1c71871c5b6530e98bd1d540a38c70d",
         "evidence": "rerun",
         "receipts": [
-          "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-b1/on/200mb/receipt.json",
-          "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-b1/on/200mb-import/receipt.json"
+          "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/pglite/large/receipt.json",
+          "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/postgres/large/receipt.json"
         ],
-        "note": "still open at Wave B PR 1 (garrytan/gbrain#6787, exploratory run with pages.segmented_storage=on): put_page still refuses the 200 MB chat with request_too_large at the 24 MiB single-string ceiling, and the streamed file import refuses it with file_too_large because PGLite's segmented ceiling is 128 MiB; Postgres (256 MiB) was not run"
+        "note": "at f717b1a (pages.segmented_storage on by default, Wave B PR 2 and the switch-on) the file import stores one document as one page up to the engine ceiling: 100 MiB and 128 MiB on PGLite, 100 MiB to 256 MiB including the 200 MB chat on Postgres, each found 40/40 and exported byte-identical; 200 MB and 256 MiB on PGLite and 260 MiB on Postgres are refused file_too_large at the documented ceilings; put_page stays limited to 24 MiB per call by design (request_too_large)"
       },
       "review_history": [
         {
@@ -2178,8 +2178,21 @@
             "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-a/200mb/receipt.json"
           ],
           "note": "partly closed by garrytan/gbrain#6733 (24 MiB ceiling): the 20 MB chat is now stored as one page (8,855 chunks, 40/40); the 200 MB chat is still refused with request_too_large, so writing one document over 24 MiB stays a gap for large pages Wave B"
+        },
+        {
+          "date": "2026-10-15",
+          "gbrain_sha": "7f3c9f5f19862372d056c713942564dd165f62ba",
+          "evidence": "rerun",
+          "receipts": [
+            "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-b1/on/200mb/receipt.json",
+            "docs/benchmarks/2026-10-15-n14-large-page-fidelity-wave-b1/on/200mb-import/receipt.json"
+          ],
+          "note": "still open at Wave B PR 1 (garrytan/gbrain#6787, exploratory run with pages.segmented_storage=on): put_page still refuses the 200 MB chat with request_too_large at the 24 MiB single-string ceiling, and the streamed file import refuses it with file_too_large because PGLite's segmented ceiling is 128 MiB; Postgres (256 MiB) was not run"
         }
-      ]
+      ],
+      "fixing_pr": "garrytan/gbrain#6963",
+      "fixing_commit": "f717b1a5b1c71871c5b6530e98bd1d540a38c70d",
+      "reason": "Closed by large pages Wave B (garrytan/gbrain#6900 and the switch-on garrytan/gbrain#6963, v0.60.299.0): a page over 24 MiB is written through the file import (gbrain import or sync) and stored in segments up to 128 MiB on PGLite and 256 MiB on Postgres; put_page keeps its documented 24 MiB per-call limit."
     },
     {
       "id": "N14-3",
@@ -2462,6 +2475,30 @@
       ],
       "fixing_pr": "garrytan/gbrain#6010 (merged as b9ee931, v0.60.49.0)",
       "fixing_commit": "b9ee931b97a3c5bcc6a2045954b05c2880cb0021"
+    },
+    {
+      "id": "N14-5",
+      "category": "large-page-fidelity",
+      "classification": "bug",
+      "status": "open",
+      "gbrain_sha": "f717b1a5b1c71871c5b6530e98bd1d540a38c70d",
+      "contract": "delete_page with purge: true 'removes the row, chunks, links and raw data immediately' (src/core/ops/pages.ts, delete_page description), and Wave B purge deletes the purged page's segment texts in the purge transaction ('purge never waits for GC', src/core/facts/purge.ts purgeSegmentStorage; src/core/persistence/page-purge.ts deletePageWithSegments)",
+      "surface": "delete_page purge: true -> deletePageWithSegments (src/core/persistence/page-purge.ts), on a segmented page restored after a forget_fact",
+      "repro": "bun eval/runner/n14-large-page-fidelity.ts --tier 2mb --arms native --lifecycle --gbrain <gbrain checkout>@f717b1a5b1c71871c5b6530e98bd1d540a38c70d",
+      "expected": "after a committed purge, no segment text holding the purged page's body remains in page_segment_texts",
+      "actual": "on a segmented page with a facts fence, forget_fact (which writes a new body generation) followed by delete_page and restore_page leaves one earlier segment text with no manifest row (160,368 bytes on the 2 MB chat). The purge deletes only the texts the page's manifest still references, so that text, holding 6 of the page's 42 planted answers, stays in page_segment_texts after the purge reports success, until the source-wide segment GC runs past its 1 h grace (sweepSegments({graceMs: 0}) removes it). Without the forget, or without the delete and restore, the purge leaves nothing (2 MB probes). Reproduced by the lifecycle on all three 2 MB documents, the 20 MB chat and the 24 MiB chat, on PGLite and Postgres.",
+      "review": {
+        "date": "2026-10-18",
+        "gbrain_sha": "f717b1a5b1c71871c5b6530e98bd1d540a38c70d",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/pglite/2mb/receipt.json",
+          "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/pglite/20mb/receipt.json",
+          "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/pglite/24mib/receipt.json",
+          "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/postgres/2mb/receipt.json"
+        ],
+        "note": "found by this run"
+      }
     }
   ]
 }

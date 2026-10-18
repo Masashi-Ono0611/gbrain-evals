@@ -84,7 +84,6 @@ export const ENTRYPOINTS = [
 export const GAPS: ReadonlyArray<{ capability: string; reason: string }> = [
   { capability: 'corpus-wide or fact-identity contradiction discovery', reason: 'runContradictionProbe only pairs the top-K results of the queries a caller supplies (runner.ts:316-428); no scanner enumerates facts or pages. Discovery is scored with generator-written queries.' },
   { capability: 'applied resolutions', reason: 'auto-supersession.ts renders paste-ready proposals and never applies them; one kind (log_timeline_change) points at a deferred timeline writer.' },
-  { capability: 'find_contradictions for remote callers', reason: 'the op returns an empty note to every remote caller (insights.ts:197-200), by documented design ("temporarily available only to trusted local callers").' },
 ];
 
 // ─── Pure scoring helpers (exported for tests) ───────────────────────────
@@ -548,8 +547,8 @@ async function runHermeticInner(gut: GbrainUnderTest, world: ReturnType<typeof g
     await sut.writeRunRow(sut.engine, oracle.report, oracle.report.duration_ms);
     const fc = async (over: Record<string, unknown>) => {
       try {
-        const r = await sut.op('find_contradictions', { limit: 100 }, over) as { contradictions: unknown[]; total_in_run?: number; note?: string };
-        return { returned: r.contradictions.length, total_in_run: r.total_in_run ?? null, note: r.note ?? null };
+        const r = await sut.op('find_contradictions', { limit: 100 }, over) as { contradictions: unknown[]; total_in_run?: number; total_visible?: number; note?: string };
+        return { returned: r.contradictions.length, total_in_run: r.total_in_run ?? null, total_visible: r.total_visible ?? null, note: r.note ?? null };
       } catch (e) { return { error: e instanceof Error ? e.message : String(e) }; }
     };
     res.find_contradictions = {

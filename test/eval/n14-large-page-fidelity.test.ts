@@ -12,13 +12,14 @@ import { assertScorerRejectsFakeSystems } from '../../eval/runner/mutation-kit.t
 import { evaluatePromotion } from '../../eval/runner/promotion.ts';
 import { PaidArmRefusal, requirePaidArm } from '../../eval/runner/paid-arm.ts';
 import {
-  DECILES, N14_DEFAULT_SEED, NEEDLE_TYPES, checkPresence, containsToken, ledgerFingerprint, renderDocument, tierSpecs, tokenOccurrences,
+  DECILES, N14_DEFAULT_SEED, NEEDLE_TYPES, TIERS, checkPresence, containsToken, ledgerFingerprint, renderDocument, tierSpecs, tokenOccurrences,
   type DocKind, type N14DocLedger, type Needle,
 } from '../../eval/generators/n14-large-page-gen.ts';
 import {
   EGRESS_CAP_BYTES, PASSAGE_CAP_BYTES, THRESHOLDS, canonicalBody, crashedSummary, absentSummary, estTokens, evaluateArm, frameBytes, hitRank, hubContent,
   n14Findings, n14Verdict, parseConfigOverlay, parseNativeIngest, probeNativeCapability, scoreQa, splitIntoParts, summarize, summarizeArm,
-  type AppendOutcome, type Arm, type CallFrame, type EmbedCount, type IngestOutcome, type N14Adapter, type N14RunResult, type NativeCapability, type SearchHit,
+  EMBED_PASS_TIERS, LIFECYCLE_CLAIM, LIFECYCLE_TOKEN, PROJECTION_SETTLE_MAX_MS, lifecycleFence, parseEngine, settleBoundMs,
+  type LifecycleOutcome, type AppendOutcome, type Arm, type CallFrame, type EmbedCount, type IngestOutcome, type N14Adapter, type N14RunResult, type NativeCapability, type SearchHit,
 } from '../../eval/runner/n14-large-page-fidelity.ts';
 import { overlaySummary, type GbrainUnderTest } from '../../eval/runner/gbrain-under-test.ts';
 import { MACHINE_LOCAL_PATH } from '../../eval/runner/receipt.ts';
@@ -458,5 +459,84 @@ describe('N14 Amendment 2 flags', () => {
     expect(parseNativeIngest([])).toBe('put_page');
     expect(parseNativeIngest(['--native-ingest', 'import'])).toBe('import');
     expect(() => parseNativeIngest(['--native-ingest', 'upload'])).toThrow(/put_page or import/);
+  });
+});
+
+describe('N14 Amendment 4: tiers, engine, settle bound, lifecycle', () => {
+  const MiB = 1024 ** 2;
+  test('the binary tiers sit on gbrain page limits: under 24 MiB, 128 MiB and 256 MiB, over 256 MiB', () => {
+    expect(Number(TIERS['24mib'].conversation)).toBe(24 * MiB - 64 * 1024);
+    expect(Number(TIERS['100mib'].conversation)).toBe(100 * MiB);
+    expect(Number(TIERS['128mib'].conversation)).toBe(128 * MiB - 64 * 1024);
+    expect(Number(TIERS['256mib'].conversation)).toBe(256 * MiB - 64 * 1024);
+    expect(Number(TIERS['260mib'].conversation)).toBe(260 * MiB);
+    expect([...EMBED_PASS_TIERS]).toEqual(['2mb', '20mb', '24mib']);
+  });
+
+  test('--engine defaults to pglite; postgres needs an admin URL from the flag or N14_PG_ADMIN_URL', () => {
+    expect(parseEngine([], {})).toEqual({ kind: 'pglite' });
+    expect(parseEngine(['--engine', 'postgres', '--pg-admin-url', 'postgres://u@h/db'], {})).toEqual({ kind: 'postgres', adminUrl: 'postgres://u@h/db' });
+    expect(parseEngine(['--engine=postgres'], { N14_PG_ADMIN_URL: 'postgres://e@h/db' })).toEqual({ kind: 'postgres', adminUrl: 'postgres://e@h/db' });
+    expect(() => parseEngine(['--engine', 'postgres'], {})).toThrow(/admin URL|pg-admin-url/);
+    expect(() => parseEngine(['--engine', 'sqlite'], {})).toThrow(/pglite or postgres/);
+  });
+
+  test('the settle bound keeps the Amendment 3 floor and grows 3 s per MB', () => {
+    expect(settleBoundMs(2_000_000)).toBe(PROJECTION_SETTLE_MAX_MS);
+    expect(settleBoundMs(268_369_920)).toBe(269 * 3_000);
+  });
+
+  test('the lifecycle fence carries one fact row with the token', () => {
+    const fence = lifecycleFence();
+    expect(fence).toContain('<!--- gbrain:facts:begin -->');
+    expect(fence).toContain('<!--- gbrain:facts:end -->');
+    expect(fence.split('\n').filter(l => l.includes(LIFECYCLE_TOKEN))).toEqual([`| 1 | ${LIFECYCLE_CLAIM} | fact | 1.0 | world | low | 2026-10-01 |  | n14 |  |`]);
+    expect(small('conversation').text.includes(LIFECYCLE_TOKEN)).toBe(false);
+  });
+
+  const doc = small('conversation', 400_000);
+  class Lifecycle extends ReferenceAdapter {
+    seen: string | null = null;
+    async lifecycle(body: string): Promise<LifecycleOutcome> {
+      this.seen = body;
+      await this.search(this.ledger.needles[0].query);
+      this.frames.push({ op: 'get_page', bytes: EGRESS_CAP_BYTES + 1 });
+      return {
+        probes: 10, hits_before: 10,
+        forget: { status: 'ok', fact_rows: 1, withdrawn: true, recall_hits_after: 0, export_row: 'struck', wall_ms: 1 },
+        delete: { status: 'ok', hits_after: 0, get_page_code: 'page_not_found', wall_ms: 1 },
+        restore: { status: 'ok', hits_after: 10, export_matches_pre_delete: true, wall_ms: 1 },
+        purge: { status: 'ok', wall_ms: 1, residue: null, sweep: null },
+      };
+    }
+  }
+
+  test('the lifecycle runs only when asked, on the page as last written, and its calls stay out of the egress count', async () => {
+    const off = new Lifecycle('native');
+    const plain = await evaluateArm(off, doc.ledger, doc.text);
+    expect(off.seen).toBeNull();
+    expect(plain.lifecycle).toBeUndefined();
+    const on = new Lifecycle('native');
+    const run = await evaluateArm(on, doc.ledger, doc.text, { lifecycle: true });
+    expect(on.seen).toBe(doc.text + doc.ledger.append.text);
+    expect(run.memory.map(m => m.phase)).toContain('lifecycle');
+    expect(run.frames.count).toBe(plain.frames.count);
+    expect(run.frames.over_cap).toBe(0);
+    const s = summarizeArm(run, '2mb');
+    expect(s.lifecycle).toEqual(run.lifecycle);
+    expect(n14Verdict(summarize([s, summarizeArm(await evaluateArm(new ReferenceAdapter('managed-parts'), doc.ledger, doc.text), '2mb')], 0, CAPABLE)).verdict).toBe('pass');
+  });
+
+  test('a lifecycle that throws is recorded, never thrown; a refused ingest skips it', async () => {
+    class Throws extends ReferenceAdapter {
+      async lifecycle(): Promise<LifecycleOutcome> { throw Object.assign(new Error('purge refused'), { code: 'permission_denied' }); }
+    }
+    expect((await evaluateArm(new Throws('native'), doc.ledger, doc.text, { lifecycle: true })).lifecycle).toEqual({ error: 'permission_denied: purge refused' });
+    class Refused extends Lifecycle {
+      override async ingest(ledger: N14DocLedger, raw: string): Promise<IngestOutcome> { await super.ingest(ledger, raw); return { status: 'refused', code: 'request_too_large', pages: 0, chunks: 0, embed_skip: null, write_errors: 1 }; }
+    }
+    const r = new Refused('native');
+    expect((await evaluateArm(r, doc.ledger, doc.text, { lifecycle: true })).lifecycle).toBeUndefined();
+    expect(r.seen).toBeNull();
   });
 });

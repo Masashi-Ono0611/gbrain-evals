@@ -6,12 +6,18 @@ autocut off. That setup retrieves all labeled conversations for 451/470 answerab
 with opaque session ids at gbrain `109b992`. [Recount](benchmarks/2026-10-04-longmemeval-opaque-followups.md),
 [original experiment](benchmarks/2026-09-06-longmemeval-ranker-wave.md).
 
-This page describes the gbrain this repository installs, master `77cf8e111` (v0.60.169.0, declared in
+This page describes the gbrain this repository installs, master `f717b1a5b` (v0.60.299.0, declared in
 `package.json`). Most experiments here ran at gbrain v0.48.4.0 (`2efaaf8f`) or later commits named beside each
 number. The `balanced`, `conservative` and `tokenmax` mode definitions (`MODE_BUNDLES` in
-`src/core/search/mode.ts`) hold the same values from `2efaaf8f` through `77cf8e111`, apart from three keys v0.60.60.0
-added for the multi-relation planner (`relational_planner`, on in `balanced` and `tokenmax`). The planner plans none
-of LongMemEval's 500 questions, so the conversation measurements describe the installed modes; other code differs.
+`src/core/search/mode.ts`) hold the same values from `2efaaf8f` through `77cf8e111` (v0.60.169.0), apart from three
+keys v0.60.60.0 added for the multi-relation planner (`relational_planner`, on in `balanced` and `tokenmax`). The
+planner plans none of LongMemEval's 500 questions. After `77cf8e111` two bundle values changed: every bundle's
+reranker resolves to Voyage `rerank-3-lite` (was `rerank-2.5`, v0.60.223.0), and `tokenmax` no longer expands
+queries (v0.60.250.0). The conversation measurements here used `rerank-2.5`; on 300 LongMemEval-S questions
+`rerank-3-lite` and `tokenmax` without expansion each kept retrieval within their preregistered margins
+([reranker addendum](benchmarks/2026-10-13-rerank3-addendum-preregistration.md),
+[expansion latency](benchmarks/2026-10-14-expansion-latency-preregistration.md)). The keys added since then
+(`search.reranker.gate`, `search.diverse_pool_depth`) are off in every bundle; other code differs.
 From v0.60.164.0, `query` also adds up to three matching saved facts as rows of their own (`search.query_facts_arm`,
 on by default and outside the mode bundles); the LongMemEval retrieval rows were measured before it and do not test
 it. Existing per-key overrides take precedence over a mode, so a mode name alone
@@ -151,6 +157,14 @@ the [refresh report](benchmarks/2026-09-09-retrieval-refresh.md) gives the full
 reproducible matrix used here.
 
 ## Changelog
+
+### 2026-10-18: Installed pin moves to `f717b1a5b`
+
+gbrain-evals v0.10.123. The installed gbrain commit changed from `77cf8e111` (v0.60.169.0) to `f717b1a5b` (v0.60.299.0).
+The mode-definition note now ends its "same values" range at `77cf8e111`, because two bundle values changed afterwards.
+Every bundle's reranker resolves to Voyage `rerank-3-lite` (v0.60.223.0), and `tokenmax` no longer expands queries
+(v0.60.250.0). The note cites the addenda that checked both changes. The conversation measurements on this page used
+`rerank-2.5`, and the note says so.
 
 ### 2026-10-11: Installed pin moves to `77cf8e111`
 

@@ -12,14 +12,18 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 
 | Item | Value |
 |---|---|
-| Pinned product | gbrain [`77cf8e111`](https://github.com/garrytan/gbrain/tree/77cf8e1116e9af67c1983adcbb3223b96f0991a5), release v0.60.169.0, declared as `gbrain` in `package.json` |
+| Pinned product | gbrain [`f717b1a5b`](https://github.com/garrytan/gbrain/tree/f717b1a5b1c71871c5b6530e98bd1d540a38c70d), release v0.60.299.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.122 (`VERSION`) |
+| This repository | gbrain-evals v0.10.123 (`VERSION`) |
 
-This repository installs gbrain v0.60.169.0 (`77cf8e111`). Some results below were measured at earlier commits; each
-names its commit, and every commit named below is in the release's history except three: the Cat 40 Hard row's, which shipped after it
-(v0.60.174.0), the wave 2 BEAM row's `71b6d85`, the head of gbrain #6445, which ships in gbrain v0.60.202.0 (#6445) with W5 on by default at factor 1.50 and the W1 `question` guidance deferred, and the Cat 40 next-wave row's `4e10136b4`, the Part 1 branch head measured for the confirmation (Part 1 ships without F5). The search modes have been identical since v0.48.4.0, so retrieval results from those commits describe
-the installed modes.
+This repository installs gbrain v0.60.299.0 (`f717b1a5b`). Some results below were measured at earlier commits; each
+names its commit, and every commit named below is in the release's history except `a7cb37b`, the September 29 branch
+commit whose retrieval the reader replay row froze. The search modes held the same values from v0.48.4.0 through
+v0.60.169.0. Since then the default reranker became Voyage `rerank-3-lite` (was `rerank-2.5`, v0.60.223.0) and
+`tokenmax` stopped expanding queries (v0.60.250.0); on 300 LongMemEval-S questions each change kept retrieval within
+its preregistered margins ([reranker addendum](docs/benchmarks/2026-10-13-rerank3-addendum-preregistration.md),
+[expansion latency](docs/benchmarks/2026-10-14-expansion-latency-preregistration.md)). Retrieval results measured
+before v0.60.223.0 used `rerank-2.5`.
 
 ## What gbrain does
 
@@ -306,6 +310,16 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-18: Re-pin to gbrain `f717b1a5b`; repository row names v0.10.123
+
+gbrain-evals v0.10.123. The pinned product row changes from `77cf8e111` (v0.60.169.0) to `f717b1a5b` (v0.60.299.0), which
+turns segmented page storage on by default (large pages Wave B). The paragraph under the table now lists only `a7cb37b` as
+a named commit outside the release's history: the other three it listed shipped before v0.60.299.0. It also says the
+search modes changed after v0.60.169.0, with the Voyage `rerank-3-lite` default and `tokenmax` without expansion, and
+cites the two addenda that checked them. This release also records the N14 run at the switch-on
+([report](docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2.md)). No result row on this page changes. The
+repository row names v0.10.123 (was v0.10.122).
 
 ### 2026-10-18: Graph backend row (HydraDB vs Postgres); repository row names v0.10.122
 
