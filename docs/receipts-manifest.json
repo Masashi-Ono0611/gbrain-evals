@@ -1,8 +1,26 @@
 {
   "schema_version": 1,
   "description": "Map from published claims to their saved evidence. The manifest test checks artifact paths, SHA-256 hashes, and declared JSON-pointer values. It does not parse report prose or independently validate every scorer. Separate golden tests and recount scripts are named where available. Entries marked disclosed-gap identify missing evidence; a fresh run cannot restore a missing historical receipt.",
-  "updated": "2026-10-15",
+  "updated": "2026-10-18",
   "entries": [
+    {
+      "claim_id": "graph-backend-2026-10-17",
+      "readme_anchor": "docs/benchmarks/2026-10-17-graph-backend.md: HydraDB same answer as breadth-first Postgres on 54,842 calls; warm p95 6.28 s vs 1.44 s (Team) and 6.28 s vs 3.45 s (Company); decision rule not met",
+      "artifact_path": "docs/benchmarks/2026-10-17-graph-backend/summary.json",
+      "artifact_sha256": "283ab4495de17eb3d819e8eaaf83df354bb07f9a5bf3f858459dbdefbc7cf725",
+      "expected": {
+        "/tiers/team/decision/meets_rule": false,
+        "/tiers/company/decision/meets_rule": false,
+        "/tiers/team/correctness/B-vs-C/mismatches": 0,
+        "/tiers/company/correctness/B-vs-C/mismatches": 0,
+        "/tiers/personal/correctness/B-vs-C/mismatches": 0,
+        "/tiers/team/pooled/B~1warm/p95": 1438.8,
+        "/tiers/team/pooled/C~1warm/p95": 6278.1
+      },
+      "golden_test": "test/eval/graph-backend.test.ts: published 2026-10-17 graph-backend receipts recount",
+      "status": "covered",
+      "note": "Zero model spend. Per-call rows (rows.ndjson.gz per tier) recount to summary.json with the committed analyzer; A-vs-B cap classification used untimed probes against the loaded databases."
+    },
     {
       "claim_id": "lifecycle-2026-09-29-primary",
       "readme_anchor": "docs/benchmarks/2026-09-29-lifecycle.md: forget collateral in 18/18 cells of builds a, b0, b and 0/6 with #5666; get_tags private leak on a and b0 only",

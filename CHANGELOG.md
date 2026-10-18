@@ -2,6 +2,13 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.122] - 2026-10-18
+
+### Graph backend: HydraDB vs Postgres for gbrain's graph walks (GBRA-123)
+
+- **Report** ([doc](docs/benchmarks/2026-10-17-graph-backend.md), [preregistration](docs/benchmarks/2026-10-17-graph-backend-preregistration.md), pushed before any timed run). gbrain's `traverseGraph` and `traversePathsDetailed` on seeded fictional power-law graphs of 10,000, 100,000 and 1,000,000 pages: the old recursive CTE (`b1fdcb843`) and the breadth-first walks of #6934 (`fc1121cae58`) on Postgres 17, against HydraDB `fe496d475be` as the walk engine with Postgres hydration. HydraDB returned the same answer as breadth-first Postgres on all 54,842 compared calls, but its warm p95 was 6.28 s against 1.44 s at 100,000 pages and 6.28 s against 3.45 s at 1,000,000. The preregistered rule (2x and 50 ms faster) is not met, so production HydraDB routing is not built. HydraDB is faster on deep `both` edge walks (10.3 s against 3.8 s p95 at depth 3, 1,000,000 pages), flagged as the next Postgres target. The old CTE differs from breadth-first only where its row cap fired.
+- **Harness**: `eval/runner/graph-backend/` (generator, loaders, eval-only HydraDB HTTP adapter, resumable runner, analyzer); receipts per tier under `docs/benchmarks/2026-10-17-graph-backend/`. Cost: $0 in model spend; one Ubicloud `standard-16` for 8 h 24 min (about $4.20).
+
 ## [0.10.121] - 2026-10-17
 
 ### W11: gbrain W4 (weekly belief diff) confirmed on sealed material
