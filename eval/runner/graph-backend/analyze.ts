@@ -81,8 +81,12 @@ for (const tier of TIERS) {
       compared++;
       if (b.h_full !== c.h_full) mism.push({ pass: c.pass, call_id: c.call_id, b: { n: b.n, truncated: b.truncated }, c: { n: c.n, truncated: c.truncated } });
     }
-    const otherErrors = counted.filter(r => r.arm === other && r.status !== 'ok').length;
-    t.correctness[`B-vs-${other}`] = { compared, mismatches: mism.length, not_comparable: notComparable, other_errors_or_timeouts: otherErrors, examples: mism.slice(0, 20) };
+    const failures = (passes: string[]) => counted.filter(r => r.arm === other && passes.includes(r.pass) && r.status !== 'ok').length;
+    t.correctness[`B-vs-${other}`] = {
+      compared, mismatches: mism.length, not_comparable: notComparable,
+      other_errors_or_timeouts_cold_warm: failures(['cold', 'warm']), other_errors_or_timeouts_tput8: failures(['tput8']),
+      examples: mism.slice(0, 20),
+    };
   }
   // A vs B distinct sets, cap classification
   const A = counted.filter(r => r.arm === 'A');
@@ -136,8 +140,9 @@ for (const tier of TIERS) {
     const speedup = num(bw.p95) / num(cw.p95);
     t.decision = {
       b_warm_p95: bw.p95, c_warm_p95: cw.p95, speedup_b_over_c: Math.round(speedup * 100) / 100, abs_gain_ms: Math.round((num(bw.p95) - num(cw.p95)) * 10) / 10,
-      correctness_100: corr.mismatches === 0 && corr.other_errors_or_timeouts === 0,
-      meets_rule: speedup >= 2 && num(bw.p95) - num(cw.p95) >= 50 && corr.mismatches === 0 && corr.other_errors_or_timeouts === 0,
+      correctness_100_cold_warm: corr.mismatches === 0 && corr.other_errors_or_timeouts_cold_warm === 0,
+      c_timeouts_under_8_callers: corr.other_errors_or_timeouts_tput8,
+      meets_rule: speedup >= 2 && num(bw.p95) - num(cw.p95) >= 50 && corr.mismatches === 0 && corr.other_errors_or_timeouts_cold_warm === 0,
     };
   }
   (summary.tiers as Record<string, unknown>)[tier] = t;
