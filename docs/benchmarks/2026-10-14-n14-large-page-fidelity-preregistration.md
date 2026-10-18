@@ -135,3 +135,34 @@ This amendment was written after the first runs under Amendment 2 (runner `7256b
 
 1. **Accepted-pending writes.** A `put_page` that is accepted but not committed within its reply deadline answers `write_pending` with a write receipt. Its contract says to poll `get_write_request` until the receipt is final. The runner now does that, with a 240 s bound, and uses the committed receipt's revision for the next write. A receipt that ends `conflict`, `failed` or `cancelled`, or is still pending at the bound, counts as a write error. The number of pending writes and the time spent polling are reported. The first runs instead counted the 20 MB `write_pending` reply as a write error and then sent the append without an expected revision.
 2. **Segmented projection.** A segmented page's chunks are built and its text projection sealed after the write commits, so the page is not searchable at the moment of the reply. Before probing, and again after the append, the runner waits until the page's `text_projection_revision` equals its `knowledge_revision`, with a 240 s bound. It reports whether the page was already sealed at the reply and how long it waited. Ingest time includes this wait. The first runs probed at the reply and found 0/40 at 20 MB.
+
+### Amendment 4 (2026-10-18): Wave B PR 2 and the switch-on, default config
+
+This amendment was written before any counted run against gbrain `f717b1a5b1c71871c5b6530e98bd1d540a38c70d` (master, v0.60.299.0). That commit contains large pages Wave B PR 2 (#6900, merge `0fb905d3`, v0.60.290.0: windowed reads, forget and purge, delete and restore, and export of segmented pages) and the switch-on (#6963): `pages.segmented_storage` defaults to `on`, so a page over 1 MiB is stored in segments up to 256 MiB on Postgres and 128 MiB on PGLite. `put_page` stays limited to 24 MiB per call, and larger pages come in through the file import. Development smoke runs at 2 MB on both engines and one 100 MiB PGLite sizing run shaped the runner changes below. They are not results. No rule, threshold, model or arm definition changes.
+
+1. **Default config.** No run sets `pages.segmented_storage` or any other brain config: no `--config` overlay and no environment override. gbrain's own defaults decide the storage class, the ceiling and the read modes.
+2. **Tiers.** Four binary tiers sit on gbrain's limits, all the frozen `n14-large-page-gen/v1` chat at seed 14. The earlier tiers keep their ledger hashes.
+   - `24mib`: 25,100,288 bytes, just under the 24 MiB per-call write ceiling.
+   - `100mib`: 104,857,600 bytes.
+   - `128mib`: 134,152,192 bytes, just under the PGLite ceiling.
+   - `256mib`: 268,369,920 bytes, just under the Postgres ceiling and over the PGLite one.
+   - `260mib`: 272,629,760 bytes, just over the Postgres ceiling.
+3. **Engines.** PGLite stays in-memory with one brain per child. A new `--engine postgres` option runs each child on a fresh database that the harness creates and drops in a local `pgvector/pgvector:pg16` server. The receipt records the server version, not the URL.
+4. **Runs.**
+   - PGLite: `2mb` with all three arms; `20mb` and `24mib` with all three arms, one child at a time; `100mib`, `128mib`, `200mb`, `256mib` and `260mib` on the single-page and native arms, one child at a time.
+   - Postgres: `2mb` with all three arms; `100mib`, `128mib`, `200mb`, `256mib` and `260mib` on the single-page and native arms, one child at a time.
+   - At 100 MiB and above the native arm writes with `importFromFile` under the brain's body policy (`--native-ingest import`), the documented path for a page over 24 MiB. The single-page arm keeps `put_page`, so its refusal over 24 MiB is measured. Managed parts does not run above 24 MiB.
+   - The counting embedder runs at 2 MB, 20 MB and 24 MiB. Above that the append cost is reported as chunk rows and segments rewritten, without an embed pass.
+5. **Counted and exploratory.**
+   - Counted, as preregistered: on PGLite at every tier up to 200 MB, the four safety contracts (crashes, responses over the egress cap, round-trip byte loss, presence), the 2 MB native recall floor and the native-versus-parts recall gap at 2 MB, 20 MB and 24 MiB.
+   - Exploratory, reported against the same rules: PGLite at 256 MiB and 260 MiB, past the preregistered 200 MB range, and every Postgres cell, because the preregistration's hermetic arm is PGLite-only.
+   - Held: `native_append_embed_ratio_max` stays reported, not counted, until Wave B PR 3, the append path, is built and pinned. The registry row stays held as a whole, so it does not gate.
+   - Unchanged from earlier reports: the trusted-local egress rule stays a reported result, as before.
+6. **Settle bound.** The Amendment 3 polls of `write_pending` writes and of the projection seal now wait up to the greater of 240 s and 3 s per MB of the document (805 s at 256 MiB), so a large import is not probed half-projected. At 2 MB and 20 MB the bound is 240 s, as before.
+7. **Lifecycle (exploratory, `--lifecycle`).** After the round trip, on the single-page and native arms whose document was stored, the runner runs four steps in order. One needle query per decile (10 probes) is searched before each step and after delete and restore. Lifecycle calls stay outside the egress count.
+   1. Forget: append a one-row `## Facts` fence through the arm's write path, `forget_fact` its row, then check the fact is withdrawn, `recall` no longer returns it and the exported row is struck. On a page over 24 MiB the fence write is expected to refuse, because facts fences are limited to 24 MiB; that is reported as such.
+   2. Soft delete: `delete_page`, then count probe hits and read the `get_page` result code.
+   3. Restore: `restore_page`, then count probe hits and check that the export is byte-identical to the export before the delete.
+   4. Purge: `delete_page` with `purge: true` (trusted local). Count what is left of the page: page, chunk, manifest and version rows, fact rows, needle answers in any chunk or segment text, and unreferenced segment texts with their bytes. Then run `sweepSegments({ graceMs: 0 })` and count again.
+8. **Comparison.** The report compares Wave A (`44eb0493`, #159) and Wave B PR 1 with the switch forced on (`7f3c9f5f`, #165). Published reports stay unchanged, and corrections go in the new report as errata.
+9. **Unchanged.** The append stays the preregistered 1 KB day. The paid arm and the upgrade path do not run, so spend is $0.

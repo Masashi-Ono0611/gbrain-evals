@@ -42,13 +42,16 @@
  * deep needles with the preregistered models. Never runs without both flags.
  *
  * Usage:
- *   bun eval/runner/n14-large-page-fidelity.ts [--tier 2mb|20mb|200mb|1gb | --tiers 2mb,20mb]
+ *   bun eval/runner/n14-large-page-fidelity.ts [--tier 2mb|20mb|24mib|100mib|128mib|200mb|256mib|260mib|1gb | --tiers 2mb,20mb]
  *     [--arms single-page,managed-parts,native] [--docs conversation,project-log,book] [--seed N] [--output <dir>] [--gbrain <checkout>[@ref]]
  *     [--concurrency N] [--rss-limit-mb N] [--record-bugs] [--json]
  *     [--upgrade-from <checkout>[@ref]]   (2mb tier: seed each document single-page with that gbrain, then backfill and probe it with --gbrain)
  *     [--config key=value[,key=value]]    (brain config set in every child after initSchema, e.g. pages.segmented_storage=on; Amendment 2)
  *     [--native-ingest put_page|import]  (native arm write path; import = importFromFile with the brain's body policy, streamed when segmented; Amendment 2)
+ *     [--engine pglite|postgres] [--pg-admin-url <url>]  (Amendment 4: postgres creates one database per child through the admin URL, or N14_PG_ADMIN_URL)
+ *     [--lifecycle]                      (Amendment 4: after the round trip, forget a fence fact, soft-delete, restore and purge the page, then count residue)
  */
+import { SQL } from 'bun';
 import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -144,6 +147,8 @@ export interface N14Adapter {
   exportBody(): Promise<string>;
   /** Amendment 2: the live segment texts of a segmented entry page, joined in order; null for an inline page. */
   segmentBody?(): Promise<{ body: string; regions: string[] } | null>;
+  /** Amendment 4: forget, delete, restore and purge the entry page; `body` is the page as the arm last wrote it. Null when the arm has no single entry page. */
+  lifecycle?(body: string): Promise<LifecycleOutcome | null>;
   close(): Promise<void>;
 }
 
@@ -168,11 +173,29 @@ export interface ArmRun {
   roundtrip: { status: 'match' | 'mismatch' | 'not_stored' | 'error'; expected_sha256: string; actual_sha256?: string; byte_delta?: number; first_diff?: FirstDiff; error?: string };
   /** Amendment 2 (exploratory, outside the safety count): sha256 of the stored segments against the same expected body. */
   segment_roundtrip?: { status: 'match' | 'mismatch' | 'not_comparable' | 'error'; actual_sha256?: string; byte_delta?: number; regions?: string[]; error?: string };
+  lifecycle?: LifecycleOutcome | { error: string };
   frames: { count: number; max_bytes: number; over_cap: number; by_op: Record<string, { count: number; max_bytes: number; over_cap: number }> };
   memory: MemMark[];
 }
 
 export interface FirstDiff { offset: number; expected: string; actual: string; differing_lines: number }
+
+/**
+ * Amendment 4 (exploratory, outside the verdict): the page's lifecycle after the round trip. `probes` is one needle
+ * query per decile; a hit is a top-10 stored chunk holding the needle answer.
+ */
+export interface LifecycleOutcome {
+  probes: number;
+  hits_before: number;
+  forget: { status: 'ok' | 'error'; fact_rows: number; withdrawn: boolean | null; recall_hits_after: number | null; export_row: 'struck' | 'active' | 'absent' | null; wall_ms: number; error?: string };
+  delete: { status: 'ok' | 'error'; hits_after: number | null; get_page_code: string | null; wall_ms: number; error?: string };
+  restore: { status: 'ok' | 'error'; hits_after: number | null; export_matches_pre_delete: boolean | null; wall_ms: number; error?: string };
+  purge: {
+    status: 'ok' | 'error'; wall_ms: number; error?: string; removed?: Record<string, number>;
+    residue: { pages: number; chunks: number; manifest_rows: number; versions: number; facts: number; needle_chunks: number; needle_texts: number; unreferenced_texts: number; unreferenced_text_bytes: number } | null;
+    sweep: { texts_deleted: number; needle_texts_after: number; texts_left: number } | null;
+  };
+}
 
 /** Where two texts first differ (UTF-16 offset), with a little context, and how many lines differ by position. */
 export function firstDiff(expected: string, actual: string): FirstDiff {
@@ -195,7 +218,7 @@ export function hitRank(passages: readonly string[], token: string, k = TOP_K): 
 }
 
 /** Run one arm over one document through the adapter. Every gbrain exception is recorded, never thrown. */
-export async function evaluateArm(adapter: N14Adapter, ledger: N14DocLedger, raw: string, opts: { embed?: boolean; probeMemory?: (phase: string) => MemMark } = {}): Promise<ArmRun> {
+export async function evaluateArm(adapter: N14Adapter, ledger: N14DocLedger, raw: string, opts: { embed?: boolean; lifecycle?: boolean; probeMemory?: (phase: string) => MemMark } = {}): Promise<ArmRun> {
   const mark = opts.probeMemory ?? ((phase: string) => ({ phase, t_ms: 0, rss_mb: 0, max_rss_mb: 0 }));
   const memory: MemMark[] = [mark('start')];
   const t0 = performance.now();
@@ -300,6 +323,14 @@ export async function evaluateArm(adapter: N14Adapter, ledger: N14DocLedger, raw
     } catch (e) { segmentRoundtrip = { status: 'error', error: `${errCode(e)}: ${errMsg(e).slice(0, 300)}` }; }
   }
   memory.push(mark('export'));
+  let lifecycle: ArmRun['lifecycle'];
+  if (opts.lifecycle && ingest.status === 'stored' && adapter.lifecycle) {
+    const counted = adapter.frames.length;
+    try { lifecycle = await adapter.lifecycle(raw + (app.status === 'ok' ? appendText : '')) ?? undefined; }
+    catch (e) { lifecycle = { error: `${errCode(e)}: ${errMsg(e).slice(0, 300)}` }; }
+    adapter.frames.splice(counted);
+    memory.push(mark('lifecycle'));
+  }
 
   const byOp: ArmRun['frames']['by_op'] = {};
   for (const f of adapter.frames) {
@@ -318,6 +349,7 @@ export async function evaluateArm(adapter: N14Adapter, ledger: N14DocLedger, raw
     append: { ...app, wall_ms: Math.round(appendMs), embed: appendEmbed, appended_tokens: estTokens(appendText), visible_rank: visibleRank, ...(visibleError ? { visible_error: visibleError } : {}) },
     roundtrip,
     ...(segmentRoundtrip ? { segment_roundtrip: segmentRoundtrip } : {}),
+    ...(lifecycle ? { lifecycle } : {}),
     frames: { count: adapter.frames.length, max_bytes: Math.max(0, ...adapter.frames.map(f => f.bytes)), over_cap: adapter.frames.filter(f => f.bytes > EGRESS_CAP_BYTES).length, by_op: byOp },
     memory,
   };
@@ -352,6 +384,7 @@ export interface ArmSummary {
   roundtrip: string;
   segment_roundtrip?: string;
   roundtrip_byte_delta: number | null;
+  lifecycle?: LifecycleOutcome | { error: string };
 }
 
 export function summarizeArm(run: ArmRun, tier: TierId): ArmSummary {
@@ -397,6 +430,7 @@ export function summarizeArm(run: ArmRun, tier: TierId): ArmSummary {
     roundtrip: run.roundtrip.status,
     ...(run.segment_roundtrip ? { segment_roundtrip: run.segment_roundtrip.status } : {}),
     roundtrip_byte_delta: run.roundtrip.byte_delta ?? null,
+    ...(run.lifecycle ? { lifecycle: run.lifecycle } : {}),
   };
 }
 
@@ -558,6 +592,18 @@ export type NativeIngest = 'put_page' | 'import';
 export const PENDING_WAIT_MAX_MS = 240_000;
 /** How long probes wait for a segmented page's projection to seal (Amendment 3). */
 export const PROJECTION_SETTLE_MAX_MS = 240_000;
+/** Amendment 4: both waits scale with the document, 3 s per MB above the Amendment 3 floor (805 s at 256 MiB). */
+export const settleBoundMs = (bytes: number) => Math.max(PROJECTION_SETTLE_MAX_MS, Math.ceil(bytes / 1e6) * 3_000);
+export const LIFECYCLE_TOKEN = 'quillfeather7731';
+export const LIFECYCLE_CLAIM = `The N14 lifecycle marker is ${LIFECYCLE_TOKEN}`;
+/** Amendment 4: the facts fence the lifecycle appends, one fact row whose claim carries LIFECYCLE_TOKEN. */
+export function lifecycleFence(): string {
+  return ['', '', '## Facts', '', '<!--- gbrain:facts:begin -->',
+    '| # | claim | kind | confidence | visibility | notability | valid_from | valid_until | source | context |',
+    '|---|-------|------|------------|------------|------------|------------|-------------|--------|---------|',
+    `| 1 | ${LIFECYCLE_CLAIM} | fact | 1.0 | world | low | 2026-10-01 |  | n14 |  |`,
+    '<!--- gbrain:facts:end -->', ''].join('\n');
+}
 type Embedder = { kind: 'counting' } | { kind: 'none' } | { kind: 'real'; model: string; dims: number; env: Record<string, string> };
 
 export class GbrainAdapter implements N14Adapter {
@@ -583,6 +629,7 @@ export class GbrainAdapter implements N14Adapter {
   #nativeIngest: NativeIngest = 'put_page';
   #pending: PendingWrites = { writes: 0, wait_ms: 0 };
   #importFile: ((file: string, rel: string) => Promise<{ status: string; error?: string; refusal?: { code: string; message: string } }>) | null = null;
+  #pg: { admin: SQL; db: string } | null = null;
   /** The `runOversizedBackfill` receipt when this adapter's ingest is the upgrade backfill (Amendment 1). */
   backfill: unknown = null;
 
@@ -593,7 +640,7 @@ export class GbrainAdapter implements N14Adapter {
    * makes ingest run the gbrain under test's oversized-page backfill on a brain
    * an older gbrain seeded, instead of writing the document.
    */
-  static async open(root: string, arm: Arm, embedder: Embedder, opts: { dataDir?: string; upgrade?: boolean; config?: Record<string, string>; nativeIngest?: NativeIngest } = {}): Promise<GbrainAdapter> {
+  static async open(root: string, arm: Arm, embedder: Embedder, opts: { dataDir?: string; upgrade?: boolean; config?: Record<string, string>; nativeIngest?: NativeIngest; pgAdminUrl?: string } = {}): Promise<GbrainAdapter> {
     const a = new GbrainAdapter(arm, embedder);
     a.#nativeIngest = opts.nativeIngest ?? 'put_page';
     const gut: GbrainUnderTest = { root, version: 'child', overlay: null };
@@ -611,13 +658,27 @@ export class GbrainAdapter implements N14Adapter {
       const { runOversizedBackfill } = await importGbrain<{ runOversizedBackfill: (engine: unknown) => Promise<unknown> }>(gut, 'src/core/oversized-backfill.ts');
       a.#runBackfill = runOversizedBackfill;
     }
-    a.#engine = new PGLiteEngine();
-    await a.#engine.connect(opts.dataDir ? { database_path: opts.dataDir } : {});
+    let engineConfig: Record<string, unknown> = { engine: 'pglite', database_path: opts.dataDir ?? ':memory:' };
+    if (opts.pgAdminUrl) {
+      const { PostgresEngine } = await importGbrain<{ PostgresEngine: new () => PGLiteEngineType }>(gut, 'src/core/postgres-engine.ts');
+      const db = `n14_${process.pid}_${randomUUID().slice(0, 8)}`;
+      const admin = new SQL(opts.pgAdminUrl);
+      await admin.unsafe(`CREATE DATABASE ${db}`);
+      a.#pg = { admin, db };
+      const url = new URL(opts.pgAdminUrl);
+      url.pathname = `/${db}`;
+      engineConfig = { engine: 'postgres', database_url: url.toString() };
+      a.#engine = new PostgresEngine();
+      await a.#engine.connect({ database_url: url.toString(), poolSize: 10 } as never);
+    } else {
+      a.#engine = new PGLiteEngine();
+      await a.#engine.connect(opts.dataDir ? { database_path: opts.dataDir } : {});
+    }
     await a.#engine.initSchema();
     for (const [k, v] of Object.entries({ 'search.cache.enabled': 'false', 'search.reranker.enabled': 'false', 'search.expansion': 'false' })) await a.#engine.setConfig(k, v);
     for (const [k, v] of Object.entries(opts.config ?? {})) await a.#engine.setConfig(k, v);
     const logger = { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} };
-    a.#ctx = { engine: a.#engine, config: { engine: 'pglite', database_path: opts.dataDir ?? ':memory:' }, logger, dryRun: false, remote: false, sourceId: 'default' };
+    a.#ctx = { engine: a.#engine, config: engineConfig, logger, dryRun: false, remote: false, sourceId: 'default' };
     a.#ops = new Map(operations.map(o => [o.name, o]));
     a.#capability = probeNativeCapability(operations);
     return a;
@@ -639,15 +700,21 @@ export class GbrainAdapter implements N14Adapter {
 
   async #put(slug: string, content: string): Promise<void> {
     const prev = this.#rev.get(slug);
-    let r: { revision?: string };
-    try { r = await this.call('put_page', { slug, content, ...(prev ? { expected_revision: prev } : {}) }) as { revision?: string }; }
+    const r = await this.#callSettled('put_page', { slug, content, ...(prev ? { expected_revision: prev } : {}) }) as { revision?: string };
+    if (r?.revision) this.#rev.set(slug, r.revision);
+  }
+
+  /** A write operation; a `write_pending` reply is polled to its final state (Amendment 3). */
+  async #callSettled(name: string, params: Record<string, unknown>): Promise<unknown> {
+    try { return await this.call(name, params); }
     catch (e) {
       const request = (e as { writeRequest?: { request_id?: string } }).writeRequest;
       if (errCode(e) !== 'write_pending' || !request?.request_id) throw e;
-      r = await this.#settle(request.request_id);
+      return await this.#settle(request.request_id);
     }
-    if (r?.revision) this.#rev.set(slug, r.revision);
   }
+
+  #boundMs(): number { return this.#ledger ? settleBoundMs(this.#ledger.bytes) : PENDING_WAIT_MAX_MS; }
 
   /** Amendment 3: an accepted write that replies `write_pending` is polled with get_write_request, as its contract asks, until it is final. */
   async #settle(requestId: string): Promise<{ revision?: string }> {
@@ -660,10 +727,10 @@ export class GbrainAdapter implements N14Adapter {
         if (rec.state !== 'committed') throw Object.assign(new Error(rec.write_error_message ?? `write ${rec.state}`), { code: rec.write_error ?? `write_${rec.state}` });
         return rec;
       }
-      if (performance.now() - t0 > PENDING_WAIT_MAX_MS) {
+      if (performance.now() - t0 > this.#boundMs()) {
         this.#pending.writes++;
         this.#pending.wait_ms += Math.round(performance.now() - t0);
-        throw Object.assign(new Error(`write ${requestId} still ${rec.state} after ${PENDING_WAIT_MAX_MS} ms`), { code: 'write_pending' });
+        throw Object.assign(new Error(`write ${requestId} still ${rec.state} after ${this.#boundMs()} ms`), { code: 'write_pending' });
       }
       await new Promise(res => setTimeout(res, Math.min(Math.max(rec.retry_after_ms ?? 500, 200), 5_000)));
     }
@@ -752,7 +819,7 @@ export class GbrainAdapter implements N14Adapter {
       `SELECT count(*)::int AS n FROM pages WHERE slug = $1 AND deleted_at IS NULL AND text_projection_revision = knowledge_revision`, [this.#ledger.slug]))[0]?.n ?? 0) > 0;
     const atReply = await sealedNow();
     let sealed = atReply;
-    while (!sealed && performance.now() - t0 < PROJECTION_SETTLE_MAX_MS) {
+    while (!sealed && performance.now() - t0 < this.#boundMs()) {
       await new Promise(res => setTimeout(res, 250));
       sealed = await sealedNow();
     }
@@ -943,6 +1010,105 @@ export class GbrainAdapter implements N14Adapter {
     }
   }
 
+  async lifecycle(body: string): Promise<LifecycleOutcome | null> {
+    if (this.arm === 'managed-parts') return null;
+    if (body.includes(LIFECYCLE_TOKEN)) throw Object.assign(new Error(`the document already holds ${LIFECYCLE_TOKEN}`), { code: 'harness' });
+    const slug = this.#ledger.slug;
+    const probes = Array.from({ length: DECILES }, (_, d) => this.#ledger.needles.find(n => n.decile === d)).filter((n): n is Needle => !!n);
+    const hits = async () => {
+      let n = 0;
+      for (const p of probes) if (hitRank((await this.search(p.query)).map(h => h.passage), p.answer) !== null) n++;
+      return n;
+    };
+    const revision = async (includeDeleted = false) => (await this.call('get_page', { slug, body: 'none', ...(includeDeleted ? { include_deleted: true } : {}) }) as { revision?: string }).revision;
+    const count = async (q: string, params: unknown[]) => Number((await this.sql<{ n: number }>(q, params))[0]?.n ?? 0);
+    const fail = (e: unknown) => `${errCode(e)}: ${errMsg(e).slice(0, 300)}`;
+    const out: LifecycleOutcome = {
+      probes: probes.length, hits_before: await hits(),
+      forget: { status: 'ok', fact_rows: 0, withdrawn: null, recall_hits_after: null, export_row: null, wall_ms: 0 },
+      delete: { status: 'ok', hits_after: null, get_page_code: null, wall_ms: 0 },
+      restore: { status: 'ok', hits_after: null, export_matches_pre_delete: null, wall_ms: 0 },
+      purge: { status: 'ok', wall_ms: 0, residue: null, sweep: null },
+    };
+
+    let t0 = performance.now();
+    let preDelete: string | null = null;
+    try {
+      const withFence = body + lifecycleFence();
+      if (this.#importFile) await this.#importDoc(withFence);
+      else await this.#put(slug, withFence);
+      await this.#settleProjection();
+      const rows = await this.sql<{ id: number }>(`SELECT id FROM facts WHERE strpos(fact, $1) > 0 ORDER BY id`, [LIFECYCLE_TOKEN]);
+      out.forget.fact_rows = rows.length;
+      if (!rows.length) throw Object.assign(new Error('the facts fence produced no fact row'), { code: 'no_fact_row' });
+      const id = Number(rows[0].id);
+      await this.#callSettled('forget_fact', { id, reason: 'n14 lifecycle' });
+      out.forget.withdrawn = await count(`SELECT count(*)::int AS n FROM facts WHERE id = $1 AND expired_at IS NULL`, [id]) === 0;
+      const recall = await this.call('recall', { query: LIFECYCLE_TOKEN }) as { facts?: unknown[] };
+      out.forget.recall_hits_after = (recall.facts ?? []).filter(f => JSON.stringify(f).includes(LIFECYCLE_TOKEN)).length;
+      preDelete = await this.exportBody();
+      const line = preDelete.split('\n').find(l => l.includes(LIFECYCLE_TOKEN));
+      out.forget.export_row = !line ? 'absent' : line.includes(`~~${LIFECYCLE_CLAIM}~~`) ? 'struck' : 'active';
+    } catch (e) { out.forget.status = 'error'; out.forget.error = fail(e); }
+    out.forget.wall_ms = Math.round(performance.now() - t0);
+    preDelete ??= await this.exportBody().catch(() => null);
+
+    t0 = performance.now();
+    try {
+      await this.#callSettled('delete_page', { slug, expected_revision: await revision() });
+      out.delete.hits_after = await hits();
+      try { await this.call('get_page', { slug, body: 'none' }); out.delete.get_page_code = 'returned'; }
+      catch (e) { out.delete.get_page_code = errCode(e); }
+    } catch (e) { out.delete.status = 'error'; out.delete.error = fail(e); }
+    out.delete.wall_ms = Math.round(performance.now() - t0);
+
+    t0 = performance.now();
+    try {
+      await this.#callSettled('restore_page', { slug, expected_revision: await revision(true) });
+      await this.#settleProjection();
+      out.restore.hits_after = await hits();
+      const after = await this.exportBody();
+      out.restore.export_matches_pre_delete = preDelete === null ? null : sha256(canonicalBody(after)) === sha256(canonicalBody(preDelete));
+    } catch (e) { out.restore.status = 'error'; out.restore.error = fail(e); }
+    out.restore.wall_ms = Math.round(performance.now() - t0);
+
+    t0 = performance.now();
+    try {
+      const pageId = Number((await this.sql<{ id: number }>(`SELECT id FROM pages WHERE slug = $1`, [slug]))[0]?.id ?? -1);
+      const r = await this.#callSettled('delete_page', { slug, expected_revision: await revision(), purge: true }) as { purge?: { removed?: Record<string, unknown> } };
+      out.purge.removed = Object.fromEntries(Object.entries(r?.purge?.removed ?? {}).filter((x): x is [string, number] => typeof x[1] === 'number' && x[1] > 0));
+      const answers = [...this.#ledger.needles.map(n => n.answer), this.#ledger.append.needle.answer, LIFECYCLE_TOKEN];
+      const segments = await this.#hasSegments();
+      const needleTexts = async () => {
+        if (!segments) return 0;
+        let n = 0;
+        for (const a of answers) if (await count(`SELECT count(*)::int AS n FROM page_segment_texts WHERE position(convert_to($1, 'UTF8') IN body) > 0`, [a]) > 0) n++;
+        return n;
+      };
+      let needleChunks = 0;
+      for (const a of answers) if (await count(`SELECT count(*)::int AS n FROM content_chunks WHERE strpos(chunk_text, $1) > 0`, [a]) > 0) needleChunks++;
+      const unref = segments ? (await this.sql<{ n: number; bytes: string }>(`SELECT count(*)::int AS n, coalesce(sum(byte_len), 0)::bigint AS bytes FROM page_segment_texts t
+        WHERE NOT EXISTS (SELECT 1 FROM page_body_manifest m WHERE m.source_id = t.source_id AND m.sha256 = t.sha256)`))[0] : null;
+      out.purge.residue = {
+        pages: await count(`SELECT count(*)::int AS n FROM pages WHERE id = $1 OR slug = $2`, [pageId, slug]),
+        chunks: await count(`SELECT count(*)::int AS n FROM content_chunks WHERE page_id = $1`, [pageId]),
+        manifest_rows: segments ? await count(`SELECT count(*)::int AS n FROM page_body_manifest WHERE page_id = $1`, [pageId]) : 0,
+        versions: await count(`SELECT count(*)::int AS n FROM page_versions WHERE page_id = $1`, [pageId]),
+        facts: await count(`SELECT count(*)::int AS n FROM facts WHERE strpos(fact, $1) > 0`, [LIFECYCLE_TOKEN]),
+        needle_chunks: needleChunks,
+        needle_texts: await needleTexts(),
+        unreferenced_texts: Number(unref?.n ?? 0),
+        unreferenced_text_bytes: Number(unref?.bytes ?? 0),
+      };
+      if (segments) {
+        const swept = await (this.#engine as unknown as { sweepSegments: (o: Record<string, unknown>) => Promise<{ textsDeleted: number }> }).sweepSegments({ graceMs: 0 });
+        out.purge.sweep = { texts_deleted: swept.textsDeleted, needle_texts_after: await needleTexts(), texts_left: await count(`SELECT count(*)::int AS n FROM page_segment_texts`, []) };
+      }
+    } catch (e) { out.purge.status = 'error'; out.purge.error = fail(e); }
+    out.purge.wall_ms = Math.round(performance.now() - t0);
+    return out;
+  }
+
   /** Paid arm helpers: hybrid query and vector-only search, hits mapped to stored chunks. */
   async hybrid(query: string): Promise<SearchHit[]> {
     const rows = await this.call('query', { query, limit: TOP_K, expand: false, autocut: false, adaptive_return: false }) as Array<{ slug: string; chunk_id?: number | null; chunk_text?: string }>;
@@ -967,6 +1133,10 @@ export class GbrainAdapter implements N14Adapter {
   async close(): Promise<void> {
     try { this.#gw.__setEmbedTransportForTests(null); } catch { /* best effort */ }
     await this.#engine.disconnect().catch(() => {});
+    if (this.#pg) {
+      await this.#pg.admin.unsafe(`DROP DATABASE IF EXISTS ${this.#pg.db} WITH (FORCE)`).catch(() => {});
+      await this.#pg.admin.close().catch(() => {});
+    }
   }
 }
 
@@ -982,7 +1152,7 @@ function countingVector(text: string, dims: number): number[] {
 // ─── Child process ───────────────────────────────────────────────────────
 
 /** `phase` (Amendment 1 upgrade path): `seed` writes the document single-page into the file-backed brain at `dataDir`; `upgrade` opens it, backfills and probes. */
-interface ChildSpec { root: string; arm: Arm; docPath: string; ledgerPath: string; outPath: string; embed: boolean; dataDir?: string; phase?: 'seed' | 'upgrade'; config?: Record<string, string>; nativeIngest?: NativeIngest }
+interface ChildSpec { root: string; arm: Arm; docPath: string; ledgerPath: string; outPath: string; embed: boolean; dataDir?: string; phase?: 'seed' | 'upgrade'; config?: Record<string, string>; nativeIngest?: NativeIngest; pgAdminUrl?: string; lifecycle?: boolean }
 interface ChildResult { ok: true; run: ArmRun; capability: NativeCapability; backfill?: unknown }
 interface SeedResult { ok: true; seed: IngestOutcome }
 
@@ -994,7 +1164,7 @@ async function childMain(specPath: string): Promise<void> {
   const spec = JSON.parse(readFileSync(specPath, 'utf8')) as ChildSpec;
   await withHermeticEnv('n14-child', async () => {
     const ledger = JSON.parse(readFileSync(spec.ledgerPath, 'utf8')) as N14DocLedger;
-    const adapter = await GbrainAdapter.open(spec.root, spec.arm, spec.embed ? { kind: 'counting' } : { kind: 'none' }, { dataDir: spec.dataDir, upgrade: spec.phase === 'upgrade', config: spec.config, nativeIngest: spec.nativeIngest });
+    const adapter = await GbrainAdapter.open(spec.root, spec.arm, spec.embed ? { kind: 'counting' } : { kind: 'none' }, { dataDir: spec.dataDir, upgrade: spec.phase === 'upgrade', config: spec.config, nativeIngest: spec.nativeIngest, pgAdminUrl: spec.pgAdminUrl });
     try {
       const raw = readFileSync(spec.docPath, 'utf8');
       if (spec.phase === 'seed') {
@@ -1003,7 +1173,7 @@ async function childMain(specPath: string): Promise<void> {
         return;
       }
       const t0 = performance.now();
-      const run = await evaluateArm(adapter, ledger, raw, { embed: spec.embed, probeMemory: memMark(t0) });
+      const run = await evaluateArm(adapter, ledger, raw, { embed: spec.embed, lifecycle: spec.lifecycle, probeMemory: memMark(t0) });
       const result: ChildResult = { ok: true, run, capability: adapter.capability, ...(adapter.backfill ? { backfill: adapter.backfill } : {}) };
       writeFileSync(spec.outPath, JSON.stringify(result));
     } finally {
@@ -1074,7 +1244,10 @@ export interface N14RunResult {
   runs: Array<{ tier: TierId; run: ArmRun }>;
 }
 
-export interface N14Options { gut: GbrainUnderTest; upgradeFrom?: GbrainUnderTest; tiers: TierId[]; arms: Arm[]; docs?: DocKind[]; seed: number; concurrency: number; rssLimitMb: number; workDir?: string; log?: (s: string) => void; config?: Record<string, string>; nativeIngest?: NativeIngest }
+export interface N14Options { gut: GbrainUnderTest; upgradeFrom?: GbrainUnderTest; tiers: TierId[]; arms: Arm[]; docs?: DocKind[]; seed: number; concurrency: number; rssLimitMb: number; workDir?: string; log?: (s: string) => void; config?: Record<string, string>; nativeIngest?: NativeIngest; pgAdminUrl?: string; lifecycle?: boolean }
+
+/** Tiers whose children run the counting embedder (the append re-embed cost); Amendment 4 adds 24mib. */
+export const EMBED_PASS_TIERS = ['2mb', '20mb', '24mib'] as const;
 
 async function pool<T, R>(items: readonly T[], n: number, fn: (x: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);
@@ -1129,11 +1302,11 @@ async function runN14Hermetic(opts: N14Options): Promise<N14RunResult> {
       const jobs = docs.flatMap(d => opts.arms.map(arm => ({ d, arm })));
       for (const { d } of jobs.filter(j => j.arm === 'native' && !capability.present)) tierRun.arms.push(absentSummary(d.ledger, tier));
       const runnable = jobs.filter(j => j.arm !== 'native' || capability.present);
-      const embed = tier === '2mb' || tier === '20mb';
+      const embed = (EMBED_PASS_TIERS as readonly string[]).includes(tier);
       const timeoutMs = Math.max(300_000, Math.round(Math.max(...docs.map(x => x.ledger.bytes)) / 1e6 * 20_000));
       const outcomes = await pool(runnable, opts.concurrency, async ({ d, arm }) => {
         log(`[${tier}] ${d.ledger.id} / ${arm}: start`);
-        const o = await runChild({ root: opts.gut.root, arm, docPath: d.docPath, ledgerPath: d.ledgerPath, outPath: join(dir, `${d.ledger.id}.${arm}.result.json`), embed, config: opts.config, nativeIngest: opts.nativeIngest }, opts.rssLimitMb, timeoutMs);
+        const o = await runChild({ root: opts.gut.root, arm, docPath: d.docPath, ledgerPath: d.ledgerPath, outPath: join(dir, `${d.ledger.id}.${arm}.result.json`), embed, config: opts.config, nativeIngest: opts.nativeIngest, pgAdminUrl: opts.pgAdminUrl, lifecycle: opts.lifecycle }, opts.rssLimitMb, timeoutMs);
         log(`[${tier}] ${d.ledger.id} / ${arm}: ${o.crash ? `CRASH ${o.crash}` : 'done'} in ${(o.wall_ms / 1000).toFixed(1)} s, peak RSS ${o.rss_peak_mb} MB`);
         return { d, arm, o };
       });
@@ -1369,6 +1542,16 @@ export function parseNativeIngest(argv: readonly string[]): NativeIngest {
   return raw;
 }
 
+/** `--engine pglite|postgres` (Amendment 4); postgres needs an admin URL from `--pg-admin-url` or N14_PG_ADMIN_URL. */
+export function parseEngine(argv: readonly string[], env: NodeJS.ProcessEnv = process.env): { kind: 'pglite' } | { kind: 'postgres'; adminUrl: string } {
+  const kind = argValue(argv, '--engine') ?? 'pglite';
+  if (kind === 'pglite') return { kind };
+  if (kind !== 'postgres') throw new Error(`--engine takes pglite or postgres, got ${kind}`);
+  const adminUrl = argValue(argv, '--pg-admin-url') ?? env.N14_PG_ADMIN_URL;
+  if (!adminUrl) throw new Error('--engine postgres needs --pg-admin-url <url> or N14_PG_ADMIN_URL');
+  return { kind, adminUrl };
+}
+
 export function parseArms(argv: readonly string[]): Arm[] {
   const raw = argValue(argv, '--arms');
   if (!raw) return [...ARMS];
@@ -1409,9 +1592,17 @@ async function main(): Promise<void> {
   const upgradeSpec = argValue(argv, '--upgrade-from');
   const upgradeFrom = upgradeSpec ? resolveGbrainUnderTest(upgradeSpec) : undefined;
   if (upgradeFrom && !tiers.includes('2mb')) throw new Error('--upgrade-from runs on the 2mb tier; add --tiers 2mb');
-  log(`# BrainBench N14: large-page fidelity (gbrain ${gut.version}${gut.overlay ? `, overlay ${gut.overlay.build.commit.slice(0, 7)}` : ', pinned'}; tiers ${tiers.join(', ')}; arms ${arms.join(', ')})`);
+  const engine = parseEngine(argv);
+  if (upgradeFrom && engine.kind === 'postgres') throw new Error('--upgrade-from runs on file-backed PGLite only');
+  const lifecycle = argv.includes('--lifecycle');
+  let postgresServer: string | null = null;
+  if (engine.kind === 'postgres') {
+    const admin = new SQL(engine.adminUrl);
+    try { postgresServer = String((await admin.unsafe('SHOW server_version'))[0]?.server_version ?? ''); } finally { await admin.close(); }
+  }
+  log(`# BrainBench N14: large-page fidelity (gbrain ${gut.version}${gut.overlay ? `, overlay ${gut.overlay.build.commit.slice(0, 7)}` : ', pinned'}; ${engine.kind}${postgresServer ? ` ${postgresServer}` : ''}; tiers ${tiers.join(', ')}; arms ${arms.join(', ')})`);
   const t0 = performance.now();
-  const r = await runN14({ gut, upgradeFrom, tiers, arms, docs, seed, concurrency, rssLimitMb, log, ...(config ? { config } : {}), ...(nativeIngest !== 'put_page' ? { nativeIngest } : {}) });
+  const r = await runN14({ gut, upgradeFrom, tiers, arms, docs, seed, concurrency, rssLimitMb, log, ...(config ? { config } : {}), ...(nativeIngest !== 'put_page' ? { nativeIngest } : {}), ...(engine.kind === 'postgres' ? { pgAdminUrl: engine.adminUrl } : {}), ...(lifecycle ? { lifecycle } : {}) });
   const hermeticMs = Math.round(performance.now() - t0);
   let paidData: Record<string, unknown> | null = null;
   let paidCost: RunSummary | null = null;
@@ -1444,7 +1635,7 @@ async function main(): Promise<void> {
     ...(attestation ? { preregistration_attestation: attestation } : {}),
     execution: { source_tree: sourceTreeIdentity(), product: productIdentityFor(gut) },
     resolved_config: {
-      engine: 'pglite-in-memory, one brain per (document, arm) child process',
+      engine: engine.kind === 'postgres' ? `postgres ${postgresServer} (pgvector), one fresh database per (document, arm) child process, created and dropped by the harness` : 'pglite-in-memory, one brain per (document, arm) child process',
       decide: DECIDE_OFF,
       caller: 'operation handlers with OperationContext { remote: false, sourceId: default }',
       tiers, arms, docs: docs ?? 'all', seed, concurrency, rss_limit_mb: rssLimitMb,
@@ -1455,7 +1646,9 @@ async function main(): Promise<void> {
       reads: 'single-page and managed-parts: get_page {slug} of the hit page; native: get_page {slug, body: window, around_chunk_id}; plus one default get_page of the entry page per arm',
       append: 'single-page: put_page whole page + 1 KB; managed-parts: put_page new part + hub index; native: append_page when it exists',
       append_cost: 'embedding inputs and estimated tokens (UTF-8 bytes / 4) sent by runEmbedCore({stale: true}) after the append, counted by a fake embed transport; ratio = embed tokens / appended tokens; null when the page has no chunks',
-      embed_pass_tiers: ['2mb', '20mb'],
+      embed_pass_tiers: EMBED_PASS_TIERS,
+      settle_bound: 'write_pending polls and projection settles wait up to max(240 s, 3 s per MB of the document) (Amendment 4)',
+      ...(lifecycle ? { lifecycle: `exploratory (Amendment 4): after the round trip, append a one-row facts fence and forget_fact it (fact withdrawn, recall, exported row), delete_page (search hits for one needle per decile, get_page), restore_page (hits, export equal to the pre-delete export), delete_page purge: true (residue rows and needle bytes, then sweepSegments({ graceMs: 0 })); lifecycle calls are outside the egress count` } : {}),
       roundtrip: 'export (runExport --slug-prefix) then reassemble the body; sha256 against source body + append',
       native_capability: r.capability,
       thresholds: THRESHOLDS,
@@ -1480,7 +1673,7 @@ async function main(): Promise<void> {
       ...(upgradeFrom ? { upgrade: r.tiers.flatMap(t => t.upgrade ?? []) } : {}),
       presence: r.tiers.flatMap(t => t.presence),
       documents: r.tiers.flatMap(t => t.docs.map(d => ({ tier: t.tier, id: d.id, bytes: d.bytes, lines: d.lines, sections: d.sections.length, sha256: d.sha256, needles: d.needles.length, append_bytes: d.append.bytes }))),
-      probes: r.runs.map(x => ({ tier: x.tier, arm: x.run.arm, doc: x.run.doc, rows: x.run.probes, reads: x.run.reads, append: x.run.append, roundtrip: x.run.roundtrip, segment_roundtrip: x.run.segment_roundtrip ?? null, frames: x.run.frames, memory: x.run.memory, ingest: x.run.ingest, direct_read: x.run.direct_read, direct_read_agent: x.run.direct_read_agent ?? null, embed_initial: x.run.embed_initial, embed_error: x.run.embed_error ?? null })),
+      probes: r.runs.map(x => ({ tier: x.tier, arm: x.run.arm, doc: x.run.doc, rows: x.run.probes, reads: x.run.reads, append: x.run.append, roundtrip: x.run.roundtrip, segment_roundtrip: x.run.segment_roundtrip ?? null, lifecycle: x.run.lifecycle ?? null, frames: x.run.frames, memory: x.run.memory, ingest: x.run.ingest, direct_read: x.run.direct_read, direct_read_agent: x.run.direct_read_agent ?? null, embed_initial: x.run.embed_initial, embed_error: x.run.embed_error ?? null })),
       findings: findings.map(f => ({ id: f.id, classification: f.classification, surface: f.surface, actual: f.actual, repro: f.repro })),
       ...(paidData ?? {}),
       harness_error: r.harnessError,
@@ -1509,6 +1702,18 @@ async function main(): Promise<void> {
       const b = u.backfill as { reindexed?: number; candidates?: number; held_for_approval?: number } | null;
       const x = u.summary;
       log(`| ${u.doc} | ${u.seed ? `${u.seed.status}${u.seed.embed_skip ? ` embed_skip=${u.seed.embed_skip}` : ''}, ${u.seed.chunks} chunks` : `crash ${u.seed_crash}`} | ${b ? `${b.reindexed}/${b.candidates} (${b.held_for_approval})` : 'n/a'} | ${u.marker_removed ?? 'n/a'} | ${x?.ingest.chunks ?? 'n/a'} | ${x ? pct(x.keyword_recall) : 'n/a'} | ${x ? x.min_decile_recall.toFixed(2) : 'n/a'} | ${x ? `${x.reads.correct}/${x.reads.attempted}` : 'n/a'} | ${x?.max_frame_bytes ?? 'n/a'} | ${x?.roundtrip ?? (u.crash ? `crash ${u.crash}` : 'n/a')} |`);
+    }
+  }
+  const lifecycles = r.runs.filter(x => x.run.lifecycle);
+  if (lifecycles.length) {
+    log('\nlifecycle (exploratory, Amendment 4)');
+    log('| tier | doc | arm | hits before | forget: rows / withdrawn / recall after / exported row | delete: hits / get_page | restore: hits / export equal | purge: pages, chunks, manifest, versions, facts / needle chunks, texts / unreferenced texts (bytes) / after sweep |');
+    log('|---|---|---|---|---|---|---|---|');
+    for (const { tier, run } of lifecycles) {
+      const l = run.lifecycle!;
+      if ('error' in l) { log(`| ${tier} | ${run.doc} | ${run.arm} | error ${l.error} |||||`); continue; }
+      const p = l.purge.residue;
+      log(`| ${tier} | ${run.doc} | ${run.arm} | ${l.hits_before}/${l.probes} | ${l.forget.status === 'ok' ? `${l.forget.fact_rows} / ${l.forget.withdrawn} / ${l.forget.recall_hits_after} / ${l.forget.export_row}` : `error ${l.forget.error}`} | ${l.delete.status === 'ok' ? `${l.delete.hits_after}/${l.probes} / ${l.delete.get_page_code}` : `error ${l.delete.error}`} | ${l.restore.status === 'ok' ? `${l.restore.hits_after}/${l.probes} / ${l.restore.export_matches_pre_delete}` : `error ${l.restore.error}`} | ${l.purge.status === 'ok' && p ? `${p.pages}, ${p.chunks}, ${p.manifest_rows}, ${p.versions}, ${p.facts} / ${p.needle_chunks}, ${p.needle_texts} / ${p.unreferenced_texts} (${p.unreferenced_text_bytes}) / ${l.purge.sweep ? `${l.purge.sweep.texts_deleted} deleted, ${l.purge.sweep.needle_texts_after} needle texts` : 'n/a'}` : `error ${l.purge.error}`} |`);
     }
   }
   log(`\ngbrain findings: ${findings.length ? '' : 'none'}`);
