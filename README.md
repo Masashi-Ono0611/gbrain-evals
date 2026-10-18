@@ -86,6 +86,7 @@ save, find, update and forget what it knows. The parts that matter for an agent:
 | A file whose frontmatter `slug:` names another page: duplicate to merge, stray line to delete, or a case for a person (model judgment) | **0** harmful answers in 432 pair runs (no duplicate split, no merge of two different things); true duplicates recognised **92.0%** (Opus 5.5), 85.3% (gpt-6.1-sol), 80.0% (Sonnet 5.5), the rest deferred to a person | gbrain #6377 (`ac6e0868`) | [Slug-conflict judgment](docs/benchmarks/2026-10-09-content-repair-judgment.md) |
 | A forecasting take graded by a model, among verdicts confident enough to apply (≥ 0.95) | **0** wrong in 496 applied verdicts by gpt-6.1-sol (upper bound 0.6%, bar 1%), which resolved 99.2% of resolvable takes and held back on all 250 unresolvable ones; Opus 5.5 and Sonnet 5.5 rarely reach 0.95 (2 and 121 applied, Sonnet 1 wrong) | gbrain #6882 (`d99b84694`) | [Take grading](docs/benchmarks/2026-10-16-take-grading.md) |
 | A forecast journal over synthetic holders of known skill (private, trusted local only) | Shrunk accuracy ranks holders in their true order, median Spearman ρ **0.905** (bar 0.80); who-was-right set-F1 **1.000**; every open, overdue and undated prediction counted exactly; **8/8** remote probes see none of it | gbrain #6886 (`65ed40ec6`), v0.60.286.0 | [Forecast journal](docs/benchmarks/2026-10-17-forecast-journal.md) |
+| Graph walks (`traverseGraph`, `traversePathsDetailed`) on fictional graphs of 10,000 to 1,000,000 pages: Postgres with breadth-first walks against HydraDB as the walk engine | Postgres faster at every size, same answer on all 54,842 compared calls: warm p95 **1.44 s vs 6.28 s** at 100,000 pages and **3.45 s vs 6.28 s** at 1,000,000; HydraDB faster only on deep `both` walks (2.7x at depth 3); production HydraDB routing not built | gbrain #6934 (`fc1121cae58`) | [Graph backend](docs/benchmarks/2026-10-17-graph-backend.md) |
 | Useful material kept when a session becomes a memory page | **88.1%** judged (judge calibration awaiting a person's review); 74.9% with quoted evidence | Cat 35 run | [Cat 35](docs/benchmarks/2026-08-16-brainbench-cat35-transcript-distill.md) |
 
 All 29 reproductions in the [bug ledger](docs/benchmarks/2026-10-01-wave-bugs.md) pass at `77cf8e111`, including
@@ -318,7 +319,14 @@ a named commit outside the release's history: the other three it listed shipped 
 search modes changed after v0.60.169.0, with the Voyage `rerank-3-lite` default and `tokenmax` without expansion, and
 cites the two addenda that checked them. This release also records the N14 run at the switch-on
 ([report](docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2.md)). No result row on this page changes. The
-repository row names v0.10.123 (was v0.10.121).
+repository row names v0.10.123 (was v0.10.122).
+
+### 2026-10-18: Graph backend row (HydraDB vs Postgres); repository row names v0.10.122
+
+Current results gains a graph-walk row from the [graph backend benchmark](docs/benchmarks/2026-10-17-graph-backend.md)
+(GBRA-123, preregistered): gbrain's breadth-first walks on Postgres (#6934, `fc1121cae58`) answer faster than HydraDB
+at 10,000, 100,000 and 1,000,000 pages with identical answers, so production HydraDB routing is not built. No existing
+number changed. The repository row names v0.10.122 (was v0.10.121).
 
 ### 2026-10-17: W11 confirms gbrain W4 on sealed material; repository row names v0.10.121
 
