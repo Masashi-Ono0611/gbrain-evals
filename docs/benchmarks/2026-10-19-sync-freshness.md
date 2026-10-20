@@ -114,6 +114,29 @@ Transactions come from `pg_stat_database` for the brain's database, connections 
 
 The before/after pair for three residents was measured on the third machine, where the after side read 245.5 transactions and 29 connections; the table's after row comes from the Postgres machine.
 
+### First managed sync after activating a classic brain (gbrain v0.60.320.0, #6712 PR 4b)
+
+Measured October 19 by GBRA-133 at the request of GBRA-101, after the rest of this report.
+
+gbrain v0.60.320.0 (PR [#7053](https://github.com/garrytan/gbrain/pull/7053), PR head `426c4ef5`, merged into master as `c9f309f3`) changed how a managed sync works on an ordinary source. Instead of replaying commits from the last checkpoint to HEAD, each pass compares every file at HEAD with the page and import record the brain holds. This cell measures the first managed sync after `gbrain sources writer claim` and `gbrain sources writer activate` turn a classic brain into a managed one.
+
+Each run starts from the same kind of classic brain, built and fully synced to HEAD by v0.60.316.0. The run then activates the brain with the version under test and repeats `gbrain sync` until a pass reports it is up to date, up to 10 passes at 10,000 pages and 6 at 100,000. The time covers the sync passes only, not the activation step. Statements come from `pg_stat_statements`, reset just before the first pass, so PGLite has no statement count. "Before" is v0.60.316.0 (product revision `4ba4c36f`); "after" is the PR 4b head `426c4ef5`. Both ran on one 4 vCPU machine.
+
+| Engine | Pages | Version | n | Passes | Converged within the cap | Sync time, median (range) | Statements (without transaction control) | Postgres statement time |
+|---|---|---|---|---|---|---|---|---|
+| Postgres | 10,000 | before (v0.60.316.0) | 3 | 1 | yes, 3 of 3 | 1.57 s (1.52 to 1.64) | 138 (118) | 0.09 to 0.14 s |
+| Postgres | 10,000 | after (PR 4b) | 3 | 1 | yes, 3 of 3 | 13.17 s (11.79 to 14.29) | 2,487 (2,256) | 0.99 to 1.36 s |
+| PGLite | 10,000 | before (v0.60.316.0) | 3 | 1 | yes, 3 of 3 | 1.78 s (1.70 to 1.81) | not counted | - |
+| PGLite | 10,000 | after (PR 4b) | 3 | 1 | yes, 3 of 3 | 12.94 s (12.28 to 13.17) | not counted | - |
+| Postgres | 100,000 | before (v0.60.316.0) | 1 | 1 | yes | 7.1 s | 147 (127) | 1.1 s |
+| Postgres | 100,000 | after (PR 4b) | 1 | 1 | yes | 129.6 s | 23,243 (21,206) | 15.3 s |
+
+Every run converged in its first pass and every pass reported `up_to_date` with 0 pages written, because the classic brain already held every file. The statement count was identical in every rep of a cell.
+
+The two versions do different work here, so this is not a like-for-like speed comparison. v0.60.316.0 replays commits from the checkpoint to HEAD. The classic sync had already left the checkpoint at HEAD, so that range is empty and nothing is checked. PR 4b compares all 10,000 or 100,000 files with the brain. That comparison is what lets it recover from a reset, a rewritten history or a lost run. Its cost grows with the brain: about 2.3 statements and 1.3 ms of sync time per page at both sizes. At 100,000 pages it ran about 1,000 rounds of 100 pages. Each round re-read the config and source topology, checked the cycle lock and wrote a checkpoint. Postgres accounts for 15.3 s of the 129.6 s, so most of the time is spent outside the database.
+
+GBRA-101 measured the same cell on master `c9f309f3` (which contains PR 4b) on a different 4 vCPU machine: Postgres, 100,000 pages, converged in 1 pass, 23,241 statements, 114.1 s. The statement counts agree within 2, and this machine took 14% longer (one run on each side). The PR 4b changelog says this case "did not finish" before and now converges in about 45 s. Neither run reproduces either figure. Here v0.60.316.0 finished in 7.1 s, because its replay range was empty. Both 100,000-page measurements took longer than 45 s.
+
 ## A nightly regression gate
 
 gbrain gates three of these cells nightly (`.github/workflows/sync-freshness-gate.yml` on the gbrain branch): watch mode, single-file commit, 10,000 pages, through `gbrain serve`, for Postgres managed, PGLite managed and Postgres classic. The gate value is the p50 of 10 reps after one discarded warm-up rep, and a cell fails above its committed baseline plus 25%. It runs on `ubicloud-standard-4` runners, and the baseline was recorded on that runner class.
@@ -136,6 +159,7 @@ Before committing it, the gate procedure ran 25 times (5 runs on each of 5 fresh
 - PGLite times include an MCP round trip through the serve.
 - The PGLite outage result is "not embedded within 300 s plus a 20 s settle"; the run did not wait longer to see whether a later retry would finish.
 - PR 2a's jobs-only and autopilot numbers are quoted from that lane, not re-measured here.
+- The activation cell measured 100,000 pages once on each side (n = 1) because of the cost. It covers only a classic brain synced to HEAD just before activation, with no embeddings.
 
 ## Reproduce and inspect
 
@@ -147,6 +171,9 @@ ENGINE=pglite   scripts/bench/sync-freshness-matrix.sh pr2b6 <work-dir>
 scripts/bench/sync-freshness-matrix.sh pr2b6-before <work-dir> <checkout of gbrain 2e9df779>
 bun scripts/bench/sync-freshness.ts --report <work-dir>/results
 bun scripts/bench/sync-freshness-gate.ts --write-baseline <file> --machine-class <class>   # one gate run
+bun scripts/bench/sync-freshness.ts --work-dir <work-dir> --engine postgres --mode classic --pages 10000 --commit single --trigger manual --reps 1   # classic input, at 4ba4c36f
+bun scripts/bench/sync-freshness.ts --work-dir <work-dir> --mode managed --activation --commit single --trigger manual --reps 1 \
+  --engine postgres --pages 10000 --max-activation-passes 10 --brain-rev 4ba4c36f --gbrain-root <checkout under test>   # activation cell
 ```
 
-A full Postgres set takes about 2.5 hours and a PGLite set about 3 hours on a 4-core machine. [`raw/`](2026-10-19-sync-freshness/raw/) holds the cell JSON for every row (`after-pg/`, `after-pglite/`, `before-after/` with `HEAD_20bcf56b` for pre-2a, `gate-stress/`), with machine paths removed; per-rep values are in each file's `reps`.
+A full Postgres set takes about 2.5 hours and a PGLite set about 3 hours on a 4-core machine. [`raw/`](2026-10-19-sync-freshness/raw/) holds the cell JSON for every row (`after-pg/`, `after-pglite/`, `before-after/` with `HEAD_20bcf56b` for pre-2a, `gate-stress/`, `activation/` with one file per rep), with machine paths removed; per-rep values are in each file's `reps`.
