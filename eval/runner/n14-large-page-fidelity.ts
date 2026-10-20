@@ -571,8 +571,31 @@ export function probeNativeCapability(operations: ReadonlyArray<{ name: string; 
   const upload = byName.has('begin_page_upload') && byName.has('upload_page_part') && byName.has('commit_page_upload');
   return {
     present, get_page_body: bodyText, append_page: appendPage, upload_session: upload,
-    evidence: present ? `get_page declares body ${bodyText}${appendPage ? '; append_page exists' : ''}` : `get_page declares ${bodyText === null ? 'no body parameter' : `body ${bodyText} without a window mode`}; ${appendPage ? 'append_page exists' : 'no append_page op'}`,
+    evidence: present ? `get_page declares body ${bodyText}${appendPage ? '; append_page exists' : ''}${upload ? '; upload sessions exist' : ''}` : `get_page declares ${bodyText === null ? 'no body parameter' : `body ${bodyText} without a window mode`}; ${appendPage ? 'append_page exists' : 'no append_page op'}`,
   };
+}
+
+/**
+ * Amendment 5: an upload's parts, in order. Each part ends on a code point boundary, and each upload_page_part call's
+ * encoded frame (gbrain's encodedFrameBytes: the JSON-RPC envelope plus its 1024-byte reserve) stays within `cap`.
+ */
+export function cutUploadParts(buf: Buffer, uploadId: string, cap: number): Buffer[] {
+  const frame = (slice: Buffer, part: number) => Buffer.byteLength(JSON.stringify({ jsonrpc: '2.0', id: 0,
+    result: { upload_id: uploadId, part, text: slice.toString('utf8'), part_sha256: '0'.repeat(64) } })) + 1024;
+  const parts: Buffer[] = [];
+  for (let off = 0; off < buf.length;) {
+    for (let size = Math.min(buf.length - off, Math.floor(cap / 2)); ; size = Math.floor(size * 0.8)) {
+      let end = off + size;
+      while (end < buf.length && end > off && (buf[end] & 0xc0) === 0x80) end--;
+      const slice = buf.subarray(off, end);
+      if (end === off) throw new Error(`an upload part limit of ${cap} bytes cannot carry the text at byte ${off}`);
+      if (frame(slice, parts.length) > cap) continue;
+      parts.push(slice);
+      off = end;
+      break;
+    }
+  }
+  return parts;
 }
 
 // ─── gbrain adapter (runs inside a child process) ────────────────────────
@@ -595,6 +618,8 @@ export const PROJECTION_SETTLE_MAX_MS = 240_000;
 /** Amendment 4: both waits scale with the document, 3 s per MB above the Amendment 3 floor (805 s at 256 MiB). */
 export const settleBoundMs = (bytes: number) => Math.max(PROJECTION_SETTLE_MAX_MS, Math.ceil(bytes / 1e6) * 3_000);
 export const LIFECYCLE_TOKEN = 'quillfeather7731';
+/** Amendment 5: the preregistered upload threshold, 4 MiB. */
+export const UPLOAD_ABOVE_BYTES = 4 * 1024 * 1024;
 export const LIFECYCLE_CLAIM = `The N14 lifecycle marker is ${LIFECYCLE_TOKEN}`;
 /** Amendment 4: the facts fence the lifecycle appends, one fact row whose claim carries LIFECYCLE_TOKEN. */
 export function lifecycleFence(): string {
@@ -720,11 +745,14 @@ export class GbrainAdapter implements N14Adapter {
   async #settle(requestId: string): Promise<{ revision?: string }> {
     const t0 = performance.now();
     for (;;) {
-      const rec = await this.call('get_write_request', { request_id: requestId }) as { state: string; retry_after_ms?: number | null; revision?: string; write_error?: string; write_error_message?: string };
+      const rec = await this.call('get_write_request', { request_id: requestId }) as { state: string; retry_after_ms?: number | null; revision?: string; write_error?: string; write_error_message?: string; write_error_reason?: string; error_detail?: unknown };
       if (['committed', 'conflict', 'failed', 'cancelled'].includes(rec.state)) {
         this.#pending.writes++;
         this.#pending.wait_ms += Math.round(performance.now() - t0);
-        if (rec.state !== 'committed') throw Object.assign(new Error(rec.write_error_message ?? `write ${rec.state}`), { code: rec.write_error ?? `write_${rec.state}` });
+        if (rec.state !== 'committed') {
+          const detail = rec.error_detail == null ? '' : ` detail: ${(typeof rec.error_detail === 'string' ? rec.error_detail : JSON.stringify(rec.error_detail)).slice(0, 300)}`;
+          throw Object.assign(new Error(`${rec.write_error_message ?? `write ${rec.state}`}${rec.write_error_reason ? ` (${rec.write_error_reason})` : ''}${detail}`), { code: rec.write_error ?? `write_${rec.state}` });
+        }
         return rec;
       }
       if (performance.now() - t0 > this.#boundMs()) {
@@ -768,8 +796,8 @@ export class GbrainAdapter implements N14Adapter {
       await attempt(ledger.slug, hubContent(ledger, split.hub.preamble, split.parts));
     } else if (this.#importFile) {
       try { await this.#importDoc(raw); } catch (e) { writeErrors++; first ??= { code: errCode(e), message: errMsg(e).slice(0, 500) }; }
-    } else if (this.arm === 'native' && this.#capability.upload_session && Buffer.byteLength(raw) > 4 * 1024 * 1024) {
-      try { await this.#upload(ledger.slug, raw); } catch (e) { writeErrors++; first ??= { code: errCode(e), message: errMsg(e).slice(0, 500) }; }
+    } else if (this.#usesUpload(raw)) {
+      try { await this.#upload(ledger.slug, raw, 'create'); } catch (e) { writeErrors++; first ??= { code: errCode(e), message: errMsg(e).slice(0, 500) }; }
     } else {
       await attempt(ledger.slug, raw);
     }
@@ -842,18 +870,20 @@ export class GbrainAdapter implements N14Adapter {
     return { status, ...(first ? { code: first.code, message: first.message } : {}), pages, chunks: Number(docPages[0]?.chunks ?? 0), embed_skip: docPages[0]?.skip ?? null, write_errors: writeErrors, storage: this.arm === 'managed-parts' ? null : await this.#storage(), pending: this.#takePending(), projection };
   }
 
-  async #upload(slug: string, raw: string): Promise<void> {
+  /** Amendment 5: the native arm writes a document over 4 MiB through an upload session when gbrain has one. */
+  #usesUpload(content: string): boolean {
+    return this.arm === 'native' && this.#capability.upload_session && Buffer.byteLength(content) > UPLOAD_ABOVE_BYTES;
+  }
+
+  /** An upload session: parts cut on code points so each call's encoded frame fits the session's part_max_frame_bytes. */
+  async #upload(slug: string, raw: string, mode: 'create' | 'replace'): Promise<void> {
     const buf = Buffer.from(raw);
-    const begun = await this.call('begin_page_upload', { slug, total_bytes: buf.length, sha256: createHash('sha256').update(buf).digest('hex') }) as { upload_id: string };
-    const part = 2 * 1024 * 1024;
-    let seq = 0;
-    for (let off = 0; off < buf.length; seq++) {
-      let end = Math.min(buf.length, off + part);
-      while (end < buf.length && (buf[end] & 0xc0) === 0x80) end--;
-      await this.call('upload_page_part', { upload_id: begun.upload_id, seq, text: buf.subarray(off, end).toString('utf8') });
-      off = end;
-    }
-    const r = await this.call('commit_page_upload', { upload_id: begun.upload_id }) as { revision?: string };
+    const sha = (b: Buffer) => createHash('sha256').update(b).digest('hex');
+    const expected = mode === 'replace' ? (await this.call('get_page', { slug, body: 'none' }) as { revision?: string }).revision : undefined;
+    const begun = await this.call('begin_page_upload', { slug, mode, total_bytes: buf.length, sha256: sha(buf), request_id: randomUUID(), ...(expected ? { expected_revision: expected } : {}) }) as { upload_id: string; part_max_frame_bytes: number };
+    const parts = cutUploadParts(buf, begun.upload_id, begun.part_max_frame_bytes);
+    for (const [part, slice] of parts.entries()) await this.call('upload_page_part', { upload_id: begun.upload_id, part, text: slice.toString('utf8'), part_sha256: sha(slice) });
+    const r = await this.#callSettled('commit_page_upload', { upload_id: begun.upload_id }) as { revision?: string };
     if (r?.revision) this.#rev.set(slug, r.revision);
   }
 
@@ -946,7 +976,9 @@ export class GbrainAdapter implements N14Adapter {
         await this.#put(this.#ledger.slug, hubContent(this.#ledger, this.#preamble, this.#parts));
       } else if (this.arm === 'native' && this.#capability.append_page) {
         path = 'append_page';
-        const r = await this.call('append_page', { slug: this.#ledger.slug, text, request_id: randomUUID(), ...(this.#rev.get(this.#ledger.slug) ? { expected_revision: this.#rev.get(this.#ledger.slug) } : {}) }) as { revision?: string };
+        const stored = this.#raw.trimEnd();
+        const r = await this.#callSettled('append_page', { slug: this.#ledger.slug, text: this.#raw.slice(stored.length) + text, separator: 'none', request_id: randomUUID(),
+          ...(this.#rev.get(this.#ledger.slug) ? { expected_revision: this.#rev.get(this.#ledger.slug) } : {}) }) as { revision?: string };
         if (r?.revision) this.#rev.set(this.#ledger.slug, r.revision);
       } else if (this.#importFile) {
         path = 'importFromFile re-import of the whole file (segment-aware)';
@@ -1036,6 +1068,7 @@ export class GbrainAdapter implements N14Adapter {
     try {
       const withFence = body + lifecycleFence();
       if (this.#importFile) await this.#importDoc(withFence);
+      else if (this.#usesUpload(withFence)) await this.#upload(slug, withFence, 'replace');
       else await this.#put(slug, withFence);
       await this.#settleProjection();
       const rows = await this.sql<{ id: number }>(`SELECT id FROM facts WHERE strpos(fact, $1) > 0 ORDER BY id`, [LIFECYCLE_TOKEN]);
@@ -1644,7 +1677,8 @@ async function main(): Promise<void> {
       search: `search op (keyword), limit ${TOP_K}; a hit is a result whose stored chunk (content_chunks.chunk_text by chunk_id) holds the needle answer as a whole token, passage at most ${PASSAGE_CAP_BYTES} bytes`,
       egress: `largest JSON-RPC text frame of every operation result; cap ${EGRESS_CAP_BYTES} bytes`,
       reads: 'single-page and managed-parts: get_page {slug} of the hit page; native: get_page {slug, body: window, around_chunk_id}; plus one default get_page of the entry page per arm',
-      append: 'single-page: put_page whole page + 1 KB; managed-parts: put_page new part + hub index; native: append_page when it exists',
+      append: 'single-page: put_page whole page + 1 KB; managed-parts: put_page new part + hub index; native: append_page when it exists (the source\'s trailing whitespace, then the 1 KB day, separator none; Amendment 5)',
+      native_write: 'native: put_page up to 4 MiB; above it an upload session (begin_page_upload mode create, upload_page_part cut to part_max_frame_bytes, commit_page_upload) when gbrain has one; the lifecycle fence write uses mode replace (Amendment 5)',
       append_cost: 'embedding inputs and estimated tokens (UTF-8 bytes / 4) sent by runEmbedCore({stale: true}) after the append, counted by a fake embed transport; ratio = embed tokens / appended tokens; null when the page has no chunks',
       embed_pass_tiers: EMBED_PASS_TIERS,
       settle_bound: 'write_pending polls and projection settles wait up to max(240 s, 3 s per MB of the document) (Amendment 4)',

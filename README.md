@@ -12,11 +12,11 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 
 | Item | Value |
 |---|---|
-| Pinned product | gbrain [`f717b1a5b`](https://github.com/garrytan/gbrain/tree/f717b1a5b1c71871c5b6530e98bd1d540a38c70d), release v0.60.299.0, declared as `gbrain` in `package.json` |
+| Pinned product | gbrain [`6e1086492`](https://github.com/garrytan/gbrain/tree/6e1086492dbded0059fcfabc627b846ced7855f4), release v0.60.324.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.123 (`VERSION`) |
+| This repository | gbrain-evals v0.10.124 (`VERSION`) |
 
-This repository installs gbrain v0.60.299.0 (`f717b1a5b`). Some results below were measured at earlier commits; each
+This repository installs gbrain v0.60.324.0 (`6e1086492`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except `a7cb37b`, the September 29 branch
 commit whose retrieval the reader replay row froze. The search modes held the same values from v0.48.4.0 through
 v0.60.169.0. Since then the default reranker became Voyage `rerank-3-lite` (was `rerank-2.5`, v0.60.223.0) and
@@ -310,6 +310,15 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-20: Re-pin to gbrain `6e1086492`; repository row names v0.10.124
+
+gbrain-evals v0.10.124. The pinned product row changes from `f717b1a5b` (v0.60.299.0) to `6e1086492` (v0.60.324.0),
+which adds `append_page`, upload sessions for pages larger than one request, and segmented `edit_page` (large pages Wave
+B PR 3, gbrain #7104). `src/core/search/mode.ts` is identical at both commits, so the search-mode sentences stand, and
+every commit the paragraph under the table names is still in the release's history except `a7cb37b`. This release also
+records the N14 run at Wave B PR 3 ([report](docs/benchmarks/2026-10-20-n14-large-page-fidelity-wave-b3.md)). No result
+row on this page changes. The repository row names v0.10.124 (was v0.10.123).
 
 ### 2026-10-18: Re-pin to gbrain `f717b1a5b`; repository row names v0.10.123
 

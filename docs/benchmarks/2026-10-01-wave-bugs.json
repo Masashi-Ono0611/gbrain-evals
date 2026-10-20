@@ -2480,7 +2480,7 @@
       "id": "N14-5",
       "category": "large-page-fidelity",
       "classification": "bug",
-      "status": "open",
+      "status": "fixed",
       "gbrain_sha": "f717b1a5b1c71871c5b6530e98bd1d540a38c70d",
       "contract": "delete_page with purge: true 'removes the row, chunks, links and raw data immediately' (src/core/ops/pages.ts, delete_page description), and Wave B purge deletes the purged page's segment texts in the purge transaction ('purge never waits for GC', src/core/facts/purge.ts purgeSegmentStorage; src/core/persistence/page-purge.ts deletePageWithSegments)",
       "surface": "delete_page purge: true -> deletePageWithSegments (src/core/persistence/page-purge.ts), on a segmented page restored after a forget_fact",
@@ -2488,17 +2488,36 @@
       "expected": "after a committed purge, no segment text holding the purged page's body remains in page_segment_texts",
       "actual": "on a segmented page with a facts fence, forget_fact (which writes a new body generation) followed by delete_page and restore_page leaves one earlier segment text with no manifest row (160,368 bytes on the 2 MB chat). The purge deletes only the texts the page's manifest still references, so that text, holding 6 of the page's 42 planted answers, stays in page_segment_texts after the purge reports success, until the source-wide segment GC runs past its 1 h grace (sweepSegments({graceMs: 0}) removes it). Without the forget, or without the delete and restore, the purge leaves nothing (2 MB probes). Reproduced by the lifecycle on all three 2 MB documents, the 20 MB chat and the 24 MiB chat, on PGLite and Postgres.",
       "review": {
-        "date": "2026-10-18",
-        "gbrain_sha": "f717b1a5b1c71871c5b6530e98bd1d540a38c70d",
+        "date": "2026-10-20",
+        "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
         "evidence": "rerun",
         "receipts": [
-          "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/pglite/2mb/receipt.json",
-          "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/pglite/20mb/receipt.json",
-          "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/pglite/24mib/receipt.json",
-          "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/postgres/2mb/receipt.json"
+          "docs/benchmarks/2026-10-20-n14-large-page-fidelity-wave-b3/pglite/2mb/receipt.json",
+          "docs/benchmarks/2026-10-20-n14-large-page-fidelity-wave-b3/pglite/20mb/receipt.json",
+          "docs/benchmarks/2026-10-20-n14-large-page-fidelity-wave-b3/pglite/24mib/receipt.json",
+          "docs/benchmarks/2026-10-20-n14-large-page-fidelity-wave-b3/pglite/large/receipt.json",
+          "docs/benchmarks/2026-10-20-n14-large-page-fidelity-wave-b3/postgres/2mb/receipt.json",
+          "docs/benchmarks/2026-10-20-n14-large-page-fidelity-wave-b3/postgres/large/receipt.json"
         ],
-        "note": "found by this run"
-      }
+        "note": "at 6e10864 (Wave B PR 3 and the large-pages hardening, #7081) the same lifecycle (forget_fact, delete_page, restore_page, purge) leaves no unreferenced segment text and no needle answer in any chunk or segment text after the purge, before any sweep: 0 texts (0 bytes) on all three 2 MB documents, the 20 MB and 24 MiB chats and 100 MiB to 256 MiB stored chats, on PGLite and Postgres"
+      },
+      "review_history": [
+        {
+          "date": "2026-10-18",
+          "gbrain_sha": "f717b1a5b1c71871c5b6530e98bd1d540a38c70d",
+          "evidence": "rerun",
+          "receipts": [
+            "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/pglite/2mb/receipt.json",
+            "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/pglite/20mb/receipt.json",
+            "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/pglite/24mib/receipt.json",
+            "docs/benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2/postgres/2mb/receipt.json"
+          ],
+          "note": "found by this run"
+        }
+      ],
+      "fixing_pr": "garrytan/gbrain#7081",
+      "fixing_commit": "2e9df779862bac480cc409304bc76dea02b39b20",
+      "reason": "Fixed by the large-pages hardening (garrytan/gbrain#7081, v0.60.315.0): a page purge deletes the unreferenced segment texts that hold the page's claims, in both stored forms (LPH h3, 6a3584f95; review round 2, 8c787f692)."
     }
   ]
 }
