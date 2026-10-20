@@ -160,7 +160,7 @@ reproducible matrix used here.
 
 ### 2026-10-20: Installed pin moves to `6e1086492`
 
-The installed gbrain commit changed from `f717b1a5b` (v0.60.299.0) to `6e1086492` (v0.60.324.0).
+gbrain-evals v0.10.124. The installed gbrain commit changed from `f717b1a5b` (v0.60.299.0) to `6e1086492` (v0.60.324.0).
 `src/core/search/mode.ts` is identical at both commits, so the mode-definition note stands with the new pin.
 
 ### 2026-10-18: Installed pin moves to `f717b1a5b`

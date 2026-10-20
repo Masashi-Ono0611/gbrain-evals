@@ -232,8 +232,9 @@ before A6b use the former environment variable names. The hashes of every file A
 
 ### 2026-10-20: Re-pin to gbrain `6e1086492`
 
-The pin named in the opening and in the LongMemEval section changed from `f717b1a5b` (v0.60.299.0) to `6e1086492`
-(v0.60.324.0). No comparison on this page was rerun, and every row keeps its measurement date and commit.
+gbrain-evals v0.10.124. The pin named in the opening and in the LongMemEval section changed from `f717b1a5b`
+(v0.60.299.0) to `6e1086492` (v0.60.324.0). No comparison on this page was rerun, and every row keeps its measurement
+date and commit.
 
 ### 2026-10-18: Re-pin to gbrain `f717b1a5b`
 

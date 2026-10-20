@@ -2,6 +2,21 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.124] - 2026-10-20
+
+### Re-pin to gbrain `6e1086492` (v0.60.324.0); N14 at large pages Wave B PR 3
+
+- **Pin.** gbrain moves from `f717b1a5b` (v0.60.299.0) to `6e1086492` (v0.60.324.0), which adds `append_page`, upload sessions and segmented `edit_page` (large pages Wave B PR 3, #7104) and the large-pages hardening (#7081). The suite needed only the docs that name the pin; `src/core/search/mode.ts` is identical at both commits.
+- **N14** ([report](docs/benchmarks/2026-10-20-n14-large-page-fidelity-wave-b3.md), preregistration Amendment 5, written before any counted run). A hermetic run on the default config, PGLite 2 MB to 260 MiB and Postgres 2 MB and 100 MiB to 260 MiB, at $0.
+  - The native arm appends with `append_page` and writes every document over 4 MiB through an upload session, as its preregistered definition says once gbrain has them. The runner's upload call now follows gbrain's session contract, and its append keeps the page equal to the source plus the append.
+  - The append rule is counted from this run and passes: worst native ratio 2.87. Append time falls from 7.0 s to 0.9 s at 20 MB, 8.4 s to 0.7 s at 24 MiB and 17.4 s to 2.4 s at 256 MiB.
+  - Upload sessions store what the file import stored (128 MiB on PGLite, 256 MiB on Postgres), found 40/40, read in windows and exported byte-identical.
+  - Counted verdict: fail, on the recall-gap rule at 24 MiB (2.5 points), the same split needle as v0.10.123; the chunker change is deferred. Safety, the floor and the append rule pass.
+  - Forget on pages over 24 MiB is still unreachable: `append_page` refuses fence text, and an upload replace refuses `request_too_large`.
+  - Exploratory: on Postgres the 2 MB novel or log append sometimes sends a doubled embedding input (5 of 23 document runs), as the single-page arm did at v0.10.123. It never happened on PGLite.
+- **Bug ledger.** N14-5 is fixed by #7081: a purge after `forget_fact`, delete and restore leaves no segment text on either engine.
+- **Registry.** The N14 row stays held only for the trusted-local egress rule, which waits on a product decision.
+
 ## [0.10.123] - 2026-10-18
 
 ### Re-pin to gbrain `f717b1a5b` (v0.60.299.0); N14 at large pages Wave B PR 2 and the switch-on
