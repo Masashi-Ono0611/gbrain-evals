@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.123, with gbrain master `f717b1a5b` (v0.60.299.0) as the product under test. Results measured at
+gbrain-evals v0.10.123, with gbrain master `6e1086492` (v0.60.324.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -218,6 +218,11 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-20: Re-pin to gbrain `6e1086492`
+
+The opening names gbrain master `6e1086492` (v0.60.324.0, was `f717b1a5b`, v0.60.299.0), which adds `append_page`, upload
+sessions and segmented `edit_page` (large pages Wave B PR 3, gbrain #7104).
 
 ### 2026-10-18: Re-pin to gbrain `f717b1a5b`; N14 at the switch-on
 

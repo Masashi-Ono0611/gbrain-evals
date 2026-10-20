@@ -6,7 +6,7 @@ autocut off. That setup retrieves all labeled conversations for 451/470 answerab
 with opaque session ids at gbrain `109b992`. [Recount](benchmarks/2026-10-04-longmemeval-opaque-followups.md),
 [original experiment](benchmarks/2026-09-06-longmemeval-ranker-wave.md).
 
-This page describes the gbrain this repository installs, master `f717b1a5b` (v0.60.299.0, declared in
+This page describes the gbrain this repository installs, master `6e1086492` (v0.60.324.0, declared in
 `package.json`). Most experiments here ran at gbrain v0.48.4.0 (`2efaaf8f`) or later commits named beside each
 number. The `balanced`, `conservative` and `tokenmax` mode definitions (`MODE_BUNDLES` in
 `src/core/search/mode.ts`) hold the same values from `2efaaf8f` through `77cf8e111` (v0.60.169.0), apart from three
@@ -157,6 +157,11 @@ the [refresh report](benchmarks/2026-09-09-retrieval-refresh.md) gives the full
 reproducible matrix used here.
 
 ## Changelog
+
+### 2026-10-20: Installed pin moves to `6e1086492`
+
+The installed gbrain commit changed from `f717b1a5b` (v0.60.299.0) to `6e1086492` (v0.60.324.0).
+`src/core/search/mode.ts` is identical at both commits, so the mode-definition note stands with the new pin.
 
 ### 2026-10-18: Installed pin moves to `f717b1a5b`
 
