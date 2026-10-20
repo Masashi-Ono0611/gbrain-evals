@@ -18,7 +18,7 @@ import {
 import {
   EGRESS_CAP_BYTES, PASSAGE_CAP_BYTES, THRESHOLDS, canonicalBody, crashedSummary, absentSummary, estTokens, evaluateArm, frameBytes, hitRank, hubContent,
   n14Findings, n14Verdict, parseConfigOverlay, parseNativeIngest, probeNativeCapability, scoreQa, splitIntoParts, summarize, summarizeArm,
-  EMBED_PASS_TIERS, LIFECYCLE_CLAIM, LIFECYCLE_TOKEN, PROJECTION_SETTLE_MAX_MS, lifecycleFence, parseEngine, settleBoundMs,
+  EMBED_PASS_TIERS, UPLOAD_ABOVE_BYTES, cutUploadParts, LIFECYCLE_CLAIM, LIFECYCLE_TOKEN, PROJECTION_SETTLE_MAX_MS, lifecycleFence, parseEngine, settleBoundMs,
   type LifecycleOutcome, type AppendOutcome, type Arm, type CallFrame, type EmbedCount, type IngestOutcome, type N14Adapter, type N14RunResult, type NativeCapability, type SearchHit,
 } from '../../eval/runner/n14-large-page-fidelity.ts';
 import { overlaySummary, type GbrainUnderTest } from '../../eval/runner/gbrain-under-test.ts';
@@ -250,6 +250,28 @@ describe('N14 managed parts and capability probe', () => {
     expect(probeNativeCapability([{ name: 'get_page', params: { body: { type: 'string', enum: ['auto', 'full', 'none'] } } }]).present).toBe(false);
     const c = probeNativeCapability([{ name: 'get_page', params: { body: { type: 'string', enum: ['auto', 'full', 'none', 'outline', 'window'] } } }, { name: 'append_page', params: {} }]);
     expect(c).toMatchObject({ present: true, append_page: true, upload_session: false });
+    const up = probeNativeCapability([{ name: 'get_page', params: { body: { enum: ['window'] } } }, { name: 'append_page' }, { name: 'begin_page_upload' }, { name: 'upload_page_part' }, { name: 'commit_page_upload' }]);
+    expect(up).toMatchObject({ present: true, append_page: true, upload_session: true });
+    expect(up.evidence).toContain('upload sessions exist');
+    expect(probeNativeCapability([{ name: 'get_page', params: { body: { enum: ['window'] } } }, { name: 'begin_page_upload' }, { name: 'commit_page_upload' }]).upload_session).toBe(false);
+  });
+
+  test('upload parts end on code points, rejoin to the input and keep every frame within the part limit', () => {
+    const id = '0f8fad5b-d9cb-41a1-a8b4-6d1f2c3e4a5b';
+    const frame = (slice: Buffer, part: number) => Buffer.byteLength(JSON.stringify({ jsonrpc: '2.0', id: 0, result: { upload_id: id, part, text: slice.toString('utf8'), part_sha256: '0'.repeat(64) } })) + 1024;
+    const text = Array.from({ length: 4000 }, (_, i) => `line ${i} "quoted" \\ tab\t é 漢字 🙂\n`).join('');
+    const buf = Buffer.from(text);
+    for (const cap of [8 * 1024, 64 * 1024, 4 * 1024 ** 2 - 4096]) {
+      const parts = cutUploadParts(buf, id, cap);
+      expect(Buffer.concat(parts).equals(buf)).toBe(true);
+      for (const [i, p] of parts.entries()) {
+        expect(frame(p, i)).toBeLessThanOrEqual(cap);
+        expect(p.toString('utf8')).not.toContain('\uFFFD');
+      }
+      if (cap < buf.length) expect(parts.length).toBeGreaterThan(1);
+    }
+    expect(UPLOAD_ABOVE_BYTES).toBe(4 * 1024 * 1024);
+    expect(() => cutUploadParts(Buffer.from('🙂'), id, 1100)).toThrow(/cannot carry/);
   });
 });
 

@@ -12,11 +12,11 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 
 | Item | Value |
 |---|---|
-| Pinned product | gbrain [`f717b1a5b`](https://github.com/garrytan/gbrain/tree/f717b1a5b1c71871c5b6530e98bd1d540a38c70d), release v0.60.299.0, declared as `gbrain` in `package.json` |
+| Pinned product | gbrain [`6e1086492`](https://github.com/garrytan/gbrain/tree/6e1086492dbded0059fcfabc627b846ced7855f4), release v0.60.324.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.123 (`VERSION`) |
+| This repository | gbrain-evals v0.10.125 (`VERSION`) |
 
-This repository installs gbrain v0.60.299.0 (`f717b1a5b`). Some results below were measured at earlier commits; each
+This repository installs gbrain v0.60.324.0 (`6e1086492`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except `a7cb37b`, the September 29 branch
 commit whose retrieval the reader replay row froze. The search modes held the same values from v0.48.4.0 through
 v0.60.169.0. Since then the default reranker became Voyage `rerank-3-lite` (was `rerank-2.5`, v0.60.223.0) and
@@ -313,7 +313,11 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 
 ## Changelog
 
-### 2026-10-19: First managed sync after activation row
+### 2026-10-20: Sync freshness rows; repository row names v0.10.125
+
+gbrain-evals v0.10.125 adds the two sync freshness rows below (GBRA-133) and the PR 2b section of the [sync freshness report](docs/benchmarks/2026-10-19-sync-freshness.md): no-op round trips on managed Postgres and search latency during a sync. The repository row names v0.10.125 (was v0.10.124).
+
+#### First managed sync after activation row
 
 New row in Current results: the first managed sync after activating a classic brain, on gbrain v0.60.320.0 (#6712 PR 4b,
 #7053), mirrored from GBRA-133 in
@@ -321,13 +325,22 @@ New row in Current results: the first managed sync after activating a classic br
 Every run converged in one pass: Postgres 100,000 pages took 129.6 s and 23,243 statements (n = 1); 10,000 pages took
 about 13 s on both engines (n = 3). No other row changes.
 
-### 2026-10-19: Sync freshness row
+#### Sync freshness row
 
 New row in Current results: how fast a commit becomes searchable through a running `gbrain serve` after gbrain
 v0.60.316.0 (#7079) added the commit notifier, mirrored from GBRA-133 PR 2b.6 in
 [the sync freshness report](docs/benchmarks/2026-10-19-sync-freshness.md): 0.60 s p50 in watch mode on Postgres (was
 3.7 s on managed brains and never on classic ones), 2.15 s p50 in poll mode, and a PGLite embedding gap after a provider
-outage. No other row changes; the repository version is stamped when this merges.
+outage. No other row changes.
+
+### 2026-10-20: Re-pin to gbrain `6e1086492`; repository row names v0.10.124
+
+gbrain-evals v0.10.124. The pinned product row changes from `f717b1a5b` (v0.60.299.0) to `6e1086492` (v0.60.324.0),
+which adds `append_page`, upload sessions for pages larger than one request, and segmented `edit_page` (large pages Wave
+B PR 3, gbrain #7104). `src/core/search/mode.ts` is identical at both commits, so the search-mode sentences stand, and
+every commit the paragraph under the table names is still in the release's history except `a7cb37b`. This release also
+records the N14 run at Wave B PR 3 ([report](docs/benchmarks/2026-10-20-n14-large-page-fidelity-wave-b3.md)). No result
+row on this page changes. The repository row names v0.10.124 (was v0.10.123).
 
 ### 2026-10-18: Re-pin to gbrain `f717b1a5b`; repository row names v0.10.123
 

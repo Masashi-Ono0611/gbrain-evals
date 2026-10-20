@@ -1,7 +1,7 @@
 # Learn, evaluate, and extend gbrain
 
 This index lists every published report by the question it answers. It describes the repository as it stands:
-gbrain-evals v0.10.123, with gbrain master `f717b1a5b` (v0.60.299.0) as the product under test. Results measured at
+gbrain-evals v0.10.125, with gbrain master `6e1086492` (v0.60.324.0) as the product under test. Results measured at
 other gbrain commits name that commit in their report. Everything above [Changelog](#changelog) is current; the
 changelog at the bottom records how this index changed.
 
@@ -129,7 +129,7 @@ gap does not isolate the effect of a graph alone.
 | Does the Jev answerability signal (S4) make a reader abstain on unanswerable questions without refusing answerable ones? | [October 6 A4 with S4 on](benchmarks/2026-10-06-a4-s4-on.md) ([preregistration](benchmarks/2026-10-06-a4-s4-on-preregistration.md)) |
 | When the same conversation arrives as a Claude Code, Codex, ChatGPT or WhatsApp export (any of the 27 formats gbrain registers), does gbrain keep who said what and when, and admit what it cannot parse? Does a meeting page tell attendees from people only mentioned? (gates since 2026-10-02, when gbrain's fix for N12-1 was verified) | [October 1 ingestion format fidelity (N12)](benchmarks/2026-10-01-n12-format-fidelity.md) |
 | Are gbrain's six code-intelligence operations ready to use on a real TypeScript repository, and where do their documented limits show? | [October 1 code-intelligence readiness scout (N13)](benchmarks/2026-10-01-n13-code-intelligence.md) |
-| If I put one very large document in gbrain (a 2 MB chat, a novel, a 20 MB or 200 MB export), can an agent find and read what is deep inside it, and does keeping it up to date stay cheap? (report-only and held; at gbrain `f717b1a`, with segmented storage on by default, one page up to 128 MiB on PGLite and 256 MiB on Postgres is found 40/40, read in windows and exported byte-identical, and an append writes one tail segment; the counted recall-gap rule fails at 24 MiB, where one needle split across two chunks is missed, and a purge after a forget, delete and restore leaves segment text behind until GC, bug N14-5) | [October 18 Wave B PR 2 and the switch-on (N14)](benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2.md), [October 15 Wave B PR 1, segmented storage (exploratory)](benchmarks/2026-10-15-n14-large-page-fidelity-wave-b1.md), [October 15 after large pages Wave A](benchmarks/2026-10-15-n14-large-page-fidelity-wave-a.md), [October 14 baseline](benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md) ([preregistration](benchmarks/2026-10-14-n14-large-page-fidelity-preregistration.md)) |
+| If I put one very large document in gbrain (a 2 MB chat, a novel, a 20 MB or 200 MB export), can an agent find and read what is deep inside it, and does keeping it up to date stay cheap? (report-only and held; at gbrain `6e10864`, with segmented storage on by default, `append_page` and upload sessions, one page up to 128 MiB on PGLite and 256 MiB on Postgres is found 40/40, read in windows and exported byte-identical, and a 1 KB append writes one tail segment and re-embeds one chunk, within the counted append rule; the counted recall-gap rule still fails at 24 MiB, where one needle split across two chunks is missed, and a purge now leaves nothing behind, so bug N14-5 is fixed) | [October 20 Wave B PR 3 (N14)](benchmarks/2026-10-20-n14-large-page-fidelity-wave-b3.md), [October 18 Wave B PR 2 and the switch-on](benchmarks/2026-10-18-n14-large-page-fidelity-wave-b2.md), [October 15 Wave B PR 1, segmented storage (exploratory)](benchmarks/2026-10-15-n14-large-page-fidelity-wave-b1.md), [October 15 after large pages Wave A](benchmarks/2026-10-15-n14-large-page-fidelity-wave-a.md), [October 14 baseline](benchmarks/2026-10-14-n14-large-page-fidelity-baseline.md) ([preregistration](benchmarks/2026-10-14-n14-large-page-fidelity-preregistration.md)) |
 | Does "who is waiting on me" open, close and mute Gmail loops the way the guide says, and where does a reply closing a loop differ from the work being done? | [October 1 open loops on Gmail-shaped threads (N7)](benchmarks/2026-10-01-n7-open-loops-email.md) |
 | Does the brain volunteer the right page when someone is mentioned, without false alarms, and does it keep private pages out of what it pushes? (report-only) | [October 1 unsolicited recall at final delivery (N8)](benchmarks/2026-10-01-n8-proactive-recall.md) |
 | Does relationship retrieval help questions that chain two or three relations, in wording the parser never saw, and does it still help reworded one-hop questions at the current pin? | [October 1 multi-hop check (N9)](benchmarks/2026-10-01-n9-multi-hop.md), [multi-relation planner preregistration](benchmarks/2026-10-04-p7-multi-hop-planner-preregistration.md), [LHF wave 2 attendance paraphrase gate](benchmarks/2026-10-16-lhf-wave-2-attendance-preregistration.md) (held-out paraphrases fired 18 of 90, failed) |
@@ -220,11 +220,19 @@ procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
 
-### 2026-10-19: Sync freshness
+### 2026-10-20: Sync freshness
 
 Saving, using, and improving memory gains the [sync freshness report](benchmarks/2026-10-19-sync-freshness.md)
-(GBRA-133 PR 2b.6): commit-to-searchable latency through gbrain's commit notifier in watch and poll mode, embedding
+(GBRA-133 PR 2b.6, gbrain-evals v0.10.125; the opening names it, was v0.10.124): commit-to-searchable latency through gbrain's commit notifier in watch and poll mode, embedding
 drain under backlog and provider outage, serve start catch-up, multi-source fairness and idle cost.
+
+### 2026-10-20: Re-pin to gbrain `6e1086492`; N14 at Wave B PR 3
+
+gbrain-evals v0.10.124 (the opening names it; was v0.10.123). The opening names gbrain master `6e1086492` (v0.60.324.0,
+was `f717b1a5b`, v0.60.299.0), which adds `append_page`, upload sessions and segmented `edit_page` (large pages Wave B
+PR 3, gbrain #7104). The N14 row links the [Wave B PR 3 run](benchmarks/2026-10-20-n14-large-page-fidelity-wave-b3.md), and
+its question cell names the result: appends within the counted append rule, the recall-gap rule still failing at 24 MiB, and
+bug N14-5 fixed.
 
 ### 2026-10-18: Re-pin to gbrain `f717b1a5b`; N14 at the switch-on
 
