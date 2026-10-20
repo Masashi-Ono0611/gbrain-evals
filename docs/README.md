@@ -110,6 +110,7 @@ gap does not isolate the effect of a graph alone.
 | Does a managed Postgres catch-up still stop when one write cannot finish preparing, and what happens to that write? | [October 8 preparation stall mirror](benchmarks/2026-10-08-managed-sync-preparation-stall.md) (gbrain #6298, v0.60.112.0): a stuck write is cut off and held in 240 s and a 15,000-entry catch-up drains in two to three passes where v0.60.105.0 never did; a table lock still pins the pool |
 | How soon does a managed Postgres catch-up commit its first page, and how slow is a page save during it? | [October 8 follow-up mirror](benchmarks/2026-10-08-managed-sync-followup-wave.md) (gbrain follow-up wave at `d6d9d5956`): first page at 15.5 s (was 19.3 s; target 15 s), slowest saves within 0.8 s of idle with none failed; corrects the October 7 catch-up-while-saving row to 60 to 63% |
 | Why did a managed Postgres sync behind a transaction-mode pooler wedge for eighteen days, and were two consumers on one host the cause? | [October 8 ClientRead wedge mirror](benchmarks/2026-10-08-managed-sync-clientread-wedge.md) (gbrain #6278, #6317; the two-consumer arms, the on-demand reproduction and the named await) |
+| How soon is a commit searchable when a running gbrain process watches the repository, in watch and poll mode, with embeddings, several sources and idle cost? | [October 19 sync freshness after the commit notifier](benchmarks/2026-10-19-sync-freshness.md) (gbrain v0.60.316.0, #7079; GBRA-133 PR 2b.6): single-file commit keyword-visible in 0.60 s p50 through `gbrain serve` in watch mode (was 3.7 s managed, never classic), 2 s p50 and under 3.7 s p95 in poll mode; deferred embeds drain fully except on PGLite after a provider outage (about 3% left); several sources sync one after another, about 2 to 3 s apart; one idle serve runs 31.5 transactions per 30 s (was 25.5) |
 | Which MCP tool surface should gbrain register for agents: seven verbs, `starter` or `full`? | [October 5 registration-surface cell](benchmarks/2026-10-05-registration-surface.md) ([preregistration](benchmarks/2026-10-05-registration-surface-preregistration.md)) |
 | What happens when tweet ingestion becomes parallel? | [Tweet ingestion](benchmarks/2026-04-18-tweet-ingestion.md) |
 | What did the earlier ingestion worker comparisons measure? | [Subagent comparison](benchmarks/2026-04-18-minions-vs-openclaw-subagents.md), [production comparison](benchmarks/2026-04-18-minions-vs-openclaw-production.md) |
@@ -218,6 +219,12 @@ and [repository writing guide](../CLAUDE.md). The
 procedure with documented missing pieces; it is not the current refresh command.
 
 ## Changelog
+
+### 2026-10-19: Sync freshness
+
+Saving, using, and improving memory gains the [sync freshness report](benchmarks/2026-10-19-sync-freshness.md)
+(GBRA-133 PR 2b.6): commit-to-searchable latency through gbrain's commit notifier in watch and poll mode, embedding
+drain under backlog and provider outage, serve start catch-up, multi-source fairness and idle cost.
 
 ### 2026-10-18: Re-pin to gbrain `f717b1a5b`; N14 at the switch-on
 
