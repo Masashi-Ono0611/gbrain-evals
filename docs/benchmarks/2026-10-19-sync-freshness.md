@@ -137,6 +137,34 @@ The two versions do different work here, so this is not a like-for-like speed co
 
 GBRA-101 measured the same cell on master `c9f309f3` (which contains PR 4b) on a different 4 vCPU machine: Postgres, 100,000 pages, converged in 1 pass, 23,241 statements, 114.1 s. The statement counts agree within 2, and this machine took 14% longer (one run on each side). The PR 4b changelog says this case "did not finish" before and now converges in about 45 s. Neither run reproduces either figure. Here v0.60.316.0 finished in 7.1 s, because its replay range was empty. Both 100,000-page measurements took longer than 45 s.
 
+### PR 2b: a no-op sync over a 57 ms link, and search while a sync runs (gbrain PR 2b, tree 6193810d)
+
+Measured on October 20, 2026 by the same lane on gbrain branch `gbra133-pr2b`. The shipped head adds gate fixes on top of the measured tree. One of them makes the first sync's batch build yield (62 ms of thread CPU per stretch down to 34 ms on a dev box), so the first-sync cells below are an upper bound for that head.
+
+**No-op `gbrain sync` on a managed brain over a 57 ms link** (Postgres direct or through a transaction-mode PgBouncer, n = 40 per cell; p50 / p95 seconds to exit; dependent round trips per run in brackets). The three trees of each cell ran on one brain.
+
+| cell | master c9f309f3 | PR 2b (3dee6f9c lanes) |
+|---|---|---|
+| 10k pages, direct | 5.90 / 5.98 (70) | 3.34 / 3.39 (32) |
+| 10k pages, PgBouncer | 6.11 / 6.18 (81) | 2.90 / 2.99 (32) |
+| 100k pages, direct | 8.12 / 8.21 (78) | 3.49 / 3.59 (32) |
+| 100k pages, PgBouncer | 7.34 / 7.46 (90) | 3.00 / 3.08 (31) |
+
+Verdict: **the 100k no-op target of 5 s or less is met** in both topologies, and the cost no longer grows with brain size (master read 11 page batches per no-op at 100k for the ghost report). `pg_type` fetches per run drop from 10 to 1.
+
+**Search latency while a sync runs** (10k pages, open loop: one search due every 250 ms, timed from when it was due; n ≥ 60 per cell; p50 / p95 ms, then the longest thread-CPU stall in ms). "Within 25%" is against each engine's idle median: PGLite 64.6 / 79.9 ms, Postgres 41.6 / 55.8 ms.
+
+| engine | cell | before (e4ec4528) | PR 2b (6193810d) | within 25% of idle, p50 / p95 |
+|---|---|---|---|---|
+| PGLite | 100-file commit | 4433 / 11826 · 11836 | 53.5 / 156.6 · 783 | yes / no |
+| PGLite | first sync | 67.6 / 927.2 · 14996 | 65.2 / 103.2 · 1490 | yes / no (+29%) |
+| Postgres | 100-file commit | 37.4 / 82.0 · 29 | 37.7 / 95.5 · 28 | yes / noisy (66 to 96 across runs on every tree) |
+| Postgres | first sync | 64.8 / 269.3 · 1649 | 65.4 / 121.4 · 96 | no / no |
+
+Verdict: **the search-within-25% precondition for turning `sync.on_commit` on by default is not met yet.** Every multi-second stall is gone, and Postgres no longer stalls past 100 ms. On PGLite each remaining stall is one wasm statement on its single thread (the #5449 checkpoint guard's CHECKPOINT at 0.7 to 0.9 s, and large result decodes at 0.4 to 0.6 s). On Postgres the first-sync miss comes from search sharing the JS thread with a CPU-bound sync: search CPU per call rises from about 14 ms to about 47 ms.
+
+Raw data: `raw/pr2b-search/` (one ndjson per tree and engine, plus the harness `search-during-sync.ts`; `d3-86bd0374` is an intermediate tree) and `raw/pr2b-roundtrips/lane-c-bench.md` (the round-trip method, traces and every round).
+
 ## A nightly regression gate
 
 gbrain gates three of these cells nightly (`.github/workflows/sync-freshness-gate.yml` on the gbrain branch): watch mode, single-file commit, 10,000 pages, through `gbrain serve`, for Postgres managed, PGLite managed and Postgres classic. The gate value is the p50 of 10 reps after one discarded warm-up rep, and a cell fails above its committed baseline plus 25%. It runs on `ubicloud-standard-4` runners, and the baseline was recorded on that runner class.
