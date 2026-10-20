@@ -136,6 +136,216 @@
       ]
     },
     {
+      "id": "ARS-1",
+      "category": "agent-retrieval-shapes",
+      "classification": "feature-gap",
+      "contract": "None stated: gbrain keys result slots on (source_id, slug) on purpose and has no source-agnostic collapse stage (gbrain#4612).",
+      "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+      "surface": "search / query with source_id __all__",
+      "repro": "bun eval/runner/agent-retrieval-shapes.ts --families E1",
+      "expected": "a slug held by both sources takes one of the top 10 rows and ranks first for its own title words",
+      "actual": "headline pass search 0/30, query 0/30 (default); duplicate slug in the top 10: {\"search\":{\"n\":30,\"of\":30},\"query\":{\"n\":30,\"of\":30}}",
+      "status": "open",
+      "review": {
+        "date": "2026-10-20",
+        "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-20-agent-retrieval-shapes/receipt.json"
+        ],
+        "note": "found by this run (gbrain#4612)"
+      }
+    },
+    {
+      "id": "ARS-2",
+      "category": "agent-retrieval-shapes",
+      "classification": "feature-gap",
+      "contract": "None stated: gbrain does not claim to collapse or demote merge-redirect stubs (gbrain#7153).",
+      "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+      "surface": "search / query",
+      "repro": "bun eval/runner/agent-retrieval-shapes.ts --families E2",
+      "expected": "the target ranks above the stub whose body says \"This page has been merged into [[target]]\", or the stub is collapsed onto it",
+      "actual": "headline pass search 5/15, query 5/15 (same-title, renamed-stub)",
+      "status": "open",
+      "review": {
+        "date": "2026-10-20",
+        "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-20-agent-retrieval-shapes/receipt.json"
+        ],
+        "note": "found by this run (gbrain#7153)"
+      }
+    },
+    {
+      "id": "ARS-3",
+      "category": "agent-retrieval-shapes",
+      "classification": "feature-gap",
+      "contract": "None stated: gbrain has no document-family collapse for pages that share an origin (gbrain#7154).",
+      "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+      "surface": "search / query",
+      "repro": "bun eval/runner/agent-retrieval-shapes.ts --families E3",
+      "expected": "the page that answers the question ranks first and the transcript, summary and diarized copies take at most 1 of the top 5",
+      "actual": "headline pass search 0/6, query 0/6 (default)",
+      "status": "open",
+      "review": {
+        "date": "2026-10-20",
+        "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-20-agent-retrieval-shapes/receipt.json"
+        ],
+        "note": "found by this run (gbrain#7154)"
+      }
+    },
+    {
+      "id": "ARS-4",
+      "category": "agent-retrieval-shapes",
+      "classification": "feature-gap",
+      "contract": "None stated: gbrain has no entity-type prior for descriptive organization queries (gbrain#7155).",
+      "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+      "surface": "search / query",
+      "repro": "bun eval/runner/agent-retrieval-shapes.ts --families E4",
+      "expected": "the company page ranks first for a product-description query that names no person, without --types",
+      "actual": "headline pass search 0/6, query 0/6 (default)",
+      "status": "open",
+      "review": {
+        "date": "2026-10-20",
+        "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-20-agent-retrieval-shapes/receipt.json"
+        ],
+        "note": "found by this run (gbrain#7155)"
+      }
+    },
+    {
+      "id": "ARS-5",
+      "category": "agent-retrieval-shapes",
+      "classification": "feature-gap",
+      "contract": "None stated: search, query and list_pages take no frontmatter-field filter (gbrain#7159); the probes pass a where parameter only when the operation declares one.",
+      "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+      "surface": "search / query params",
+      "repro": "bun eval/runner/agent-retrieval-shapes.ts --families E5",
+      "expected": "a where: {partner, cycle, outcome} filter returns the one interview whose frontmatter matches",
+      "actual": "capability gap: search and query declare no where (frontmatter filter) parameter at this build; without a filter the right interview ranks first search 1/8, query 1/8 (baseline)",
+      "status": "open",
+      "review": {
+        "date": "2026-10-20",
+        "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-20-agent-retrieval-shapes/receipt.json"
+        ],
+        "note": "found by this run (gbrain#7159)"
+      }
+    },
+    {
+      "id": "ARS-6",
+      "category": "agent-retrieval-shapes",
+      "classification": "feature-gap",
+      "contract": "None stated: the entity op resolves \"Name, alias or slug\" (alias, exact slug, exact title, slug suffix); variant generation is what gbrain#7160 asks for.",
+      "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+      "surface": "entity",
+      "repro": "bun eval/runner/agent-retrieval-shapes.ts --families E6",
+      "expected": "each variant of a person with empty aliases resolves to that person, none resolves to a wrong page, and no miss suggests an index or digest page",
+      "actual": "headline pass entity 0/24 (honorific, surname, diminutive, reversed); wrong page {\"n\":0,\"of\":26}, index or digest suggested {\"n\":19,\"of\":26}",
+      "status": "open",
+      "review": {
+        "date": "2026-10-20",
+        "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-20-agent-retrieval-shapes/receipt.json"
+        ],
+        "note": "found by this run (gbrain#7160)"
+      }
+    },
+    {
+      "id": "ARS-7",
+      "category": "agent-retrieval-shapes",
+      "classification": "feature-gap",
+      "contract": "None stated: the entity op prefers an exact title, and no doctor check looks for title-prefixed person duplicates (gbrain#7160).",
+      "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+      "surface": "entity; run_doctor",
+      "repro": "bun eval/runner/agent-retrieval-shapes.ts --families E7",
+      "expected": "\"Mayor <Surname>-Example\" resolves to the canonical person page, not the short people/mayor-<surname>-example stub, and a doctor check flags the pair",
+      "actual": "headline pass entity 0/4 (prefixed); doctor flags 0 of 4 pairs",
+      "status": "open",
+      "review": {
+        "date": "2026-10-20",
+        "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-20-agent-retrieval-shapes/receipt.json"
+        ],
+        "note": "found by this run (gbrain#7160)"
+      }
+    },
+    {
+      "id": "ARS-13",
+      "category": "agent-retrieval-shapes",
+      "classification": "feature-gap",
+      "contract": "The chunker caps a stored chunk at 6,000 characters (src/core/chunkers/recursive.ts, maxChars); return_unit auto returns whole conversations by design, and gbrain#7164 asks for a cap on returned text.",
+      "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+      "surface": "search / query (return_unit auto)",
+      "repro": "bun eval/runner/agent-retrieval-shapes.ts --families E13",
+      "expected": "no returned row carries more than 6,000 characters",
+      "actual": "headline pass search 0/1, query 0/1 (default); largest returned row 59883 characters, largest stored chunk 2702",
+      "status": "open",
+      "review": {
+        "date": "2026-10-20",
+        "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-20-agent-retrieval-shapes/receipt.json"
+        ],
+        "note": "found by this run (gbrain#7164)"
+      }
+    },
+    {
+      "id": "ARS-14",
+      "category": "agent-retrieval-shapes",
+      "classification": "feature-gap",
+      "contract": "None stated: the readiness probe covers the caller's whole visible scope, narrowed only by --types (src/core/search/projection-readiness.ts); gbrain#7165 asks to scope it to the query.",
+      "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+      "surface": "search / query response meta degraded",
+      "repro": "bun eval/runner/agent-retrieval-shapes.ts --families E14",
+      "expected": "a text query that cannot match an unprojected image page reports no projection_pending stage",
+      "actual": "headline pass search 0/3, query 0/3 (unscoped)",
+      "status": "open",
+      "review": {
+        "date": "2026-10-20",
+        "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-20-agent-retrieval-shapes/receipt.json"
+        ],
+        "note": "found by this run (gbrain#7165)"
+      }
+    },
+    {
+      "id": "ARS-15",
+      "category": "agent-retrieval-shapes",
+      "classification": "feature-gap",
+      "contract": "None stated: keyword search cannot match words a question paraphrases; query without --expand ranks like search on the keyword path (gbrain#7157).",
+      "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+      "surface": "search / query",
+      "repro": "bun eval/runner/agent-retrieval-shapes.ts --families E15",
+      "expected": "the page each paraphrased question describes ranks first (hit@1), with query at least as good as search",
+      "actual": "headline pass search 48/50, query 48/50 (default); {\"search\":{\"n\":50,\"hit_at_1\":0.96,\"hit_at_5\":1,\"hit_at_10\":1,\"mrr\":0.9733333333333333},\"query\":{\"n\":50,\"hit_at_1\":0.96,\"hit_at_5\":1,\"hit_at_10\":1,\"mrr\":0.9733333333333333}}; search and query return the same top 10 for {\"n\":50,\"of\":50}",
+      "status": "open",
+      "review": {
+        "date": "2026-10-20",
+        "gbrain_sha": "6e1086492dbded0059fcfabc627b846ced7855f4",
+        "evidence": "rerun",
+        "receipts": [
+          "docs/benchmarks/2026-10-20-agent-retrieval-shapes/receipt.json"
+        ],
+        "note": "found by this run (gbrain#7157)"
+      }
+    },
+    {
       "id": "N1-1",
       "category": "knowledge-update",
       "classification": "bug",

@@ -2,6 +2,15 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [Unreleased]
+
+### Agent retrieval shapes: E1 to E15 as a report-only category
+
+- **New category `agent-retrieval-shapes`** ([report](docs/benchmarks/2026-10-20-agent-retrieval-shapes.md); runner `eval/runner/agent-retrieval-shapes.ts`, generator `eval/generators/agent-retrieval-shapes-gen.ts`, alias ARS). It turns 15 retrieval failure shapes that an operator agent reported on a large multi-source production brain (gbrain issues #4612, #6058, #7153 to #7157 and #7159 to #7165) into a seeded fictional world of 621 pages in three sources plus 5 images, with gold from an independent oracle. Tier H, free, report-only with exploratory metrics only, and runnable against any build with `--gbrain`.
+- **First run at gbrain `6e1086492`** (keyword path, no embedding key, 20.7 s, $0). Nine shapes reproduce: twin slugs across federated sources (E1, 0/30), same-title merge stubs above their target (E2, 5/15), derived copies of one talk (E3, 0/6), a founder page above the company a product query describes (E4, 0/6), name variants beyond N4 (E6, 0/24), title-prefixed person stubs (E7, 0/4), a 59,883-character returned row (E13, 0/1), `projection_pending` on unrelated text queries (E14, 0/3), and `query` returning the same top 10 as `search` (E15, 48/50 hit@1). E8 to E12 hold. E5 is not measured, because search and query take no frontmatter filter.
+- **Bug ledger.** ARS-1 to ARS-7 and ARS-13 to ARS-15 open as feature gaps, each naming its gbrain issue.
+- **Not measured.** Vector, hybrid, reranked and expanded retrieval; a paid arm is follow-up work.
+
 ## [0.10.125] - 2026-10-20
 
 ### Sync freshness: gbrain's commit notifier, first sync after activation, and PR 2b
