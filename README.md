@@ -14,7 +14,7 @@ describes gbrain as this repository pins it today; the changelog at the bottom r
 |---|---|
 | Pinned product | gbrain [`6e1086492`](https://github.com/garrytan/gbrain/tree/6e1086492dbded0059fcfabc627b846ced7855f4), release v0.60.324.0, declared as `gbrain` in `package.json` |
 | Fixed-purpose aliases | `gbrain-cues` (`939232f`) and `gbrain-reader` (`e78f1c3`), used only by the experiments that name them |
-| This repository | gbrain-evals v0.10.124 (`VERSION`) |
+| This repository | gbrain-evals v0.10.125 (`VERSION`) |
 
 This repository installs gbrain v0.60.324.0 (`6e1086492`). Some results below were measured at earlier commits; each
 names its commit, and every commit named below is in the release's history except `a7cb37b`, the September 29 branch
@@ -82,6 +82,8 @@ save, find, update and forget what it knows. The parts that matter for an agent:
 | Managed Postgres catch-up 57 ms from the database (10,000-file backlog) | **367.9 pages/min** steady, **33.6 min** for the backlog (was 174.8 pages/min and 74.5 min on the same rig); a page save 2.5 s instead of 8.6 s | v0.60.111.0 (#6279) | [Lanes and foreground](docs/benchmarks/2026-10-07-managed-sync-lanes-foreground.md) |
 | A managed Postgres catch-up when one write cannot finish preparing (15,000 entries, heavy fact adoption, 57 ms, transaction-mode pooler) | Drains in **2 passes (91 min, pool 10)** and 3 passes (pool 3), with **0** failed fence receipts and **0** watchdog stops; v0.60.105.0 never drained (102 pages in 47.6 min). A stuck write is held in **240 s**; a table lock still pins 9 of 10 connections | v0.60.112.0 (#6298; 15,000-entry runs at `846bea442`) | [Preparation stall](docs/benchmarks/2026-10-08-managed-sync-preparation-stall.md) |
 | A managed Postgres sync behind a transaction-mode pooler whose round trip never completes | Wedges with **one process and no lanes** (backend `ClientRead`, consumer parked 135 s, zero commits) on v0.60.110.0 and on #6298's head; **0 wedges in 2 h 49 min** of the two-consumer shape (4,951 pages); fixed by the bounded settle in v0.60.114.0 | v0.60.110.0 → v0.60.117.0 | [ClientRead wedge](docs/benchmarks/2026-10-08-managed-sync-clientread-wedge.md) |
+| A single-file commit becoming searchable through a running `gbrain serve` with `sync.on_commit` on (10,000 synthetic pages, local database, 4 vCPUs) | **0.60 s** p50 (p95 0.61 s, n = 40) on Postgres in watch mode, was 3.7 s managed and never on classic sources; poll mode 2.15 s p50, p95 3.20 s; vector for hybrid search 0.3 s later on managed, about 6 s later on classic; after a 30 s embedding outage PGLite left about 3% of a 1,000-chunk backlog unembedded | v0.60.316.0 (#7079) | [Sync freshness](docs/benchmarks/2026-10-19-sync-freshness.md) |
+| The first managed sync after activating a classic brain already synced to HEAD (synthetic pages, local database, 4 vCPUs) | Converges in **1 pass** on every run: Postgres 10,000 pages 13.2 s p50 (n = 3, 2,487 statements), PGLite 10,000 pages 12.9 s (n = 3), Postgres 100,000 pages **129.6 s** (n = 1, 23,243 statements). v0.60.316.0 took 1.6 s, 1.8 s and 7.1 s but compared no files, because its commit replay range was empty | v0.60.320.0 (#7053, PR head `426c4ef5`) | [Sync freshness](docs/benchmarks/2026-10-19-sync-freshness.md#first-managed-sync-after-activating-a-classic-brain-gbrain-v0603200-6712-pr-4b) |
 | Malformed facts/takes tables repaired by a model without a wrong cell (held-out set, model tier only) | **96.0%** repaired, **0** wrong cells (gpt-6.1-sol and claude-opus-5-5, the measured defaults); every other case held | v0.60.102.0 ([`5b58910`](https://github.com/garrytan/gbrain/commit/5b5891069)) | [Fence repair Tier 3](docs/benchmarks/2026-10-06-fence-repair-tier3.md) |
 | A file whose frontmatter `slug:` names another page: duplicate to merge, stray line to delete, or a case for a person (model judgment) | **0** harmful answers in 432 pair runs (no duplicate split, no merge of two different things); true duplicates recognised **92.0%** (Opus 5.5), 85.3% (gpt-6.1-sol), 80.0% (Sonnet 5.5), the rest deferred to a person | gbrain #6377 (`ac6e0868`) | [Slug-conflict judgment](docs/benchmarks/2026-10-09-content-repair-judgment.md) |
 | A forecasting take graded by a model, among verdicts confident enough to apply (≥ 0.95) | **0** wrong in 496 applied verdicts by gpt-6.1-sol (upper bound 0.6%, bar 1%), which resolved 99.2% of resolvable takes and held back on all 250 unresolvable ones; Opus 5.5 and Sonnet 5.5 rarely reach 0.95 (2 and 121 applied, Sonnet 1 wrong) | gbrain #6882 (`d99b84694`) | [Take grading](docs/benchmarks/2026-10-16-take-grading.md) |
@@ -310,6 +312,26 @@ Code is MIT licensed. Dataset and vendored benchmark attribution is recorded in 
 [PrecisionMemBench attribution](eval/precisionmembench/ATTRIBUTION.md).
 
 ## Changelog
+
+### 2026-10-20: Sync freshness rows; repository row names v0.10.125
+
+gbrain-evals v0.10.125 adds the two sync freshness rows below (GBRA-133) and the PR 2b section of the [sync freshness report](docs/benchmarks/2026-10-19-sync-freshness.md): no-op round trips on managed Postgres and search latency during a sync. The repository row names v0.10.125 (was v0.10.124).
+
+#### First managed sync after activation row
+
+New row in Current results: the first managed sync after activating a classic brain, on gbrain v0.60.320.0 (#6712 PR 4b,
+#7053), mirrored from GBRA-133 in
+[the sync freshness report](docs/benchmarks/2026-10-19-sync-freshness.md#first-managed-sync-after-activating-a-classic-brain-gbrain-v0603200-6712-pr-4b).
+Every run converged in one pass: Postgres 100,000 pages took 129.6 s and 23,243 statements (n = 1); 10,000 pages took
+about 13 s on both engines (n = 3). No other row changes.
+
+#### Sync freshness row
+
+New row in Current results: how fast a commit becomes searchable through a running `gbrain serve` after gbrain
+v0.60.316.0 (#7079) added the commit notifier, mirrored from GBRA-133 PR 2b.6 in
+[the sync freshness report](docs/benchmarks/2026-10-19-sync-freshness.md): 0.60 s p50 in watch mode on Postgres (was
+3.7 s on managed brains and never on classic ones), 2.15 s p50 in poll mode, and a PGLite embedding gap after a provider
+outage. No other row changes.
 
 ### 2026-10-20: Re-pin to gbrain `6e1086492`; repository row names v0.10.124
 

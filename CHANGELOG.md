@@ -2,6 +2,14 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.125] - 2026-10-20
+
+### Sync freshness: gbrain's commit notifier, first sync after activation, and PR 2b
+
+- **Sync freshness** ([report](docs/benchmarks/2026-10-19-sync-freshness.md), GBRA-133). Commit-to-searchable latency through a running `gbrain serve` after gbrain's commit notifier (v0.60.316.0, #7079): 0.60 s p50 in watch mode on Postgres (was 3.7 s on managed brains and never on classic ones) and 2.15 s p50 in poll mode, plus embedding drain under backlog and provider outage, serve start catch-up, multi-source fairness and idle cost.
+- **First managed sync after activating a classic brain** on gbrain v0.60.320.0 (#6712 PR 4b): every run converged in one pass; Postgres 100,000 pages took 129.6 s and 23,243 statements (n = 1), 10,000 pages about 13 s on both engines (n = 3).
+- **gbrain PR 2b** (#7111): no-op sync round trips on managed Postgres and search latency during a sync, with the raw runs under `docs/benchmarks/2026-10-19-sync-freshness/raw/`.
+
 ## [0.10.124] - 2026-10-20
 
 ### Re-pin to gbrain `6e1086492` (v0.60.324.0); N14 at large pages Wave B PR 3
