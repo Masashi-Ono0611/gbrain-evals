@@ -2,6 +2,12 @@
 
 This records what each gbrain-evals release changed and what its measurements meant at the time. Versions follow `VERSION` and `package.json`. Historical scores keep their original dates; later corrections do not turn them into measurements of today's code.
 
+## [0.10.127] - 2026-10-20
+
+### Agent retrieval shapes: gbrain#7186 measured
+
+- **gbrain#7186 at `42588edd` against master `9c03ec68`** ([report](docs/benchmarks/2026-10-20-agent-retrieval-shapes.md#builds-measured), receipts under `docs/benchmarks/2026-10-20-agent-retrieval-shapes/gbrain-7186/`; keyword path, no embedding key, $0). Twin slugs across sources (E1) 0/30 to 30/30, merge stubs above their target (E2) 5/15 to 15/15, the founder above the company (E4) 0/6 to 6/6. Score order (E12) holds at 306/306 and E15 at 48/50 hit@1. Derived copies of one talk (E3) stay 0/6: the copies fold into one row, but that row still ranks above the decision page. The largest returned row (E13) stays 59,883 characters, a whole conversation block the PR leaves alone.
+
 ## [0.10.126] - 2026-10-20
 
 ### Agent retrieval shapes: E1 to E15 as a report-only category
