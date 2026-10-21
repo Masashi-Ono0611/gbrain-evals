@@ -69,3 +69,12 @@ bun eval/runner/agent-retrieval-shapes.ts --families E2,E6 --json      # a subse
 bun eval/runner/agent-retrieval-shapes.ts --gbrain ../gbrain-candidate  # another build
 bun test test/eval/agent-retrieval-shapes.test.ts
 ```
+
+## Builds measured
+
+| date | gbrain build | E1 | E2 | E3 | E4 | E9 | E11 | E12 | E13 largest row | E15 hit@1 | receipts |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 2026-10-20 | master 9c03ec68 | 0/30 | 5/15 | 0/6 | 0/6 | 6/6 | 6/6 | 306/306 | 59,883 | 48/50 | `2026-10-20-agent-retrieval-shapes/gbrain-7186/master-9c03ec68.receipt.json` |
+| 2026-10-20 | gbrain#7186 head 42588edd (collapse stage, rank priors, score order) | **30/30** | **15/15** | 0/6 | **6/6** | 6/6 | 6/6 | 306/306 | 59,883 | 48/50 | `2026-10-20-agent-retrieval-shapes/gbrain-7186/pr-42588edd.receipt.json` |
+
+Counts are search; query matches search on every family. gbrain#7186 bounds a chunk row at 8,000 characters. E13's row is a whole conversation from evidence delivery's implied `auto` unit, and #7186 leaves that unit's bound to a follow-up, so E13 is unchanged. E3's copies share an `origin` key that #7186 does not read yet.
