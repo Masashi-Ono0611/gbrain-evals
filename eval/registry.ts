@@ -1075,6 +1075,30 @@ export const REGISTRY: readonly CategoryEntry[] = [
     contract: 'Generates seeded worlds of investors, companies, employees and meetings as linked notes (eval/generators/constrained-relational-gen.ts), indexes them with extraction and real embeddings on in-memory PGLite, and runs each question through hybrid search with the arm config from GBRAIN_EVAL_SEARCH_PINS. Every question names one seed entity, one typed relation and one attribute constraint that selects 1 to 4 of 8 to 14 neighbors; gold comes from the world model. Built for plan P3 E4 (relational triplet scoring); the fire rate must stay at or above 80%. Only development phrasing set A and seeds 11 and 13 run here; held-out phrasing and seeds belong to the custodian (--phrasing-file, access-logged). It does not measure answer synthesis or multi-hop composition.',
   },
   {
+    id: 'agent-retrieval-shapes', legacy_alias: 'ARS', name: 'Agent retrieval shapes: 15 failure shapes an operator agent reported on a large multi-source brain (E1 to E15)',
+    family: 'retrieval', tier: 'H', script: 'eval/runner/agent-retrieval-shapes.ts', run: { kind: 'dispatched', outputFlag: '--output', timeoutMs: 300_000 },
+    cost_estimate: FREE, receipt_path: 'eval/reports/agent-retrieval-shapes/<output>/receipt.json',
+    headline: {
+      metric: 'pass rate per family (E1 to E15), each on its own surface (search and query, or entity) and denominator, plus negative controls; E1 duplicate-slug share and hit@1, E13 largest returned row, E15 hit@1/5/10 and MRR',
+      denominator: 'seed 20261020: 621 pages in three sources (default plus two federated) and 5 images; 199 probes, 361 probe-surface pairs, of which the 18 E5 filter pairs are not measured where search and query take no frontmatter filter (343 at gbrain 6e1086492); E12 checks every search and query list of the run (306 at 6e1086492)',
+    },
+    gate: 'report-only', evidence_maturity: 'synthetic-production-path',
+    promotion: {
+      preregistered: '2026-10-20',
+      basis: 'report-only from its first run (docs/benchmarks/2026-10-20-agent-retrieval-shapes.md): the shapes are ranking and lookup behavior gbrain does not claim, so nothing gates; GBRA-154 and GBRA-155 measure their fixes against these metrics with --gbrain, and any future threshold is set in a reviewed commit that does not also change the code it measures',
+      safety_contracts: [], quality_thresholds: [],
+      exploratory: [
+        'data.families[].headline (pass rate and denominator per surface, per family)',
+        'data.families[].negatives (negative controls: single-source twins, filter that matches nothing, ambiguous surname, a name that exists nowhere)',
+        'data.families[].variants (types-company, return_unit chunk, types-scoped notice, renamed stub, full-name control, frontmatter baseline)',
+        'data.families[].metrics (E1 duplicate share and hit@1, E3 family share of the top 5, E6/E7 wrong-page and index-or-digest suggestions, E7 doctor flag, E8 mention pages named, E13 largest returned and stored chunk, E15 hit@1/5/10 and MRR)',
+        'data.extras.monotonic (E12: score non-increasing down every search and query list)',
+        'data.not_measured (vector, reranker and expansion behavior the hermetic arm cannot reach)',
+      ],
+    },
+    contract: 'Writes a seeded world (eval/generators/agent-retrieval-shapes-gen.ts) through put_page on in-memory PGLite, with two federated sources added by sources_add for E1 and five images through importImageFile for E14, then asks search, query (keyword path, no embedding key) and entity the questions of 15 families: twin slugs across sources (E1), merge-redirect stubs (E2), derived copies of one talk (E3), a product query against a densely linked founder page (E4), frontmatter-only discriminators (E5), honorific, surname, diminutive and reversed name variants beyond N4 (E6), title-prefixed person stubs (E7), names only daily notes mention (E8), OCR image pages (E9), phone, mail and hex identifiers (E10), dated versus undated evidence (E11), monotonic score (E12), returned chunk size on a 60,000-character meeting (E13), projection_pending notices on unrelated queries (E14) and paraphrased known-item questions (E15). Gold comes from an independent oracle over the rendered pages, never from gbrain. Each family reports its own pass rate. It does not measure vector, hybrid, reranked or expanded retrieval (no paid arm), N4\'s nickname, typo, initials and handle variants, or source isolation (Cat 22). A gbrain exception where an answer is expected is a scored miss; a capability the build lacks (a frontmatter filter) or a state the hermetic arm cannot reach is reported as not measured; a failed presence assertion is a harness error and voids the run.',
+  },
+  {
     id: 'multi-hop-paraphrase', legacy_alias: 'N9', name: 'Multi-hop with held-out wording: composed 2-3-hop questions, relational retrieval off vs on',
     family: 'relationships', tier: 'H', script: 'eval/runner/n9-multi-hop-paraphrase.ts', run: { kind: 'dispatched', outputFlag: '--output', timeoutMs: 600_000 },
     cost_estimate: FREE, receipt_path: 'eval/reports/n9-multi-hop-paraphrase/<output>/receipt.json',
